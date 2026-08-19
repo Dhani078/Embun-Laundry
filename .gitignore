@@ -1,0 +1,18 @@
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Agent / local cache
+.agents/
+skills-lock.json
+
+# Temporary uploads (keep structure if needed)
+# upload/avatars/*
+# !upload/avatars/.gitkeep

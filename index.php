@@ -1,0 +1,1073 @@
+<?php
+require __DIR__ . '/config.php';
+
+// Ambil layanan aktif dari DB
+$stmt = $mysqli->prepare("SELECT id, name, price, duration_hours, is_popular FROM services WHERE is_active=1 ORDER BY is_popular DESC, id ASC");
+$stmt->execute();
+$res = $stmt->get_result();
+$services = $res->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+function e($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Embun Laundry</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --accent-border: #bfdbfe;
+  
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border-light: #e2e8f0;
+  
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 12px 30px -10px rgba(15, 23, 42, 0.08), 0 4px 12px -5px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.12), 0 8px 24px -8px rgba(15, 23, 42, 0.04);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background: var(--bg-page);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+.container {
+  width: min(1150px, 92%);
+  margin-inline: auto;
+}
+a { text-decoration: none; }
+
+/* Header */
+.site-header {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  height: 80px;
+  display: flex;
+  align-items: center;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+  border: 2px solid #ffffff;
+}
+.brand-text {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
+.nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Buttons */
+.btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-main);
+}
+.btn-ghost:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.btn-outline {
+  background: #fff;
+  border-color: var(--border-light);
+  color: var(--text-main);
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.site-header .btn-ghost {
+  color: #ffffff;
+}
+.site-header .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.site-header .btn-primary {
+  background: #ffffff;
+  color: var(--accent);
+}
+.site-header .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--accent-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  background: rgba(37, 99, 235, 0.15);
+  pointer-events: none;
+}
+.btn-primary .ripple {
+  background: rgba(255, 255, 255, 0.3);
+}
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+  color: #ffffff;
+  padding: 160px 0 100px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.hero h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3.5rem;
+  line-height: 1.12;
+  margin: 0 0 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+.hero p.lead {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 24px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  max-width: 50ch;
+}
+.hero .pill {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.hero .cta-row {
+  display: flex;
+  gap: 16px;
+}
+.hero .btn-primary {
+  background: #ffffff;
+  color: var(--accent);
+}
+.hero .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--accent-hover);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+.hero .btn-outline {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+.hero .btn-outline:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+.mock {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.mock::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.25) 48%, transparent 70%);
+  transform: translateX(-120%);
+  animation: sweep 4s ease-in-out infinite;
+}
+@keyframes sweep {
+  0%, 10% { transform: translateX(-120%); }
+  45% { transform: translateX(120%); }
+  100% { transform: translateX(120%); }
+}
+
+/* Section */
+.section {
+  padding: 90px 0;
+  background: var(--bg-page);
+}
+.section .section-head {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.section h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+.section p.sub {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  max-width: 50ch;
+  margin-inline: auto;
+  margin-block: 0;
+}
+
+/* Promo bar */
+.promo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 auto 40px;
+  width: fit-content;
+  padding: 8px 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+.promo button {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  padding: 6px 14px !important;
+  border-radius: 999px;
+}
+
+/* Pricing Cards */
+.prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
+  margin-top: 40px;
+  margin-bottom: 60px;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 36px 28px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-border);
+}
+.card h3 {
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.card .price {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 12px 0;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
+.card .meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 8px 0 28px;
+}
+.card .btn {
+  width: 100%;
+  margin-top: auto;
+}
+.card.popular {
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-lg);
+}
+.card.popular .badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Features Bento Grid */
+.features-bento {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 24px;
+  margin-top: 40px;
+}
+.bento-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+}
+.bento-cell:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-border);
+}
+.bento-cell.large {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, #ffffff 100%);
+  border-color: var(--accent-border);
+  min-height: 464px;
+}
+.bento-cell .ic {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+  border: 1px solid var(--accent-border);
+}
+.bento-cell.large .ic {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+.bento-cell h4 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+.bento-cell p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Footer */
+.site-footer {
+  background: #090d16;
+  color: #94a3b8;
+  padding: 80px 0 30px;
+  margin-top: 100px;
+  border-top: 1px solid #1e293b;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 40px;
+}
+.footer-grid h4 {
+  color: #f8fafc;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 20px;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+}
+.site-footer p {
+  line-height: 1.6;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-top: 12px;
+}
+.list-plain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.list-plain li {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+.list-plain li a {
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+.list-plain li a:hover {
+  color: #ffffff;
+}
+.footer-bottom {
+  text-align: center;
+  padding-top: 30px;
+  color: #64748b;
+  border-top: 1px solid #1e293b;
+  margin-top: 50px;
+  font-size: 0.9rem;
+}
+
+/* Modal Quick Order */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal.show {
+  display: flex;
+  animation: fade .2s ease;
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sheet {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: min(480px, 100%);
+  padding: 32px;
+  border: 1px solid var(--border-light);
+  transform: translateY(12px) scale(.98);
+  opacity: 0;
+}
+.modal.show .sheet {
+  animation: sheetIn .3s cubic-bezier(.16, 1, 0.3, 1) both;
+}
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.65rem;
+  font-weight: 800;
+  margin: 8px 0 20px;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+.sheet label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.sheet .row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.sheet .input {
+  border: 1px solid var(--border-light);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  width: 100%;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text-main);
+  background: #fff;
+  transition: all 0.2s ease;
+}
+.sheet .input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  outline: none;
+}
+.sheet .total-display {
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+}
+.sheet .total-display span {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.sheet .total {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--accent);
+  font-family: 'Outfit', sans-serif;
+}
+.sheet .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+.badge-soft {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Reveal utility */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s var(--delay, 0ms) cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s var(--delay, 0ms) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.show {
+  opacity: 1;
+  transform: none;
+}
+
+/* Scroll progress bar */
+#scrollProg {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 3px;
+  width: 0;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
+  z-index: 100;
+}
+
+/* Utilities */
+.small {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.hero-3d {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 40px rgba(15, 23, 42, 0.15));
+  animation: floaty 4s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes floaty {
+  0% { transform: translateY(0) rotate(-0.2deg); }
+  50% { transform: translateY(-8px) rotate(0.2deg); }
+  100% { transform: translateY(0) rotate(-0.2deg); }
+}
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.75rem;
+  }
+  .hero p.lead {
+    margin-inline: auto;
+  }
+  .hero .cta-row {
+    justify-content: center;
+  }
+  .site-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-light);
+  }
+}
+
+@media (max-width: 768px) {
+  .section h2 {
+    font-size: 1.85rem;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .site-footer {
+    padding: 60px 0 30px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-3d { animation: none; }
+}
+
+/* Body lock when modal open */
+body.no-scroll { overflow: hidden; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <div class="brand">
+      <img
+        src="img/Logo.png"
+        alt="Embun Laundry"
+        class="logo"
+        width="36" height="36"
+        decoding="async"
+        fetchpriority="high"
+      />
+      <div class="brand-text">Embun Laundry</div>
+    </div>
+    <nav class="nav-actions">
+      <a class="btn btn-ghost" href="auth/login.php">Masuk</a>
+      <a class="btn btn-primary" href="auth/register.php">Buat Akun</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <h1>Laundry jadi cepat,<br/>rapi, dan terpantau.</h1>
+      <p class="lead">Terima pesanan, atur kurir, dan pantau pembayaran dalam satu dashboard.</p>
+
+      <div class="pill">
+        <span style="color:#f59e0b">★★★★★</span>
+        <span style="opacity:.9; color: var(--text-main); margin-left: 4px;">4.9/5 dari 1.200+ pelanggan</span>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary js-scroll" href="#harga">Pesan Sekarang</a>
+        <a class="btn btn-outline js-scroll" href="#harga">Lihat Harga</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="mock">
+        <img
+          src="img/3d.png"
+          alt="3D Laundry Illustration"
+          class="hero-3d"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="harga" class="section">
+  <div class="container">
+    <div class="promo">
+      <span>🎟️ Promo Oktober</span>
+      <span style="color: var(--text-light)">•</span>
+      <strong>Diskon 15% Cuci Kering untuk pelanggan baru</strong>
+      <button class="btn btn-outline" id="btnPromo">Gunakan Promo</button>
+    </div>
+
+    <div class="section-head">
+      <h2>Harga Layanan</h2>
+      <p class="sub">Pilih layanan yang sesuai dengan kebutuhan Anda</p>
+    </div>
+
+    <div class="prices">
+      <?php foreach ($services as $s): ?>
+        <div class="card <?php echo $s['is_popular'] ? 'popular' : '';?>">
+          <?php if ($s['is_popular']): ?><div class="badge">Paling Populer</div><?php endif; ?>
+          <h3><?= e($s['name']); ?></h3>
+          <div class="price"><?= rupiah($s['price']); ?></div>
+          <div class="meta">⏱️ Estimasi <?= (int)$s['duration_hours']; ?> jam</div>
+          <button
+            class="btn <?php echo $s['is_popular'] ? 'btn-primary' : 'btn-outline'; ?> js-order"
+            data-id="<?= (int)$s['id']; ?>"
+            data-name="<?= e($s['name']); ?>"
+            data-price="<?= (int)$s['price']; ?>"
+          >Pesan</button>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+    <div class="section-head" style="margin-top:80px; margin-bottom: 40px;">
+      <h2>Mengapa Pilih Embun Laundry?</h2>
+      <p class="sub">Kami berkomitmen memberikan layanan terbaik dengan kepuasan pelanggan sebagai prioritas utama</p>
+    </div>
+    
+    <div class="features-bento">
+      <div class="bento-cell large">
+        <div>
+          <div class="ic">🚚</div>
+          <h4>Pickup &amp; Delivery Cepat</h4>
+          <p>Tidak perlu keluar rumah. Kurir kami siap menjemput pakaian kotor Anda dan mengantarkannya kembali dalam kondisi bersih, wangi, dan rapi sesuai jadwal.</p>
+        </div>
+        <div style="margin-top: 30px; display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;">Layanan Terpercaya</span>
+          <div style="flex: 1; height: 1px; background: var(--accent-border);"></div>
+        </div>
+      </div>
+      <div class="bento-cell small-1">
+        <div>
+          <div class="ic">📦</div>
+          <h4>Kelola Pesanan Mandiri</h4>
+          <p>Sistem manajemen pesanan modern yang terpusat. Anda bisa memantau detail cucian, berat timbangan, hingga proses cuci langsung dari perangkat Anda.</p>
+        </div>
+      </div>
+      <div class="bento-cell small-2">
+        <div>
+          <div class="ic">📈</div>
+          <h4>Laporan Pembayaran Real-time</h4>
+          <p>Pantau status transaksi, struk pembayaran digital, dan histori cucian secara instan tanpa perlu repot menyimpan nota kertas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <img
+          src="img/Logo.png"
+          alt="Embun Laundry"
+          class="logo"
+          width="36" height="36"
+        />
+        <div class="brand-text" style="color:#f8fafc">Embun Laundry</div>
+      </div>
+      <p>Solusi terpercaya untuk kebutuhan laundry Anda.</p>
+    </div>
+    <div>
+      <h4>Layanan</h4>
+      <ul class="list-plain">
+        <li>Cuci Kering</li>
+        <li>Setrika</li>
+        <li>Cuci Lipat</li>
+        <li>Dry Cleaning</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Kontak</h4>
+      <ul class="list-plain">
+        <li>+62 812-3456-7890</li>
+        <li>info@embunlaundry.id</li>
+        <li>Jl. Sudirman No. 123</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Jam Operasional</h4>
+      <ul class="list-plain">
+        <li>Senin - Jumat: 07.00 - 21.00</li>
+        <li>Sabtu: 08.00 - 20.00</li>
+        <li>Minggu: 09.00 - 18.00</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© <?= date('Y'); ?> Embun Laundry</div>
+</footer>
+
+<!-- MODAL QUICK ORDER -->
+<div class="modal" id="orderModal" aria-hidden="true">
+  <div class="sheet">
+    <div class="badge-soft" id="orderService">Layanan</div>
+    <h3>Quick Order</h3>
+    <div class="row">
+      <div>
+        <label>Berat (kg)</label>
+        <input class="input" type="number" min="1" step="1" value="3" id="kgInput">
+      </div>
+      <div>
+        <label>Estimasi Harga</label>
+        <div class="total-display">
+          <span>Total</span>
+          <span class="total" id="totalOut">Rp 0</span>
+        </div>
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px; color: var(--accent); font-weight: 600;" id="infoPromo"></div>
+    <div class="actions">
+      <button class="btn btn-outline" id="btnClose">Batal</button>
+      <button class="btn btn-primary" id="btnGo">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// helper: ripple
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.btn'); if(!btn) return;
+  const circle = document.createElement('span');
+  const d = Math.max(btn.clientWidth, btn.clientHeight);
+  circle.style.width = circle.style.height = d+'px';
+  circle.style.left = (e.clientX - btn.getBoundingClientRect().left - d/2) + 'px';
+  circle.style.top  = (e.clientY - btn.getBoundingClientRect().top  - d/2) + 'px';
+  circle.className = 'ripple';
+  btn.appendChild(circle);
+  setTimeout(()=>circle.remove(), 600);
+});
+
+// smooth scroll already via CSS; this ensures preventing default on same-page navigation with class
+document.querySelectorAll('.js-scroll').forEach(a=>{
+  a.addEventListener('click', (ev)=>{
+    const href = a.getAttribute('href');
+    if(href && href.startsWith('#')){ ev.preventDefault(); document.querySelector(href)?.scrollIntoView({behavior:'smooth'}); }
+  });
+});
+
+// Promo toggle
+let promoActive = false;
+const btnPromo = document.getElementById('btnPromo');
+if (btnPromo) btnPromo.addEventListener('click', ()=>{
+  promoActive = !promoActive;
+  btnPromo.textContent = promoActive ? 'Promo Aktif ✔' : 'Gunakan Promo';
+  btnPromo.classList.toggle('is-active', promoActive);
+});
+
+// Quick order modal
+const modal = document.getElementById('orderModal');
+const orderSvc = document.getElementById('orderService');
+const infoPromo = document.getElementById('infoPromo');
+const totalOut = document.getElementById('totalOut');
+const kgInput = document.getElementById('kgInput');
+const isLoggedIn = <?php echo is_logged_in() ? 'true' : 'false'; ?>;
+const loginUrl = "<?php echo base_url('auth/login.php'); ?>";
+const dashUrl  = "<?php echo base_url('dashboard.php'); ?>";
+
+let current = { id: null, name:'', price:0 };
+
+function rupiah(n){
+  n = Math.max(0, Math.round(n));
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+function openModal(svc){
+  current = svc; kgInput.value = 3;
+  orderSvc.textContent = svc.name;
+  computeTotal();
+  modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  document.body.classList.add('no-scroll');
+}
+function closeModal(){
+  modal.classList.remove('show'); modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('no-scroll');
+}
+function computeTotal(){
+  const kg = parseInt(kgInput.value||'0',10);
+  let subtotal = kg * current.price;
+  let disc = 0;
+  infoPromo.textContent = '';
+  if (promoActive && /cuci\s*kering/i.test(current.name)) {
+    disc = Math.round(subtotal * 0.15);
+    infoPromo.textContent = `Promo 15% diterapkan untuk ${current.name}: -${rupiah(disc)}`;
+  }
+  totalOut.textContent = rupiah(subtotal - disc);
+}
+
+kgInput.addEventListener('input', computeTotal);
+document.getElementById('btnClose').addEventListener('click', closeModal);
+document.getElementById('btnGo').addEventListener('click', ()=>{
+  // Untuk demo: arahkan login bila belum login, kalau sudah login ke dashboard
+  const kg = parseInt(kgInput.value||'0',10);
+  const qs = new URLSearchParams({service_id:String(current.id), kg:String(kg)}).toString();
+  window.location.href = (isLoggedIn ? dashUrl : loginUrl) + '?' + qs;
+});
+
+// buka modal dari tombol "Pesan"
+document.querySelectorAll('.js-order').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    openModal({
+      id: parseInt(btn.dataset.id,10),
+      name: btn.dataset.name,
+      price: parseInt(btn.dataset.price,10)
+    });
+  });
+});
+
+// Tutup modal saat klik backdrop
+modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+// Tutup modal dengan Escape
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal.classList.contains('show')) closeModal(); });
+
+// Scroll progress bar
+afterPaint(()=>{
+  const bar = document.createElement('div');
+  bar.id = 'scrollProg';
+  document.body.appendChild(bar);
+  window.addEventListener('scroll', ()=>{
+    const h = document.documentElement;
+    const sc = h.scrollTop;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = Math.max(0, Math.min(1, max ? sc/max : 0));
+    bar.style.width = (p*100)+'%';
+  }, {passive:true});
+});
+
+// Reveal on enter viewport with stagger
+const revealEls = [...document.querySelectorAll('.card, .bento-cell')];
+revealEls.forEach((el,i)=>{
+  el.classList.add('reveal');
+  el.style.setProperty('--delay', (i*70)+'ms');
+});
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){ en.target.classList.add('show'); io.unobserve(en.target); }
+  });
+},{threshold:.15});
+revealEls.forEach(el=> io.observe(el));
+
+// Tilt/parallax effect for hero mock
+const mock = document.querySelector('.mock');
+const heroImg = document.querySelector('.hero-3d');
+if (mock && heroImg) {
+  let rafId;
+  const bound = 8; // max deg
+  function onMove(e){
+    const rect = mock.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rx = ((y / rect.height) - 0.5) * -2 * bound;
+    const ry = ((x / rect.width) - 0.5) *  2 * bound;
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(()=>{
+      heroImg.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(0)`;
+    });
+  }
+  function reset(){
+    cancelAnimationFrame(rafId);
+    heroImg.style.transform = '';
+  }
+  mock.addEventListener('mousemove', onMove);
+  mock.addEventListener('mouseleave', reset);
+}
+
+// afterPaint utility: run after initial paint to avoid blocking first render
+function afterPaint(cb){ requestAnimationFrame(()=>requestAnimationFrame(cb)); }
+</script>
+
+</body>
+</html>
