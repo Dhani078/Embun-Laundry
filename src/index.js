@@ -102,6 +102,12 @@ export default {
 
     // Serve static assets from public directory
     if (env.ASSETS) {
+      // Handle SPA routes - serve dashboard.html for /dashboard and sub-routes
+      if (path === '/dashboard' || path.startsWith('/dashboard/')) {
+        const dashboardUrl = new URL(request.url);
+        dashboardUrl.pathname = '/dashboard.html';
+        return env.ASSETS.fetch(dashboardUrl);
+      }
       return env.ASSETS.fetch(request);
     }
 
