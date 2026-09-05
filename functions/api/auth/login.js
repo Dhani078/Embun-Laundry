@@ -1,10 +1,10 @@
 // functions/api/auth/login.js
-import { getDb, hashPassword, jsonResponse, getUserFromSession, createSessionToken } from '../../_db.js';
+import { getDb, hashPassword, jsonResponse, createSessionToken } from '../../_db.js';
 
 export async function onRequestPost({ request, env }) {
   const db = await getDb(env);
   if (!db) {
-    return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
+    return jsonResponse({ ok: false, msg: 'Database tidak terhubung' }, 500);
   }
 
   try {
@@ -12,7 +12,7 @@ export async function onRequestPost({ request, env }) {
     const { identity, password } = body;
 
     if (!identity || !password) {
-      return jsonResponse({ ok: false, msg: 'Identity and password required' }, 400);
+      return jsonResponse({ ok: false, msg: 'Identitas dan kata sandi wajib diisi' }, 400);
     }
 
     // Find user by email, phone, or full_name
@@ -45,6 +45,7 @@ export async function onRequestPost({ request, env }) {
 
     return new Response(JSON.stringify({
       ok: true,
+      msg: 'Login berhasil',
       user: {
         id: user.id,
         user_name: user.full_name,
@@ -65,16 +66,26 @@ export async function onRequestPost({ request, env }) {
 }
 
 async function verifyPassword(password, hash) {
-  // For bcrypt hashes, we'd need bcrypt. For now, simple comparison
-  // In production, use bcrypt or similar
+  if (!hash) return false;
+  // 1. Direct match (plain text or legacy seeds)
+  if (password === hash) return true;
+
+  // 2. SHA-256 match
   const encoder = new TextEncoder();
   const data = encoder.encode(password + 'dhani-salt');
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   
-  // Check both hash formats
-  return hash === password || hash === computedHash;
+  if (computedHash === hash) return true;
+
+  // 3. Fallback for simple SHA-256 without salt
+  const data2 = encoder.encode(password);
+  const hashBuffer2 = await crypto.subtle.digest('SHA-256', data2);
+  const computedHash2 = Array.from(new Uint8Array(hashBuffer2)).map(b => b.toString(16).padStart(2, '0')).join('');
+  if (computedHash2 === hash) return true;
+
+  return false;
 }
 
 export async function onRequestOptions() {

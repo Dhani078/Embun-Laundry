@@ -49,7 +49,7 @@ export async function onRequest({ request, env }) {
       const qrPayload = `DHLDR|${order.order_code}|${amount}|${Date.now()}`;
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      const res = await db.execute(
+      await db.execute(
         `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at)
          VALUES (?, ?, 'manual', ?, 'pending', ?, ?)`,
         [order.id, method, amount, qrPayload, now]
@@ -57,7 +57,6 @@ export async function onRequest({ request, env }) {
 
       return jsonResponse({
         ok: true,
-        payment_id: res.insertId,
         qr_payload: qrPayload,
         amount
       });

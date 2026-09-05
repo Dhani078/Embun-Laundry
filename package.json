@@ -1,8 +1,9 @@
 {
-  "name": "dhani-laundry",
+  "name": "embun-laundry",
   "version": "1.0.0",
+  "type": "module",
   "description": "Aplikasi pengelolaan layanan laundry, pencatatan transaksi kasir, dan tracking status pesanan pelanggan.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
