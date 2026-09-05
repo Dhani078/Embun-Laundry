@@ -15,10 +15,31 @@ import * as checkinHandler from '../functions/api/checkin.js';
 import * as payHandler from '../functions/api/pay.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
 
+function rewriteImagePath(pathname) {
+  // Handle case-insensitive image requests - rewrite to actual filenames
+  const lower = pathname.toLowerCase();
+  if (lower === '/img/logo.png' || lower === '/logo.png') return '/img/Logo.png';
+  if (lower === '/img/3d.png' || lower === '/3d.png') return '/img/3d.png';
+  if (lower === '/img/avatar-placeholder.png' || lower === '/avatar-placeholder.png') return '/img/avatar-placeholder.png';
+  if (lower.startsWith('/assets/') && lower.endsWith('.css')) {
+    // Handle CSS file references
+    return pathname;
+  }
+  return pathname;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const path = url.pathname;
+    let path = url.pathname;
+
+    // Rewrite image paths for case-insensitive matching
+    const rewrittenPath = rewriteImagePath(path);
+    if (rewrittenPath !== path) {
+      const newUrl = new URL(request.url);
+      newUrl.pathname = rewrittenPath;
+      return env.ASSETS.fetch(newUrl);
+    }
 
     // Route API requests
     if (path.startsWith('/api/')) {
