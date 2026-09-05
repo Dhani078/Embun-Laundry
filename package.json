@@ -1,0 +1,23 @@
+{
+  "name": "dhani-laundry",
+  "version": "1.0.0",
+  "description": "Aplikasi pengelolaan layanan laundry, pencatatan transaksi kasir, dan tracking status pesanan pelanggan.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dhani078/Embun-Laundry.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dhani078/Embun-Laundry/issues"
+  },
+  "homepage": "https://github.com/Dhani078/Embun-Laundry#readme",
+  "dependencies": {
+    "@tidbcloud/serverless": "^0.3.0"
+  }
+}

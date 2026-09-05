@@ -1,0 +1,7 @@
+name = "dhani-laundry"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "public"
+
+[vars]
+TIDB_DATABASE = "embun_laundry"
+JWT_SECRET = "dhani-laundry-secure-jwt-secret-key-2026"
