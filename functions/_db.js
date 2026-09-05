@@ -1,13 +1,17 @@
-// functions/_middleware.js
+// functions/_db.js
 import { connect } from '@tidbcloud/serverless';
 
 export async function getDb(env) {
   const connUrl = env.TIDB_DATABASE_URL || env.DATABASE_URL;
   if (!connUrl) {
-    // Return a mock / memory fallback if no TiDB URL configured yet
     return null;
   }
-  return connect({ url: connUrl });
+  const conn = connect({ url: connUrl });
+  // Provide both .execute and .query methods for maximum compatibility
+  return {
+    execute: (sql, params) => conn.execute(sql, params),
+    query: (sql, params) => conn.execute(sql, params)
+  };
 }
 
 export async function hashPassword(password) {
@@ -52,7 +56,6 @@ export async function getUserFromSession(request, env) {
     const [payloadBase64, signature] = sessionToken.split('.');
     if (!payloadBase64 || !signature) return null;
     
-    // Verify signature
     const secret = env.JWT_SECRET || 'dhani-laundry-secure-jwt-secret-key-2026';
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -95,7 +98,7 @@ export async function createSessionToken(user, env) {
     user_name: user.full_name || user.name,
     user_role: user.role || 'Customer',
     email: user.email,
-    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60) // 30 days
+    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
   };
 
   const payloadBase64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
