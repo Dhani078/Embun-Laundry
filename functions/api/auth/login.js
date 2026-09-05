@@ -1,5 +1,5 @@
 // functions/api/auth/login.js
-import { getDb, hashPassword, jsonResponse, getUserFromSession, createSessionToken } from '../_db.js';
+import { getDb, hashPassword, jsonResponse, getUserFromSession, createSessionToken } from '../../_db.js';
 
 export async function onRequestPost({ request, env }) {
   const db = await getDb(env);
