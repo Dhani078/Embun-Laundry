@@ -1,31 +1,33 @@
-# Embun-Laundry
+# Embun Laundry · Serverless Edition (Cloudflare Pages + TiDB Cloud)
 
-Aplikasi pengelolaan layanan laundry, pencatatan transaksi kasir, dan tracking status pesanan pelanggan.
+Sistem Manajemen Laundry Modern berbasis **Cloudflare Pages (Edge Functions)** dan **TiDB Cloud Serverless**.
 
-## ✨ Fitur Utama
-- 🧺 **Manajemen Pesanan:** Pencatatan order masuk, status pengerjaan (Antrian, Proses, Siap Diambil, Selesai), dan cetak nota.
-- 👥 **Manajemen Pelanggan:** Database pelanggan, histori pemesanan, dan kategori membership.
-- 💲 **Layanan & Tarif:** Pengaturan jenis layanan (Cuci Kering, Setrika, Cuci Lipat, Dry Cleaning) dan tarif per kg / satuan.
-- 🚚 **Pickup & Delivery:** Penjadwalan kurir untuk penjemputan dan pengantaran laundry ke alamat pelanggan.
-- 🎟️ **Promo & Diskon:** Pengaturan voucher promo dan potongan harga.
-- 📑 **Laporan & Analytics:** Laporan pendapatan, volume cucian, dan grafik performa operasional.
-- 💳 **Pembayaran Digital & Cash:** Dukungan pencatatan status bayar (Lunas / Belum Lunas) serta QRIS.
+---
 
-## 🛠️ Teknologi yang Digunakan
-- **Backend:** PHP 8.x
-- **Database:** MySQL / MariaDB (`embun_laundry`)
-- **Frontend:** HTML5, CSS3 Modern, Vanilla JavaScript (Fetch API Realtime)
-- **Styling:** Custom Modern Responsive Design
+## 🌟 Fitur Utama
+- **Multi-Role RBAC**: Admin, Staff, Owner, dan Pelanggan.
+- **Manajemen Pesanan Real-Time**: Status pesanan (Baru, Proses, Selesai, Batal), hitung otomatis diskon kiloan dan voucher.
+- **Pickup & Delivery Kurir**: Penjadwalan jemput dan antar cucian, penugasan kurir, dan tracking status pengiriman.
+- **Promo & Voucher Diskon**: Sistem klaim voucher otomatis dengan perhitungan diskon persentase maupun potongan harga flat.
+- **Laporan Finansial & KPI**: Grafik omset, perbandingan lunas vs belum lunas, rata-rata bobot laundry, dan rekapitulasi harian.
+- **Sistem Pembayaran Dinamis**: Halaman invoice QRIS dinamis siap bayar (`/pay.html`).
+- **Edge Performance**: Waktu respon ultra-cepat (<50ms) didukung jaringan global Cloudflare dan TiDB Cloud Serverless Driver.
 
-## 🚀 Cara Menjalankan Secara Lokal
-1. Pastikan **XAMPP** sudah terinstal dan servis **Apache** & **MySQL** berjalan.
-2. Tempatkan folder project ini di dalam direktori `c:/xampp/htdocs/`.
-3. Buka **phpMyAdmin** (`http://localhost/phpmyadmin`) dan impor database dari file `db/embun_laundry.sql` atau `db/init.sql`.
-4. Sesuaikan konfigurasi database pada file `config.php` jika diperlukan:
-   ```php
-   define('DB_HOST', 'localhost');
-   define('DB_USER', 'root');
-   define('DB_PASS', '');
-   define('DB_NAME', 'embun_laundry');
+---
+
+## 🚀 Panduan Ringkas Menjalankan
+1. **Lokal**:
+   ```bash
+   npm install
+   npx wrangler pages dev public
    ```
-5. Akses aplikasi melalui browser di `http://localhost/dhani-laundry` (atau sesuai nama foldernya).
+2. **Deploy**:
+   ```bash
+   npx wrangler pages deploy public
+   ```
+
+Lihat panduan lengkap pada:
+- [`DEPLOYMENT.md`](./DEPLOYMENT.md) untuk panduan konfigurasi Cloudflare Pages.
+- [`TIDB_SETUP.md`](./TIDB_SETUP.md) untuk pengaturan database TiDB Cloud.
+- [`API_DOCUMENTATION.md`](./API_DOCUMENTATION.md) untuk referensi endpoint REST API.
+- [`DATABASE_SCHEMA.md`](./DATABASE_SCHEMA.md) untuk DDL skema database.
