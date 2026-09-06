@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Dhani078/Embun-Laundry#readme",
   "dependencies": {
-    "@tidbcloud/serverless": "^0.3.0"
+    "@tidbcloud/serverless": "^0.3.0",
+    "bcryptjs": "^3.0.3"
   }
 }
