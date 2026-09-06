@@ -92,14 +92,14 @@ export async function createSessionToken(user, env) {
     ['sign']
   );
 
-  const payload = {
-    id: user.id,
-    user_id: user.id,
-    user_name: user.full_name || user.name,
-    user_role: user.role || 'Customer',
-    email: user.email,
-    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
-  };
+    const payload = {
+      id: user.id,
+      user_id: user.id,
+      user_name: user.full_name || user.name || user.user_name || 'User',
+      user_role: user.role || 'Customer',
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+    };
 
   const payloadBase64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(payloadBase64));

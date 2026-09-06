@@ -67,7 +67,7 @@ export async function onRequest({ request, env }) {
           return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
         }
 
-        const customer = isStaff ? body.customer_name : myName;
+        const customer = isStaff ? (body.customer_name || myName) : myName;
         const phone = body.customer_phone || '';
         const address = body.customer_address || '';
         const serviceId = parseInt(body.service_id) || 0;
