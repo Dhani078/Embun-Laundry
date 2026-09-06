@@ -65,8 +65,7 @@ export async function onRequestPost({ request, env }) {
       const custCode = 'CUST-' + Math.floor(1000 + Math.random() * 9000);
       await db.execute(
         `INSERT INTO customers (code, full_name, phone, address, tag, created_at, updated_at)
-         VALUES (?, ?, ?, '', 'Baru', NOW(), NOW())
-         ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)`,
+         VALUES (?, ?, ?, '', 'Baru', NOW(), NOW())`,
         [custCode, full_name, phone || '']
       );
     } catch (e) {

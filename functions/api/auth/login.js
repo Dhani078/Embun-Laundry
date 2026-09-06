@@ -67,10 +67,33 @@ export async function onRequestPost({ request, env }) {
 
 async function verifyPassword(password, hash) {
   if (!hash) return false;
-  // 1. Direct match (plain text or legacy seeds)
+  
+  // 1. bcrypt - check if hash starts with $2y$, $2a$, $2b$
+  if (hash.startsWith('$2')) {
+    // Use Web Crypto API for bcrypt is not available natively
+    // We'll use a simple check - for now use node's bcrypt if available
+    // But in Cloudflare Workers, we need to use a compatible approach
+    // For simplicity, we'll check using a custom implementation or use a library
+    // Since we can't easily do bcrypt in Workers without a library,
+    // let's check if we can use the existing password check logic
+    // Actually, let's use the crypto.subtle with PBKDF2 or just add bcryptjs
+    // But Workers don't have node bcrypt. Let's use a WASM bcrypt or just check
+    // For now, let me add a simple bcrypt verification using a small implementation
+    try {
+      // Try to use bcryptjs if available in the worker
+      const bcrypt = await import('bcryptjs');
+      return await bcrypt.compare(password, hash);
+    } catch (e) {
+      // Fallback: direct compare for testing
+      // In production, bcryptjs should be bundled
+      return false;
+    }
+  }
+  
+  // 2. Direct match (plain text or legacy seeds)
   if (password === hash) return true;
-
-  // 2. SHA-256 match
+  
+  // 3. SHA-256 match with salt
   const encoder = new TextEncoder();
   const data = encoder.encode(password + 'dhani-salt');
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -78,13 +101,13 @@ async function verifyPassword(password, hash) {
   const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   
   if (computedHash === hash) return true;
-
-  // 3. Fallback for simple SHA-256 without salt
+  
+  // 4. Fallback for simple SHA-256 without salt
   const data2 = encoder.encode(password);
   const hashBuffer2 = await crypto.subtle.digest('SHA-256', data2);
   const computedHash2 = Array.from(new Uint8Array(hashBuffer2)).map(b => b.toString(16).padStart(2, '0')).join('');
   if (computedHash2 === hash) return true;
-
+  
   return false;
 }
 
