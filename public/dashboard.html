@@ -78,8 +78,8 @@
 <script>
   // Initialize app.js routing
   window.onload = () => {
-    if (window.App) {
-      App.init();
+    if (window.App && typeof window.App.init === 'function') {
+      window.App.init();
     }
   };
 </script>

@@ -1013,11 +1013,12 @@ async function checkAuth() {
       isLoggedIn = true;
       currentUser = data.user;
       const navActions = document.querySelector('.nav-actions');
-      navActions.innerHTML = `
-        <a class="btn btn-ghost" href="/app.js" onclick="event.preventDefault(); window.location.href='/dashboard';">Dashboard</a>
-        <button class="btn btn-primary" id="btnDashboard">Halo, ${data.user.user_name || 'User'}</button>
-      `;
-      document.getElementById('btnDashboard').onclick = () => window.location.href = '/dashboard';
+      if (navActions) {
+        navActions.innerHTML = `
+          <a class="btn btn-ghost" href="/dashboard.html">Dashboard</a>
+          <a class="btn btn-primary" href="/dashboard.html">Halo, ${data.user.user_name || 'User'}</a>
+        `;
+      }
     }
   } catch(e) {}
 }
@@ -1052,31 +1053,36 @@ async function loadServices() {
       `;
     }).join('');
 
-    // Attach click handlers to js-order buttons
-    document.querySelectorAll('.js-order').forEach(btn => {
-      btn.addEventListener('click', () => {
-        openOrderModal({
-          id: parseInt(btn.dataset.id, 10),
-          name: btn.dataset.name,
-          price: parseInt(btn.dataset.price, 10)
-        });
-      });
-    });
-
+    // Attach event delegation for the dynamically injected order buttons
+    // Only bind once to the document body to avoid duplicates
   } catch(e) {
     document.getElementById('pricesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444;">Gagal memuat harga layanan</div>';
   }
 }
 loadServices();
 
+// Delegation for dynamic JS Order Buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.js-order');
+  if (btn) {
+    openOrderModal({
+      id: parseInt(btn.dataset.id, 10),
+      name: btn.dataset.name,
+      price: parseInt(btn.dataset.price, 10)
+    });
+  }
+});
+
 // Promo toggle
 let promoActive = false;
-const btnPromo = document.getElementById('btnPromo');
-if (btnPromo) btnPromo.addEventListener('click', ()=>{
-  promoActive = !promoActive;
-  btnPromo.textContent = promoActive ? 'Promo Aktif ✔' : 'Gunakan Promo';
-  btnPromo.classList.toggle('is-active', promoActive);
-  computeTotal();
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#btnPromo');
+  if (btn) {
+    promoActive = !promoActive;
+    btn.textContent = promoActive ? 'Promo Aktif ✔' : 'Gunakan Promo';
+    btn.classList.toggle('is-active', promoActive);
+    computeTotal();
+  }
 });
 
 // Quick order modal
@@ -1155,12 +1161,13 @@ function closeAuthModal() {
   document.body.classList.remove('no-scroll');
 }
 
-document.getElementById('navLoginBtn').onclick = () => openAuthModal('login');
-document.getElementById('navRegisterBtn').onclick = () => openAuthModal('register');
-document.getElementById('authCloseBtn1').onclick = closeAuthModal;
-document.getElementById('authCloseBtn2').onclick = closeAuthModal;
-document.getElementById('toRegLink').onclick = (e) => { e.preventDefault(); openAuthModal('register'); };
-document.getElementById('toLoginLink').onclick = (e) => { e.preventDefault(); openAuthModal('login'); };
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'navLoginBtn') openAuthModal('login');
+  if (e.target.id === 'navRegisterBtn') openAuthModal('register');
+  if (e.target.id === 'authCloseBtn1' || e.target.id === 'authCloseBtn2') closeAuthModal();
+  if (e.target.id === 'toRegLink') { e.preventDefault(); openAuthModal('register'); }
+  if (e.target.id === 'toLoginLink') { e.preventDefault(); openAuthModal('login'); }
+});
 authModal.addEventListener('click', (e)=>{ if(e.target===authModal) closeAuthModal(); });
 
 // Global Escape Key Listener
@@ -1172,68 +1179,70 @@ document.addEventListener('keydown', (e)=>{
 });
 
 // Auth Forms Submission
-document.getElementById('authLoginForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const errEl = document.getElementById('authLoginErr');
-  errEl.style.display = 'none';
+document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'authLoginForm') {
+    e.preventDefault();
+    const errEl = document.getElementById('authLoginErr');
+    errEl.style.display = 'none';
 
-  const identity = document.getElementById('authLoginId').value.trim();
-  const password = document.getElementById('authLoginPass').value;
+    const identity = document.getElementById('authLoginId').value.trim();
+    const password = document.getElementById('authLoginPass').value;
 
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, password })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      window.location.href = '/dashboard';
-    } else {
-      errEl.textContent = data.msg || 'Login gagal';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identity, password })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        errEl.textContent = data.msg || 'Login gagal';
+        errEl.style.display = 'block';
+      }
+    } catch(err) {
+      errEl.textContent = 'Terjadi kesalahan jaringan';
       errEl.style.display = 'block';
     }
-  } catch(err) {
-    errEl.textContent = 'Terjadi kesalahan jaringan';
-    errEl.style.display = 'block';
   }
-};
+  
+  if (e.target.id === 'authRegForm') {
+    e.preventDefault();
+    const errEl = document.getElementById('authRegErr');
+    errEl.style.display = 'none';
 
-document.getElementById('authRegForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const errEl = document.getElementById('authRegErr');
-  errEl.style.display = 'none';
+    const full_name = document.getElementById('authRegName').value.trim();
+    const email = document.getElementById('authRegEmail').value.trim();
+    const phone = document.getElementById('authRegPhone').value.trim();
+    const password = document.getElementById('authRegPass').value;
+    const confirm = document.getElementById('authRegPass2').value;
 
-  const full_name = document.getElementById('authRegName').value.trim();
-  const email = document.getElementById('authRegEmail').value.trim();
-  const phone = document.getElementById('authRegPhone').value.trim();
-  const password = document.getElementById('authRegPass').value;
-  const confirm = document.getElementById('authRegPass2').value;
+    if (password !== confirm) {
+      errEl.textContent = 'Konfirmasi kata sandi tidak sama';
+      errEl.style.display = 'block';
+      return;
+    }
 
-  if (password !== confirm) {
-    errEl.textContent = 'Konfirmasi kata sandi tidak sama';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name, email, phone, password, confirm, agree: true })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      window.location.href = '/dashboard';
-    } else {
-      errEl.textContent = data.msg || 'Pendaftaran gagal';
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, email, phone, password, confirm, agree: true })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        errEl.textContent = data.msg || 'Pendaftaran gagal';
+        errEl.style.display = 'block';
+      }
+    } catch(err) {
+      errEl.textContent = 'Terjadi kesalahan server';
       errEl.style.display = 'block';
     }
-  } catch(err) {
-    errEl.textContent = 'Terjadi kesalahan server';
-    errEl.style.display = 'block';
   }
-};
+});
 
 // Scroll progress bar
 const bar = document.createElement('div');

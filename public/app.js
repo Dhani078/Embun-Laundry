@@ -1,5 +1,5 @@
 // public/app.js - Embun Laundry Single Page App
-const App = {
+const App = window.App = {
   user: null,
   currentPage: 'dashboard',
 
@@ -79,38 +79,77 @@ const App = {
       </div>
     `;
 
-    document.getElementById('loginForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const errEl = document.getElementById('loginErr');
-      errEl.style.display = 'none';
+    document.addEventListener('submit', async (e) => {
+      if (e.target.id === 'loginForm') {
+        e.preventDefault();
+        const errEl = document.getElementById('loginErr');
+        errEl.style.display = 'none';
 
-      const identity = document.getElementById('loginId').value.trim();
-      const password = document.getElementById('loginPass').value;
+        const identity = document.getElementById('loginId').value.trim();
+        const password = document.getElementById('loginPass').value;
 
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identity, password })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          this.user = data.user;
-          this.renderApp();
-        } else {
-          errEl.textContent = data.msg || 'Login gagal';
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity, password })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            this.user = data.user;
+            this.renderApp();
+          } else {
+            errEl.textContent = data.msg || 'Login gagal';
+            errEl.style.display = 'block';
+          }
+        } catch (err) {
+          errEl.textContent = 'Terjadi kesalahan jaringan';
           errEl.style.display = 'block';
         }
-      } catch (err) {
-        errEl.textContent = 'Terjadi kesalahan jaringan';
-        errEl.style.display = 'block';
       }
-    };
+      
+      if (e.target.id === 'regForm') {
+        e.preventDefault();
+        const errEl = document.getElementById('regErr');
+        errEl.style.display = 'none';
 
-    document.getElementById('toRegBtn').onclick = (e) => {
-      e.preventDefault();
-      this.renderRegister();
-    };
+        const full_name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const password = document.getElementById('regPass').value;
+        const confirm = document.getElementById('regPass2').value;
+
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ full_name, email, phone, password, confirm, agree: true })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            this.user = data.user;
+            this.renderApp();
+          } else {
+            errEl.textContent = data.msg || 'Pendaftaran gagal';
+            errEl.style.display = 'block';
+          }
+        } catch (err) {
+          errEl.textContent = 'Terjadi kesalahan server';
+          errEl.style.display = 'block';
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'toRegBtn') {
+        e.preventDefault();
+        this.renderRegister();
+      }
+      if (e.target.id === 'toLogBtn') {
+        e.preventDefault();
+        this.renderLogin();
+      }
+    });
   },
 
   renderRegister() {
@@ -160,41 +199,7 @@ const App = {
       </div>
     `;
 
-    document.getElementById('regForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const errEl = document.getElementById('regErr');
-      errEl.style.display = 'none';
-
-      const full_name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const phone = document.getElementById('regPhone').value.trim();
-      const password = document.getElementById('regPass').value;
-      const confirm = document.getElementById('regPass2').value;
-
-      try {
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ full_name, email, phone, password, confirm, agree: true })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          this.user = data.user;
-          this.renderApp();
-        } else {
-          errEl.textContent = data.msg || 'Pendaftaran gagal';
-          errEl.style.display = 'block';
-        }
-      } catch (err) {
-        errEl.textContent = 'Terjadi kesalahan server';
-        errEl.style.display = 'block';
-      }
-    };
-
-    document.getElementById('toLogBtn').onclick = (e) => {
-      e.preventDefault();
-      this.renderLogin();
-    };
+    // Event listeners are bound once in document.addEventListener
   },
 
   renderApp() {
@@ -244,9 +249,11 @@ const App = {
 
         <section class="main">
           <div class="topbar">
-            <div class="topbar-inner">
-              <div class="h1" id="pageTitle">Dashboard</div>
-              <div class="badge" style="margin-left: 8px;">${this.user.role || this.user.user_role}</div>
+            <div class="topbar-inner" style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center;">
+                <div class="h1" id="pageTitle" style="font-size: 20px; font-weight: 700; margin: 0;">Dashboard</div>
+                <div class="badge" style="margin-left: 8px;">${this.user.role || this.user.user_role}</div>
+              </div>
               <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
                 <span style="font-size: 14px; font-weight: 600;">Hai, ${this.user.user_name || this.user.name || 'User'}</span>
               </div>
@@ -259,25 +266,142 @@ const App = {
       </div>
     `;
 
-    // Sidebar navigation handler
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.onclick = (e) => {
+    // Global Click Delegation
+    document.addEventListener('click', async (e) => {
+      // Sidebar Navigation
+      const navLink = e.target.closest('.nav-link');
+      if (navLink) {
         e.preventDefault();
-        const page = link.getAttribute('data-page');
+        const page = navLink.getAttribute('data-page');
         if (page) {
           this.currentPage = page;
           document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-          link.classList.add('active');
+          navLink.classList.add('active');
           this.renderPage(page);
         }
-      };
+      }
+
+      // Logout
+      const logoutBtn = e.target.closest('#logoutBtn');
+      if (logoutBtn) {
+        e.preventDefault();
+        await fetch('/api/auth/logout', { method: 'POST' });
+        this.user = null;
+        this.renderLogin();
+      }
+      
+      // Dashboard - New Order
+      if (e.target.id === 'dashNewOrdBtn') {
+        this.renderPesanan();
+      }
+      
+      // Open New Order Modal
+      if (e.target.id === 'openNewOrderModal') {
+        const modal = document.getElementById('orderModal');
+        if (modal) modal.style.display = 'grid';
+      }
+      
+      // Close New Order Modal
+      if (e.target.id === 'closeOrderModalBtn') {
+        const modal = document.getElementById('orderModal');
+        if (modal) modal.style.display = 'none';
+      }
+      
+      // Delete Order
+      const btnDel = e.target.closest('.btn-del');
+      if (btnDel) {
+        if (!confirm('Hapus pesanan ini?')) return;
+        const id = btnDel.getAttribute('data-id');
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_order', id })
+        });
+        this.renderPesanan();
+      }
     });
 
-    document.getElementById('logoutBtn').onclick = async () => {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      this.user = null;
-      this.renderLogin();
-    };
+    // Global Change Delegation
+    document.addEventListener('change', async (e) => {
+      if (e.target.classList.contains('status-select')) {
+        const id = e.target.getAttribute('data-id');
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'move_status', id, status: e.target.value })
+        });
+      }
+    });
+    
+    // Global Submit Delegation
+    document.addEventListener('submit', async (e) => {
+      if (e.target.id === 'newOrderForm') {
+        e.preventDefault();
+        const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
+        const payload = {
+          action: 'create_order',
+          customer_name: isStaff ? document.getElementById('ordCustName').value.trim() : this.user.user_name,
+          customer_phone: document.getElementById('ordPhone').value.trim(),
+          customer_address: document.getElementById('ordAddress').value.trim(),
+          service_id: document.getElementById('ordService').value,
+          weight_kg: document.getElementById('ordWeight').value,
+          voucher_code: document.getElementById('ordVoucher').value.trim()
+        };
+
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const modal = document.getElementById('orderModal');
+          if (modal) modal.style.display = 'none';
+          this.renderPesanan();
+        } else {
+          alert(data.msg || 'Gagal membuat pesanan');
+        }
+      }
+      
+      if (e.target.id === 'profileForm') {
+        e.preventDefault();
+        const full_name = document.getElementById('profName').value.trim();
+        const phone = document.getElementById('profPhone').value.trim();
+        const r = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_profile', full_name, phone })
+        });
+        const resData = await r.json();
+        if (resData.ok) {
+          this.user.user_name = full_name;
+          this.user.name = full_name;
+          alert('Profil diperbarui');
+          this.renderApp();
+        } else {
+          alert(resData.msg || 'Gagal update profil');
+        }
+      }
+      
+      if (e.target.id === 'passForm') {
+        e.preventDefault();
+        const old_password = document.getElementById('oldPass').value;
+        const new_password = document.getElementById('newPass').value;
+        const repeat_password = document.getElementById('repPass').value;
+        const r = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'change_password', old_password, new_password, repeat_password })
+        });
+        const resData = await r.json();
+        if (resData.ok) {
+          alert('Sandi berhasil diganti');
+          document.getElementById('passForm').reset();
+        } else {
+          alert(resData.msg || 'Gagal ganti sandi');
+        }
+      }
+    });
 
     this.renderPage(this.currentPage);
   },
@@ -480,63 +604,10 @@ const App = {
         </div>
       `;
 
-      // Status change handler
-      document.querySelectorAll('.status-select').forEach(sel => {
-        sel.onchange = async () => {
-          const id = sel.getAttribute('data-id');
-          await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'move_status', id, status: sel.value })
-          });
-        };
-      });
+      // Status change handler and delete handler removed since they are handled by global delegation
 
-      // Delete handler
-      document.querySelectorAll('.btn-del').forEach(btn => {
-        btn.onclick = async () => {
-          if (!confirm('Hapus pesanan ini?')) return;
-          const id = btn.getAttribute('data-id');
-          await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete_order', id })
-          });
-          this.renderPesanan();
-        };
-      });
-
-      // Modal open/close
-      const modal = document.getElementById('orderModal');
-      document.getElementById('openNewOrderModal').onclick = () => modal.style.display = 'grid';
-      document.getElementById('closeOrderModalBtn').onclick = () => modal.style.display = 'none';
-
-      // Form submit
-      document.getElementById('newOrderForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const payload = {
-          action: 'create_order',
-          customer_name: isStaff ? document.getElementById('ordCustName').value.trim() : this.user.user_name,
-          customer_phone: document.getElementById('ordPhone').value.trim(),
-          customer_address: document.getElementById('ordAddress').value.trim(),
-          service_id: document.getElementById('ordService').value,
-          weight_kg: document.getElementById('ordWeight').value,
-          voucher_code: document.getElementById('ordVoucher').value.trim()
-        };
-
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.ok) {
-          modal.style.display = 'none';
-          this.renderPesanan();
-        } else {
-          alert(data.msg || 'Gagal membuat pesanan');
-        }
-      };
+      // Modal open/close handled by global click delegation
+      // Form submit handled by global submit delegation
 
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan koneksi pesanan</div>';
@@ -861,38 +932,7 @@ const App = {
         </div>
       `;
 
-      document.getElementById('profileForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const full_name = document.getElementById('profName').value.trim();
-        const phone = document.getElementById('profPhone').value.trim();
-        const r = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_profile', full_name, phone })
-        });
-        const resData = await r.json();
-        if (resData.ok) alert('Profil diperbarui');
-        else alert(resData.msg || 'Gagal update profil');
-      };
-
-      document.getElementById('passForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const old_password = document.getElementById('oldPass').value;
-        const new_password = document.getElementById('newPass').value;
-        const repeat_password = document.getElementById('repPass').value;
-        const r = await fetch('/api/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'change_password', old_password, new_password, repeat_password })
-        });
-        const resData = await r.json();
-        if (resData.ok) {
-          alert('Sandi berhasil diganti');
-          document.getElementById('passForm').reset();
-        } else {
-          alert(resData.msg || 'Gagal ganti sandi');
-        }
-      };
+      // Update profile and pass forms handled by global submit delegation
 
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat profil</div>';
@@ -900,4 +940,6 @@ const App = {
   }
 };
 
+// Attach app.js to window unconditionally
+if (typeof window !== 'undefined') window.App = App;
 window.onload = () => App.init();
