@@ -14,6 +14,7 @@ import * as profileHandler from '../functions/api/profile.js';
 import * as checkinHandler from '../functions/api/checkin.js';
 import * as payHandler from '../functions/api/pay.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
+import * as healthHandler from '../functions/api/health.js';
 
 function rewriteImagePath(pathname) {
   // Handle case-insensitive image requests - rewrite to actual filenames
@@ -59,6 +60,9 @@ export default {
       }
       if (path === '/api/me') {
         return meHandler.onRequestGet(context);
+      }
+      if (path === '/api/health') {
+        return healthHandler.onRequestGet(context);
       }
       if (path === '/api/dashboard') {
         return dashboardHandler.onRequestGet(context);
