@@ -1,0 +1,285 @@
+/* ==========================================================================
+   EMBUN LAUNDRY — DESIGN TOKENS (God Mode)
+   Precision-engineered design system merging Linear precision + Vercel clarity
+   Optimized for laundry business: clean, trustworthy, performant
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     COLOR PALETTE — Laundry-appropriate: clean blues, fresh whites, trust signals
+     -------------------------------------------------------------------------- */
+  
+  /* Brand — Fresh laundry blue (trust, cleanliness, water) */
+  --color-brand-50:  #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;  /* Primary brand */
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  /* Brand accent — Soft cyan for highlights (water droplets) */
+  --color-accent-50:  #f0fdfa;
+  --color-accent-100: #ccfbf1;
+  --color-accent-200: #99f6e4;
+  --color-accent-300: #5eead4;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;  /* Accent */
+  --color-accent-600: #0d9488;
+  --color-accent-700: #0f766e;
+  --color-accent-800: #115e59;
+  --color-accent-900: #134e4a;
+
+  /* Neutral — Vercel-style warm grays (not cool/blue grays) */
+  --color-neutral-0:   #ffffff;
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;  /* Primary text — not pure black */
+  --color-neutral-950: #0a0a0a;
+
+  /* Semantic aliases (use these in components) */
+  --color-bg-primary:     var(--color-neutral-0);
+  --color-bg-secondary:   var(--color-neutral-50);
+  --color-bg-tertiary:    var(--color-neutral-100);
+  --color-bg-elevated:    var(--color-neutral-0);
+  --color-bg-overlay:     rgba(23, 23, 23, 0.6);
+  
+  --color-text-primary:   var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary:  var(--color-neutral-500);
+  --color-text-inverse:   var(--color-neutral-0);
+  --color-text-link:      var(--color-brand-600);
+  --color-text-link-hover: var(--color-brand-700);
+  
+  --color-border-subtle:  var(--color-neutral-200);
+  --color-border-default: var(--color-neutral-300);
+  --color-border-strong:  var(--color-neutral-400);
+  --color-border-focus:   var(--color-brand-500);
+  --color-border-ring:    rgba(0, 0, 0, 0.08);  /* Vercel shadow-as-border */
+
+  --color-brand-primary:        var(--color-brand-600);
+  --color-brand-primary-hover:  var(--color-brand-700);
+  --color-brand-primary-light:  var(--color-brand-50);
+  --color-brand-accent:         var(--color-accent-500);
+  --color-brand-accent-hover:   var(--color-accent-600);
+  --color-brand-accent-light:   var(--color-accent-50);
+
+  /* Status colors — minimal, purposeful */
+  --color-success:        #16a34a;
+  --color-success-light:  #dcfce7;
+  --color-warning:        #eab308;
+  --color-warning-light:  #fef9c3;
+  --color-error:          #dc2626;
+  --color-error-light:    #fee2e2;
+  --color-info:           var(--color-brand-500);
+  --color-info-light:     var(--color-brand-50);
+
+  /* --------------------------------------------------------------------------
+     TYPOGRAPHY — Inter + Plus Jakarta Sans (existing) + Geist Mono for code
+     Letter-spacing scales with size (Vercel/Linear principle)
+     -------------------------------------------------------------------------- */
+  
+  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Font features */
+  --font-feature-default: 'cv01', 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'ss03', 'liga', 'calt';
+  --font-feature-mono: 'liga', 'calt', 'tnum', 'zero';
+
+  /* Type scale — fluid, responsive, compressed at display sizes */
+  --text-display-xl: clamp(48px, 6vw, 72px);   /* Hero */
+  --text-display-lg: clamp(40px, 5vw, 56px);
+  --text-display-md: clamp(32px, 4vw, 48px);   /* Section headers */
+  --text-display-sm: clamp(28px, 3.5vw, 40px);
+  
+  --text-heading-xl: clamp(24px, 2.5vw, 32px);
+  --text-heading-lg: clamp(22px, 2vw, 28px);
+  --text-heading-md: clamp(20px, 1.5vw, 24px); /* Card titles */
+  --text-heading-sm: clamp(18px, 1.2vw, 20px);
+  
+  --text-body-lg: clamp(18px, 1.1vw, 20px);    /* Lead paragraphs */
+  --text-body:     clamp(16px, 1vw, 17px);     /* Body */
+  --text-body-sm:  clamp(14px, 0.9vw, 15px);   /* UI text */
+  --text-caption:  clamp(12px, 0.8vw, 13px);   /* Metadata */
+  --text-micro:    clamp(11px, 0.7vw, 12px);   /* Badges, labels */
+
+  /* Weights */
+  --weight-light:     300;
+  --weight-normal:    400;
+  --weight-medium:    500;   /* UI emphasis */
+  --weight-semibold:  600;   /* Headings */
+  --weight-bold:      700;   /* Rare — micro badges only */
+
+  /* Line heights */
+  --leading-tight:    1.05;  /* Display */
+  --leading-snug:     1.15;  /* Headings */
+  --leading-normal:   1.5;   /* Body */
+  --leading-relaxed:  1.75;  /* Reading text */
+  --leading-loose:    2.0;   /* Hero subtitle */
+
+  /* Letter spacing — negative at display, normal at body (Vercel/Linear) */
+  --tracking-tightest: -0.04em;  /* 72px */
+  --tracking-tighter:  -0.035em; /* 56px */
+  --tracking-tight:    -0.03em;  /* 48px */
+  --tracking-snug:     -0.025em; /* 40px */
+  --tracking-normal:   -0.015em; /* 32px */
+  --tracking-relaxed:  -0.01em;  /* 24px */
+  --tracking-wide:     0;        /* 16px and below */
+  --tracking-wider:    0.02em;   /* Uppercase labels */
+  --tracking-widest:   0.05em;   /* Micro badges */
+
+  /* --------------------------------------------------------------------------
+     SPACING — 4px base unit, Linear-style micro-adjustments
+     -------------------------------------------------------------------------- */
+  --space-0:    0;
+  --space-1:    4px;
+  --space-2:    8px;
+  --space-3:    12px;
+  --space-4:    16px;
+  --space-5:    20px;
+  --space-6:    24px;
+  --space-7:    28px;
+  --space-8:    32px;
+  --space-9:    36px;
+  --space-10:   40px;
+  --space-12:   48px;
+  --space-14:   56px;
+  --space-16:   64px;
+  --space-20:   80px;
+  --space-24:   96px;
+  --space-28:   112px;
+  --space-32:   128px;
+
+  /* --------------------------------------------------------------------------
+     BORDER RADIUS — Vercel/Linear scale
+     -------------------------------------------------------------------------- */
+  --radius-none:     0;
+  --radius-micro:    2px;    /* Inline code, small tags */
+  --radius-subtle:   4px;    /* Small containers */
+  --radius-sm:       6px;    /* Buttons, inputs, functional */
+  --radius-md:       8px;    /* Cards, dropdowns */
+  --radius-lg:       12px;   /* Featured cards, panels */
+  --radius-xl:       16px;   /* Large panels */
+  --radius-2xl:      24px;   /* Hero cards */
+  --radius-full:     9999px; /* Pills, badges */
+  --radius-circle:   50%;    /* Avatars, icon buttons */
+
+  /* --------------------------------------------------------------------------
+     SHADOWS & DEPTH — Vercel multi-layer shadow stacks
+     -------------------------------------------------------------------------- */
+  
+  /* Level 0: Flat */
+  --shadow-none: none;
+
+  /* Level 1: Ring (shadow-as-border) — Vercel signature */
+  --shadow-ring: 0 0 0 1px var(--color-border-ring);
+  --shadow-ring-light: 0 0 0 1px rgba(229, 229, 229, 0.5);
+
+  /* Level 2: Subtle elevation */
+  --shadow-sm: var(--shadow-ring), 0 1px 2px rgba(0, 0, 0, 0.03);
+
+  /* Level 3: Card — full stack */
+  --shadow-card: 
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px -8px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(250, 250, 250, 0.5) inset;
+
+  /* Level 4: Elevated card (hover) */
+  --shadow-card-hover:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 16px 32px -12px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(250, 250, 250, 0.5) inset;
+
+  /* Level 5: Floating (modals, dropdowns) */
+  --shadow-float:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 24px 48px -16px rgba(0, 0, 0, 0.1);
+
+  /* Level 6: Modal overlay */
+  --shadow-modal:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 48px 96px -24px rgba(0, 0, 0, 0.16);
+
+  /* Focus ring — accessible */
+  --shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.35);
+  --shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.35);
+
+  /* --------------------------------------------------------------------------
+     TRANSITIONS — Stripe/Linear: fast, respectful of prefers-reduced-motion
+     -------------------------------------------------------------------------- */
+  --duration-instant:  0ms;
+  --duration-fast:     120ms;
+  --duration-normal:   200ms;
+  --duration-slow:     300ms;
+  --duration-slower:   500ms;
+
+  --ease-default:      cubic-bezier(0.4, 0, 0.2, 1);    /* Standard */
+  --ease-out:          cubic-bezier(0, 0, 0.2, 1);      /* Enter */
+  --ease-in:           cubic-bezier(0.4, 0, 1, 1);      /* Exit */
+  --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy */
+  --ease-sharp:        cubic-bezier(0.4, 0, 0.6, 1);    /* Quick UI */
+
+  /* --------------------------------------------------------------------------
+     Z-INDEX SCALE
+     -------------------------------------------------------------------------- */
+  --z-base:      0;
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-fixed:     300;
+  --z-modal-backdrop: 400;
+  --z-modal:     500;
+  --z-popover:   600;
+  --z-tooltip:   700;
+  --z-toast:     800;
+
+  /* --------------------------------------------------------------------------
+     CONTAINER WIDTHS
+     -------------------------------------------------------------------------- */
+  --container-sm:   640px;
+  --container-md:   768px;
+  --container-lg:   1024px;
+  --container-xl:   1280px;
+  --container-2xl:  1400px;
+  --container-full: 100%;
+
+  /* --------------------------------------------------------------------------
+     BREAKPOINTS (for reference in JS)
+     -------------------------------------------------------------------------- */
+  --bp-sm:  640px;
+  --bp-md:  768px;
+  --bp-lg:  1024px;
+  --bp-xl:  1280px;
+  --bp-2xl: 1536px;
+}
+
+/* Force light mode for laundry business */
+:root { color-scheme: light; }
+.light { color-scheme: light; }
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
