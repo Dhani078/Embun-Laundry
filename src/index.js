@@ -15,6 +15,7 @@ import * as checkinHandler from '../functions/api/checkin.js';
 import * as payHandler from '../functions/api/pay.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
 import * as healthHandler from '../functions/api/health.js';
+import { withSecurityHeaders } from '../functions/_db.js';
 
 function rewriteImagePath(pathname) {
   // Handle case-insensitive image requests - rewrite to actual filenames
@@ -39,69 +40,46 @@ export default {
     if (rewrittenPath !== path) {
       const newUrl = new URL(request.url);
       newUrl.pathname = rewrittenPath;
-      return env.ASSETS.fetch(newUrl);
+      return withSecurityHeaders(await env.ASSETS.fetch(newUrl));
     }
 
     // Route API requests
     if (path.startsWith('/api/')) {
       const context = { request, env, ctx, params: {} };
+      let resp;
 
       if (path === '/api/auth/login') {
-        if (request.method === 'POST') return loginHandler.onRequestPost(context);
-        if (request.method === 'OPTIONS') return loginHandler.onRequestOptions(context);
+        if (request.method === 'POST') resp = loginHandler.onRequestPost(context);
+        else if (request.method === 'OPTIONS') resp = loginHandler.onRequestOptions(context);
       }
-      if (path === '/api/auth/register') {
-        if (request.method === 'POST') return registerHandler.onRequestPost(context);
-        if (request.method === 'OPTIONS') return registerHandler.onRequestOptions(context);
+      else if (path === '/api/auth/register') {
+        if (request.method === 'POST') resp = registerHandler.onRequestPost(context);
+        else if (request.method === 'OPTIONS') resp = registerHandler.onRequestOptions(context);
       }
-      if (path === '/api/auth/logout') {
-        if (request.method === 'POST') return logoutHandler.onRequestPost(context);
-        if (request.method === 'OPTIONS') return logoutHandler.onRequestOptions(context);
+      else if (path === '/api/auth/logout') {
+        if (request.method === 'POST') resp = logoutHandler.onRequestPost(context);
+        else if (request.method === 'OPTIONS') resp = logoutHandler.onRequestOptions(context);
       }
-      if (path === '/api/me') {
-        return meHandler.onRequestGet(context);
-      }
-      if (path === '/api/health') {
-        return healthHandler.onRequestGet(context);
-      }
-      if (path === '/api/dashboard') {
-        return dashboardHandler.onRequestGet(context);
-      }
-      if (path === '/api/orders') {
-        return ordersHandler.onRequest(context);
-      }
-      if (path === '/api/customers') {
-        return customersHandler.onRequest(context);
-      }
-      if (path === '/api/services') {
-        return servicesHandler.onRequest(context);
-      }
-      if (path === '/api/delivery') {
-        return deliveryHandler.onRequest(context);
-      }
-      if (path === '/api/promos') {
-        return promosHandler.onRequest(context);
-      }
-      if (path === '/api/vouchers') {
-        return vouchersHandler.onRequest(context);
-      }
-      if (path === '/api/reports') {
-        return reportsHandler.onRequestGet(context);
-      }
-      if (path === '/api/profile') {
-        return profileHandler.onRequest(context);
-      }
-      if (path === '/api/checkin') {
-        return checkinHandler.onRequest(context);
-      }
-      if (path === '/api/pay') {
-        return payHandler.onRequest(context);
-      }
+      else if (path === '/api/me') resp = meHandler.onRequestGet(context);
+      else if (path === '/api/health') resp = healthHandler.onRequestGet(context);
+      else if (path === '/api/dashboard') resp = dashboardHandler.onRequestGet(context);
+      else if (path === '/api/orders') resp = ordersHandler.onRequest(context);
+      else if (path === '/api/customers') resp = customersHandler.onRequest(context);
+      else if (path === '/api/services') resp = servicesHandler.onRequest(context);
+      else if (path === '/api/delivery') resp = deliveryHandler.onRequest(context);
+      else if (path === '/api/promos') resp = promosHandler.onRequest(context);
+      else if (path === '/api/vouchers') resp = vouchersHandler.onRequest(context);
+      else if (path === '/api/reports') resp = reportsHandler.onRequestGet(context);
+      else if (path === '/api/profile') resp = profileHandler.onRequest(context);
+      else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
+      else if (path === '/api/pay') resp = payHandler.onRequest(context);
 
-      return new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
+      if (resp) return withSecurityHeaders(await resp);
+
+      return withSecurityHeaders(new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
-      });
+      }));
     }
 
     // Serve static assets from public directory
@@ -110,9 +88,9 @@ export default {
       if (path === '/dashboard' || path.startsWith('/dashboard/')) {
         const dashboardUrl = new URL(request.url);
         dashboardUrl.pathname = '/dashboard.html';
-        return env.ASSETS.fetch(dashboardUrl);
+        return withSecurityHeaders(await env.ASSETS.fetch(dashboardUrl));
       }
-      return env.ASSETS.fetch(request);
+      return withSecurityHeaders(await env.ASSETS.fetch(request));
     }
 
     return new Response('Asset not found', { status: 404 });
