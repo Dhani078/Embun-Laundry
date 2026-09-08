@@ -64,3 +64,55 @@ Riwayat tick (append-only).
   - **A7 tuntas**: 16 endpoint terdaftar di router.
 
 ---
+
+## Tick 3 — 2026-09-09T06:20:00+08:00
+
+- Task: **A1** (lanjutan) — link `design-tokens.css` ke `public/index.html`
+- Temuan penting (bug produksi): `public/assets/design-tokens.css` dan
+  `public/assets/hero-canvas.js` **tidak pernah ter-commit** (`?? untracked`).
+  Padahal `dashboard.html` + `pay.html` sudah memanggil
+  `/assets/design-tokens.css` → keduanya memuat stylesheet **404** di produksi.
+  A1 yang sebelumnya ditandai "partial selesai" sebenarnya rusak di live.
+- Perubahan:
+  - `git add` dua aset yang hilang (673 baris) → sekarang ter-track
+  - Tambah `<link rel="stylesheet" href="/assets/design-tokens.css"/>` di
+    `public/index.html`, **SEBELUM** blok `<style>` inline
+- File: `public/index.html`, `public/assets/design-tokens.css`,
+  `public/assets/hero-canvas.js`
+- Analisis pra-implementasi (`tools/analyze_tokens.py`):
+  - 4 tabrakan nama token index vs design-tokens: `--radius-lg` (18 vs 12px),
+    `--radius-md` (12 vs 8px), `--radius-sm` (8 vs 6px), `--shadow-sm`
+  - Semua 16 `var()` di index.html terdefinisi di `:root` inline
+  - Karena link diletakkan SEBELUM `<style>`, `:root` inline tetap menang →
+    **nol regresi visual**
+- Verifikasi (lokal):
+  - `node --check src/index.js` / `public/app.js` / `functions/_db.js` /
+    `public/assets/hero-canvas.js` → semua exit 0
+  - `grep -c "</html>" public/index.html` → 1
+  - `grep -c "authModal" public/index.html` → 0
+  - `grep -c "<h1" public/index.html` → 1
+  - `grep -c "assets/design-tokens.css" public/index.html` → 1
+  - Hardcoded hex di index.html: 40 (sama seperti sebelum → tidak bertambah)
+- Commit: `21a94ea`
+- Post-verify produksi (setelah ~95s deploy) — SEMUA HIJAU:
+  - `/` → **200** (token link terlihat di HTML live)
+  - `/api/health` → 200
+  - `/api/services` → 200
+  - `/dashboard` → 200
+  - `/assets/design-tokens.css` → **200** (sebelumnya **404**) ✔
+  - `/assets/hero-canvas.js` → **200** (sebelumnya **404**) ✔
+  - `/assets/style.css` → 200
+  - login `admin@gmail.com` → `ok:true`
+  - Security headers masih aktif: `nosniff`, `X-Frame-Options: DENY`,
+    `Referrer-Policy`
+  - Gate 7 DOM: `pricesGrid` 3, `orderModal` 8, `<h1>` 1, `</html>` 1,
+    `<footer>` 1, script setelah `</html>` → 0
+- Status: SUKSES
+- Catatan:
+  - **A1 kini SELESAI PENUH.** Perbaikan nyata: 2 aset 404 → 200 di produksi,
+    yang juga memperbaiki `dashboard.html` dan `pay.html`.
+  - Sisa tech debt A3: 40 hardcoded hex (18 warna unik) di index.html.
+  - `tools/analyze_tokens.py` dibuat untuk analisis, belum di-commit.
+  - Next tick: **A2** (link hero-canvas.js + p5.js CDN ke hero landing).
+
+---
