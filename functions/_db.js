@@ -34,6 +34,23 @@ export function jsonResponse(data, status = 200) {
   });
 }
 
+// Security headers applied to every response (B4).
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+};
+
+// Attach security headers to a Response, preserving existing ones.
+export function withSecurityHeaders(response) {
+  const res = response.clone ? response.clone() : response;
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!res.headers.has(k)) res.headers.set(k, v);
+  }
+  return res;
+}
+
 export function parseCookies(cookieHeader) {
   const list = {};
   if (!cookieHeader) return list;
