@@ -11,13 +11,13 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
-| A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [ ] | — |
+| A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [x] | `21a94ea` |
 | A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [ ] | — |
 | A3 | Migrasi hardcoded color `index.html` → token | P2 | [ ] | — |
 | A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [ ] | — |
-| A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [ ] | — |
+| A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
 | A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [ ] | — |
-| A7 | Verifikasi 14 endpoint terdaftar di `src/index.js` | P1 | [ ] | — |
+| A7 | Verifikasi 14 endpoint terdaftar di `src/index.js` | P1 | [x] | (verifikasi) |
 | A8 | `robots.txt` + favicon + meta description/OG tags | P3 | [ ] | — |
 
 ---
@@ -29,9 +29,9 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B1 | Rate limit `/api/auth/login` (in-memory per-IP) | P1 | [ ] | — |
 | B2 | Validasi & sanitasi input server-side | P1 | [ ] | — |
 | B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [ ] | — |
-| B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [ ] | — |
+| B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
 | B5 | CORS ketat (hanya origin sendiri) | P1 | [ ] | — |
-| B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [ ] | — |
+| B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
 | B7 | Audit SQL injection (parameterized only) | **P0** | [ ] | — |
 | B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [ ] | — |
 
