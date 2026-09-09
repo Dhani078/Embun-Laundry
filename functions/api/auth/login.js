@@ -1,20 +1,68 @@
 // functions/api/auth/login.js
 import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
+import { clientKey, hit, peek, reset } from '../../_ratelimit.js';
+
+// B1 — rate limit: 10 percobaan / 5 menit / IP.
+const RL_LIMIT = 10;
+const RL_WINDOW_MS = 5 * 60 * 1000;
+const RL_OPTS = { limit: RL_LIMIT, windowMs: RL_WINDOW_MS };
+
+/**
+ * Tempel header informasi rate limit ke sebuah Response.
+ * Dipakai agar klien yang patuh bisa melihat sisa jatahnya.
+ */
+function withRateHeaders(res, remaining, retryAfter) {
+  res.headers.set('X-RateLimit-Limit', String(RL_LIMIT));
+  res.headers.set('X-RateLimit-Remaining', String(remaining));
+  if (retryAfter != null) res.headers.set('Retry-After', String(retryAfter));
+  return res;
+}
+
+/**
+ * Balas dengan header rate limit yang angkanya DIUKUR, bukan ditebak.
+ *
+ * `peek()` membaca ulang keadaan counter saat ini, jadi
+ * `X-RateLimit-Remaining` selalu cocok dengan kenyataan — termasuk pada
+ * jalur sukses dan jalur error.
+ */
+function reply(key, data, status, retryAfter = null) {
+  const { remaining } = peek(key, RL_OPTS);
+  return withRateHeaders(jsonResponse(data, status), remaining, retryAfter);
+}
 
 export async function onRequestPost({ request, env }) {
-  const db = await getDb(env);
-  if (!db) {
-    return jsonResponse({ ok: false, msg: 'Database tidak terhubung' }, 500);
+  // Cegah brute-force SEBELUM menyentuh database — percobaan yang ditolak
+  // tidak boleh menghabiskan koneksi DB.
+  const key = `login:${clientKey(request)}`;
+  const rl = hit(key, RL_OPTS);
+  if (!rl.ok) {
+    return reply(
+      key,
+      { ok: false, msg: 'Terlalu banyak percobaan login. Coba lagi nanti.' },
+      429,
+      rl.retryAfter
+    );
   }
 
   try {
+    // Urutan penting: baca & validasi body DULU, baru sambung ke DB.
+    // Kalau DB dicek lebih dulu, body yang rusak akan berubah menjadi 500
+    // "Database tidak terhubung" padahal masalahnya ada di klien (400).
     const parsed = await readJson(request);
-    if (!parsed.ok) return parsed.response;
+    if (!parsed.ok) {
+      const detail = await parsed.response.json();
+      return reply(key, { ok: false, msg: detail.msg }, parsed.response.status);
+    }
     const body = parsed.data;
     const { identity, password } = body;
 
     if (!identity || !password) {
-      return jsonResponse({ ok: false, msg: 'Identitas dan kata sandi wajib diisi' }, 400);
+      return reply(key, { ok: false, msg: 'Identitas dan kata sandi wajib diisi' }, 400);
+    }
+
+    const db = await getDb(env);
+    if (!db) {
+      return reply(key, { ok: false, msg: 'Database tidak terhubung' }, 500);
     }
 
     // Find user by email, phone, or full_name
@@ -27,7 +75,7 @@ export async function onRequestPost({ request, env }) {
     );
 
     if (users.length === 0) {
-      return jsonResponse({ ok: false, msg: 'Akun tidak ditemukan' }, 401);
+      return reply(key, { ok: false, msg: 'Akun tidak ditemukan' }, 401);
     }
 
     const user = users[0];
@@ -35,17 +83,18 @@ export async function onRequestPost({ request, env }) {
     // Verify password
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
-      return jsonResponse({ ok: false, msg: 'Kata sandi salah' }, 401);
+      return reply(key, { ok: false, msg: 'Kata sandi salah' }, 401);
     }
 
     // Create session token
     const token = await createSessionToken(user, env);
 
-    // Set cookie header
+    // Login sah -> bersihkan jatah supaya pengguna yang tadi salah ketik
+    // beberapa kali tidak terkunci pada kali berikutnya ia butuh masuk.
     const headers = new Headers();
     headers.set('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${30 * 24 * 60 * 60}`);
 
-    return new Response(JSON.stringify({
+    const res = new Response(JSON.stringify({
       ok: true,
       msg: 'Login berhasil',
       user: {
@@ -62,8 +111,12 @@ export async function onRequestPost({ request, env }) {
       }
     });
 
+    // Catatan urutan: reset DULU, lalu tempel header. Kalau dibalik,
+    // header akan melaporkan sisa 0 pada login yang justru berhasil.
+    reset(key);
+    return withRateHeaders(res, RL_LIMIT);
   } catch (e) {
-    return jsonResponse({ ok: false, msg: 'Server error: ' + e.message }, 500);
+    return reply(key, { ok: false, msg: 'Server error: ' + e.message }, 500);
   }
 }
 

@@ -11,9 +11,11 @@ export function connect(config) {
   return {
     async execute(sql, params) {
       __calls.push({ sql: String(sql), params, ts: Date.now() });
-      // Kembalikan bentuk yang sama dengan driver asli untuk SELECT:
-      // array of row. Kosong cukup untuk jalur sukses handler.
-      return [];
+      // Baris sembarang bisa disuntikkan lewat `globalThis.__MOCK_ROWS`
+      // supaya harness bisa menguji jalur SUKSES (misal login berhasil),
+      // bukan cuma jalur kosong. Kalau tidak diset, [] seperti driver asli
+      // ketika tidak ada baris cocok.
+      return Array.isArray(globalThis.__MOCK_ROWS) ? globalThis.__MOCK_ROWS : [];
     }
   };
 }
