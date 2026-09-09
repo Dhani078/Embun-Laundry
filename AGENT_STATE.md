@@ -59,6 +59,15 @@ Model: cbai/hy4-preview (custom:9router)
       kunci asing jatuh ke 'bulan' (terbukti: canary → `DATE_FORMAT`).
   - Alat baru ter-commit: `audit_sql_injection.py`, `mock_tidb.mjs`,
     `sql_guard_loader.mjs`, `verify_b7.mjs`, `verify_b7_run.mjs`.
+- **B1** — rate limit `/api/auth/login` (P1) — `9981427` + `ea05b75`
+  - **Dua lapis**: memori per-isolate (10/5 mnt) + **Cache API shared
+    per-datacenter (20/5 mnt)**. Lapis 1 saja terbukti tidak cukup.
+  - Modul baru `functions/_ratelimit.js`; harness `tools/verify_b1.mjs`
+    (7 uji, HIJAU) + `tools/mock_tidb.mjs` kini bisa menyuntik baris.
+  - 2 defek urutan diperbaiki: (1) `getDb()` sebelum parse body → body
+    rusak jadi 500, kini 400; (2) header Remaining diukur ulang via `peek()`.
+  - Terbukti di produksi: 429 pada percobaan ke-21, `Retry-After: 277`,
+    dan **self-healing** (login sah 200 lagi setelah jendela kedaluwarsa).
 - **A4** — semua API `try/catch` → respons JSON `{ok}` konsisten — `c07ed88`
   - 2 defek produksi nyata diperbaiki (bukan sekadar "sudah ada try"):
     (1) body JSON rusak → **500 dari runtime**, kini 400 `{ok:false}`;
@@ -112,10 +121,18 @@ Model: cbai/hy4-preview (custom:9router)
 ## Catatan untuk tick berikutnya
 
 - **Urutan fokus**: FASE A selesai kecuali **A6** (terblokir, butuh
-  Cloudflare API token). FASE B: **B7 selesai** (tick 8).
-  → **Berikutnya B1** (rate limit `/api/auth/login`, P1) → B2 (validasi
-  input) → B5 (CORS ketat; `Access-Control-Allow-Origin: *` masih ada di
-  `/api/*`). Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+  Cloudflare API token). FASE B: **B7 selesai** (tick 8), **B1 selesai**
+  (tick 9).
+  → **Berikutnya B2** (validasi & sanitasi input server-side, P1) → B5
+  (CORS ketat; `Access-Control-Allow-Origin: *` masih ada di `/api/*`).
+  Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+- **B1 JANGAN dikerjakan ulang.** Sudah tuntas `ea05b75`. Untuk memeriksa
+  ulang: `node tools/verify_b1.mjs` (7 uji, HASIL: HIJAU).
+- **PELAJARAN PENTING (berlaku umum)**: jangan menandai selesai hanya karena
+  uji lokal hijau. Uji lokal B1 hijau untuk lapis memori saja, tetapi
+  produksi membuktikan batasnya tidak berlaku (13 percobaan × 0 × 429).
+  Selalu lakukan post-verify produksi yang mengukur AKHIRAT — bukan sekadar
+  "endpoint masih 200".
 - **B7 JANGAN dikerjakan ulang.** Sudah tuntas `ea05d42`. Jika ingin
   memeriksa ulang, jalankan `python tools/audit_sql_injection.py` (exit 0)
   dan `node tools/verify_b7_run.mjs` (HASIL: HIJAU) — itu cukup, jangan
