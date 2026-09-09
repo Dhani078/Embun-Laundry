@@ -174,6 +174,32 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 6 — 2026-09-09T09:52:00+08:00
+
+- Task: **A8** — SEO: robots.txt, sitemap.xml, meta/OG tags
+- Perubahan:
+  - Buat `public/robots.txt` (allow /, disallow /api/ + /dashboard + /pay.html)
+  - Buat `public/sitemap.xml` (3 URL publik)
+  - Landing: meta description, keywords, canonical, OG, Twitter card, favicon
+- Verifikasi:
+  - `grep -c '</html>'` → 1 (struktur utuh, tidak ada dobel blok)
+  - `grep -c 'og:title|name="description"'` → 2 (meta masuk)
+- Post-verify produksi (HTTP):
+  - `/robots.txt` → 200
+  - `/sitemap.xml` → 200
+  - `/api/health` → 200
+  - `/api/services` → 200
+  - `/dashboard` → 200
+- Commit: `a502402` (pushed)
+- Status: **DONE**
+
+**CATATAN PENTING (observasi tick 6):** cron fire jam 09:35 cuma update docs.
+Interval 60m memberi jeda kosong panjang. Interval sudah dipadatkan ke **30m**
+dan `repeat` dinaikkan ke **96** (bukan 24) agar loop bertahan jauh lebih lama
+dan jeda antar-tick tidak terasa "berhenti".
+
+---
+
 ## Tick 5 — 2026-09-09T09:20:00+08:00
 
 - Task: **A4** — pastikan semua API `try/catch` → respons JSON `{ok}` konsisten
