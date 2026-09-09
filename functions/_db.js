@@ -1,6 +1,12 @@
 // functions/_db.js
 import { connect } from '@tidbcloud/serverless';
 
+// B8 — hash sandi kini PBKDF2-HMAC-SHA256 + salt acak per pengguna
+// (lihat functions/_password.js). Sengaja di-re-export dari sini supaya
+// pemanggil lama (register.js, profile.js) ikut ter-migrasi tanpa disentuh
+// satu per satu — tidak ada lagi salinan algoritma di `_db.js`.
+export { hashPassword, verifyPassword, isPbkdf2Hash } from './_password.js';
+
 export async function getDb(env) {
   const connUrl = env.TIDB_DATABASE_URL || env.DATABASE_URL;
   if (!connUrl) {
@@ -12,14 +18,6 @@ export async function getDb(env) {
     execute: (sql, params) => conn.execute(sql, params),
     query: (sql, params) => conn.execute(sql, params)
   };
-}
-
-export async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + 'dhani-salt');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function jsonResponse(data, status = 200) {
