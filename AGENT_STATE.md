@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T09:20:00+08:00
-Tick ke: 5
+Terakhir update: 2026-09-09T10:05:00+08:00
+Tick ke: 7
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -36,6 +36,16 @@ Model: cbai/hy4-preview (custom:9router)
 - **A2** — hero canvas p5.js + `#hero-canvas-container` — `23e3fe2`
   - Perbaikan draft: palette dark + `clear()` (bukan `background()`),
     `pointer-events:none`, guard mount, orbs pre-render ke buffer statis
+- **A8** — robots.txt + sitemap.xml + meta/OG tags — `a502402`
+  (selesai tick 6; tabel backlog belum ditandai `[x]`, perlu disinkronkan)
+- **A3** — migrasi hardcoded hex → token (sebagian) — `796e81e`
+  - 25 baris diubah, 27 kemunculan diganti, **value-identical → nol regresi**
+  - Token dipakai: `--color-neutral-0` (25x), `--color-brand-500/600/900`
+  - Sisa 18 kemunculan TIDAK diganti: tidak ada token dengan nilai persis
+    (`#94a3b8`x4 `#f8fafc`x3 `#64748b`x2 `#1e293b`x2 `#0f172a` `#e2e8f0`
+    `#090d16` `#f59e0b` `#ef4444`) → calon task **A3b**
+  - Tidak diganti juga: `<meta theme-color>` (`var()` tidak resolve di
+    atribut HTML) dan blok `:root` inline (Gate 5 membolehkan)
 - **A4** — semua API `try/catch` → respons JSON `{ok}` konsisten — `c07ed88`
   - 2 defek produksi nyata diperbaiki (bukan sekadar "sudah ada try"):
     (1) body JSON rusak → **500 dari runtime**, kini 400 `{ok:false}`;
@@ -59,12 +69,22 @@ Model: cbai/hy4-preview (custom:9router)
 ## Tech debt tercatat
 
 1. `wrangler.toml` berisi `TIDB_DATABASE_URL` + `JWT_SECRET` plaintext → **P0**.
-2. `public/index.html` masih 40 baris hardcoded hex (42 kemunculan, 18 warna
-   unik) di blok `:root` inline + body → task **A3**.
-   - CATATAN PENGUKURAN: baseline tick 3 mencatat "40" karena memakai
-     `grep -c` (menghitung BARIS). `grep -o | wc -l` menghasilkan 42
-     (menghitung KEMUNCULAN). Keduanya benar — 42 kemunculan pada 40 baris.
-     Untuk A3, ukur konsisten dengan `tools/hexdiff.py` (laporkan keduanya).
+2. `public/index.html` — sisa **22 kemunculan hex pada 22 baris** setelah
+   A3 (`796e81e`), turun dari 49 kemunculan/47 baris. Sisanya:
+   - 12 di blok `:root` inline (definisi, wajar — Gate 5 membolehkan)
+   - 1 `<meta name="theme-color" content="#2563eb">` — `var()` TIDAK
+     di-resolve di atribut HTML, jangan diganti
+   - 9 warna tanpa token nilai-persis: `#94a3b8`x4 `#f8fafc`x3
+     `#64748b`x2 `#1e293b`x2 `#090d16` `#f59e0b` `#ef4444`
+     (catatan: `#0f172a` dan `#e2e8f0` hanya ada di `:root`)
+     → calon task **A3b**: tambah token ke `design-tokens.css` dulu.
+   - CATATAN PENGUKURAN: baseline lama mencatat "40" (itu `grep -c` =
+     BARIS). Pakai `tools/hexdiff.py` dan laporkan baris DAN kemunculan.
+2a. **B4 belum mencakup aset statis.** Header keamanan
+   (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`) ADA di `/api/*`
+   tetapi TIDAK ada di respons HTML statis (`/`, `/dashboard`). B4 dulu
+   ditandai selesai hanya karena diverifikasi lewat endpoint API.
+   Perlu ditambahkan di jalur serve-aset di `src/index.js`.
 2b. p5.js kini dependensi baru (CDN 1.03MB, SRI-pinned, deferred).
    - Draft `hero-canvas.js` awalnya TIDAK bisa dipakai langsung: palette
      near-white di atas hero gradient gelap. Sudah diperbaiki.
@@ -78,9 +98,17 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Catatan untuk tick berikutnya
 
-- **Urutan fokus**: A3 → A8 (A4 SELESAI di tick 5). A6 terblokir, jangan
-  dipaksa. Setelah A3/A8, fase A tuntas → lanjut FASE B (B1 rate limit,
-  B2 validasi input, B5 CORS ketat) atau FASE C.
+- **Urutan fokus**: **FASE A hampir tuntas** — A1, A2, A3, A4, A5, A7, A8
+  selesai; tinggal **A6** (terblokir, butuh Cloudflare API token).
+  → **Lanjut FASE B**: B7 (audit SQL injection, P0) → B1 (rate limit
+  `/api/auth/login`) → B2 (validasi input) → B5 (CORS ketat;
+  `Access-Control-Allow-Origin: *` masih terlihat di `/api/health`).
+  Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+- Untuk A3b: tambahkan dulu token ke `design-tokens.css`, baru ganti
+  pemakaiannya. Jangan ganti hex ke token yang nilainya berbeda.
+- Blok `:root` inline di `index.html` MASIH ADA dan menang atas
+  `design-tokens.css` (link sengaja sebelum `<style>`). Menghapusnya
+  mengubah 4 nilai radius/shadow (lihat debt #4) → butuh uji visual.
 - **PENTING — jangan percaya `grep -c try` untuk A4**: 14/16 handler sudah
   punya `try`, jadi audit dangkal akan bilang "A4 hampir selesai". Yang
   rusak justru yang tidak terlihat: body JSON rusak dan preflight OPTIONS.

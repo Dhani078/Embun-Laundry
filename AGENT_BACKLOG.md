@@ -13,12 +13,13 @@ File ini adalah **working copy** yang diupdate setiap tick.
 |----|------|---|--------|--------|
 | A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [x] | `21a94ea` |
 | A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [x] | `23e3fe2` |
-| A3 | Migrasi hardcoded color `index.html` → token | P2 | [ ] | — |
+| A3 | Migrasi hardcoded color `index.html` → token | P2 | [x] | `796e81e` |
+| A3b | Token baru untuk 9 warna sisa (`#94a3b8` `#f8fafc` `#64748b` `#1e293b` `#090d16` `#f59e0b` `#ef4444`) | P2 | [ ] | — |
 | A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [x] | `c07ed88` |
 | A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
 | A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [ ] | — |
 | A7 | Verifikasi 14 endpoint terdaftar di `src/index.js` | P1 | [x] | (verifikasi) |
-| A8 | `robots.txt` + favicon + meta description/OG tags | P3 | [ ] | — |
+| A8 | `robots.txt` + favicon + meta description/OG tags | P3 | [x] | `a502402` |
 
 ---
 
@@ -104,12 +105,20 @@ File ini adalah **working copy** yang diupdate setiap tick.
 5. **B5** — CORS ketat, hanya origin sendiri (P1) — catatan: `jsonResponse`
    masih mengirim `Access-Control-Allow-Origin: *`; A4 memperbaiki preflight
    tapi tidak mempersempit origin. Ini bagian B5, belum dikerjakan.
-6. **A3** — Migrasi hardcoded hex → token (P2)
-7. **A8** — robots.txt + favicon + meta/OG tags (P3)
+6. **B1** — Rate limit `/api/auth/login` (P1)
+7. **B2** — Validasi & sanitasi input server-side (P1)
+8. **B5** — CORS ketat (P1) — `Access-Control-Allow-Origin: *` masih ada di
+   `/api/*`; A4 memperbaiki preflight tapi tidak mempersempit origin
+9. **A3b** — Token baru untuk 9 warna sisa (P2)
 
 ### Status FASE A
 
-Selesai: A1, A2, A4, A5, A7. Tersisa: A3 (P2), A6 (P0, terblokir), A8 (P3).
+Selesai: A1, A2, A3, A4, A5, A7, A8. Tersisa: **A6** (P0, terblokir butuh
+Cloudflare API token) dan opsional **A3b** (P2).
+
+> FASE A praktis tuntas kecuali A6. Fokus berikutnya: FASE B (B7 → B1 → B2 → B5).
+> Catatan: B4 perlu diperluas ke aset statis — header keamanan belum ada di
+> respons HTML statis (`/`, `/dashboard`), hanya di `/api/*`.
 
 > Setelah semua P0 selesai, lanjut ke P1 berurutan.
 > Jangan kerjakan P2/P3 sebelum P0/P1 tuntas.
