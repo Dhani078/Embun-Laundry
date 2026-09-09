@@ -116,3 +116,60 @@ Riwayat tick (append-only).
   - Next tick: **A2** (link hero-canvas.js + p5.js CDN ke hero landing).
 
 ---
+
+## Tick 4 — 2026-09-09T08:12:00+08:00
+
+- Task: **A2** — link `hero-canvas.js` (p5.js CDN) + container
+  `#hero-canvas-container` ke hero landing
+- Analisis pra-implementasi menemukan draft `hero-canvas.js` **tidak bisa
+  dipakai langsung** (3 masalah nyata):
+  1. Palette `bg: [220,15,97]` = near-white, sedangkan `.hero` gradient
+     GELAP (`#1e3a8a → #3b82f6`). `p.background()` akan menutupi hero.
+  2. Canvas overlay `position:absolute; inset:0` akan menelan klik pada
+     tombol "Pesan Sekarang" / "Lihat Harga".
+  3. `mountHeroCanvas()` tanpa guard → jika p5 gagal load, p5 menyuntik
+     canvas default ke `<body>`.
+- Perubahan:
+  - `index.html`: container `<div id="hero-canvas-container" aria-hidden>`
+    + CSS (`pointer-events:none`, `z-index:0`, `.hero > .container` z-index 1)
+    + tag p5.js CDN **SRI-pinned** (`sha384-6Twx1hAe...`) + `defer` +
+      `crossorigin` + `referrerpolicy`, lalu `hero-canvas.js` `defer`
+  - `hero-canvas.js`: palette diubah ke light-on-dark; `p.background()` →
+    `p.clear()` (gradient CSS tetap terlihat); orbs di-redam; guard di
+    `mountHeroCanvas()`; hapus `p.preload` (no-op)
+  - **Performa**: 3 ambient orbs STATIS sebelumnya di-render ulang sebagai
+    3 gradient radial full-canvas SETIAP FRAME (~6M px @1920px) →
+    pre-render sekali ke buffer offscreen, di-blit 1 gambar/frame;
+    rebuild saat resize + `initDroplets()`; buffer di-`remove()` saat unmount
+- Justifikasi dependensi baru (aturan keras #3): p5.js 1.03MB dari CDN,
+  deferred + SRI-pinned sehingga tidak block render & tidak bisa dimanipulasi.
+  Jika CDN gagal → `mountHeroCanvas()` no-op, hero gradient tetap tampil
+  (nol regresi visual). Tertulis di commit message.
+- Verifikasi (lokal):
+  - `node --check` × 4 file → exit 0
+  - `</html>`=1, `authModal`=0, `<h1>`=1, `orderModal`=8, `pricesGrid`=3,
+    `footer`=1, script setelah `</html>`=0
+  - **Hex tidak bertambah**: HEAD 40 baris/42 kemunculan == kerja 40/42;
+    0 hex di seluruh 31 baris baru (`tools/hexdiff.py`)
+- Commit: `23e3fe2`
+- Post-verify produksi (setelah ~95s) — SEMUA HIJAU:
+  - `/` 200, `/api/health` 200, `/api/services` 200,
+    `/assets/hero-canvas.js` 200, `/dashboard` 200
+  - Markup hidup: container + tag p5 + integrity ada di baris 787/1150/1151
+  - **SRI hash diverifikasi cocok** dengan berkas CDN
+    (`openssl dgst -sha384` → `6Twx1hAeKnwfOYJAHtYe...` identik)
+  - CSS `pointer-events:none` + `z-index` terkonfirmasi di HTML live
+  - Isolasi: `hero-canvas.js` 0 referensi di `/dashboard` dan `/pay`
+  - login admin → `ok:true`
+- Status: SUKSES
+- Catatan:
+  - **A2 SELESAI.** Draft p5 yang "sudah jadi" ternyata butuh 4 koreksi
+    agar aman dipasang — jangan percaya aset yang belum pernah di-link.
+  - **Browser tool terblokir** di cron (Chrome minta persetujuan remote
+    debugging). Verifikasi runtime dilakukan via DOM/HTTP produksi, bukan
+    observasi visual. Sudah dicatat di AGENT_STATE.md.
+  - Catatan pengukuran: angka "40 hex" di tick 3 = `grep -c` (baris);
+    `grep -o | wc -l` = 42 (kemunculan). Keduanya valid, jangan panik.
+  - Next tick: **A3** (migrasi 40 baris hex → token; hapus `:root` inline).
+
+---

@@ -12,7 +12,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
 | A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [x] | `21a94ea` |
-| A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [ ] | — |
+| A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [x] | `23e3fe2` |
 | A3 | Migrasi hardcoded color `index.html` → token | P2 | [ ] | — |
 | A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [ ] | — |
 | A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
