@@ -1,5 +1,9 @@
 // functions/api/profile.js
 import { getDb, jsonResponse, getUserFromSession, hashPassword, readJson, corsOptions } from '../_db.js';
+// B8 — verifikasi sandi lama lewat SATU fungsi yang sama dengan login.
+// Dulu baris ini cuma `hash === oldPass || sha256(oldPass + salt) === hash`,
+// jadi setiap format baru harus disalin ke sini — sumber dua algoritma.
+import { verifyPassword } from '../_password.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -47,9 +51,19 @@ export async function onRequest({ request, env }) {
         const rows = await db.query('SELECT password_hash FROM users WHERE id = ? LIMIT 1', [user.id]);
         if (rows.length === 0) return jsonResponse({ ok: false, msg: 'User not found' }, 404);
 
-        const oldHash = await hashPassword(oldPass);
-        if (rows[0].password_hash !== oldPass && rows[0].password_hash !== oldHash) {
+        // B8 — bandingkan lewat verifyPassword(): menerima PBKDF2, bcrypt,
+        // plaintext, dan SHA-256 lawas. Catatan: `oldPass` sengaja TIDAK
+        // dibatasi panjangnya (kecocokan persis terhadap kolom lawas
+        // 'testhash' harus tetap mungkin), jadi jangan ditambah validasi
+        // min/max di sini tanpa memikirkan hash lawas.
+        if (!await verifyPassword(oldPass, rows[0].password_hash)) {
           return jsonResponse({ ok: false, msg: 'Sandi lama salah' }, 400);
+        }
+
+        // Sandi baru WAJIB panjangnya wajar — dulu `newPass` bisa 1 karakter
+        // dan langsung ditulis ke DB.
+        if (String(newPass).length < 6 || String(newPass).length > 128) {
+          return jsonResponse({ ok: false, msg: 'Sandi baru harus 6-128 karakter' }, 400);
         }
 
         const newHash = await hashPassword(newPass);

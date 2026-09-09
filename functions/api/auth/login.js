@@ -1,7 +1,9 @@
 // functions/api/auth/login.js
-import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
+import { getDb, jsonResponse, createSessionToken, readJson } from '../../_db.js';
 import { clientKey, consume, peek, clearAll } from '../../_ratelimit.js';
 import { validateOr400 } from '../../_validate.js';
+// B8 — verifikasi sandi kini PBKDF2 (dengan fallback ke format lawas).
+import { verifyPassword, isPbkdf2Hash, hashPassword } from '../../_password.js';
 
 // B1 — rate limit: 10 percobaan / 5 menit / IP.
 const RL_LIMIT = 10;
@@ -96,6 +98,25 @@ export async function onRequestPost({ request, env, ctx }) {
       return reply(key, { ok: false, msg: 'Kata sandi salah' }, 401);
     }
 
+    // --- B8 — LAZY UPGRADE -------------------------------------------------
+    // Login sah dengan hash LAWAS (SHA-256 + salt global) → tulis ulang ke
+    // PBKDF2. Ini jalur migrasi tanpa downtime: pengguna tidak perlu ganti
+    // sandi, tidak ada skrip massal, dan hash lama tidak dibuang sampai
+    // pemiliknya benar-benar pernah login lagi.
+    //
+    // Dilewatkan ke `ctx.waitUntil()` agar tidak menahan respons login:
+    // gagal tulis tidak boleh membuat login gagal (pengguna sudah sah).
+    if (!isPbkdf2Hash(user.password_hash)) {
+      ctx?.waitUntil?.(
+        hashPassword(password)
+          .then(newHash =>
+            db.execute('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, user.id])
+          )
+          .catch(() => {})   // diam: upgrade akan dicoba lagi pada login berikutnya
+      );
+    }
+    // -----------------------------------------------------------------------
+
     // Create session token
     const token = await createSessionToken(user, env);
 
@@ -131,51 +152,9 @@ export async function onRequestPost({ request, env, ctx }) {
   }
 }
 
-async function verifyPassword(password, hash) {
-  if (!hash) return false;
-  
-  // 1. bcrypt - check if hash starts with $2y$, $2a$, $2b$
-  if (hash.startsWith('$2')) {
-    // Use Web Crypto API for bcrypt is not available natively
-    // We'll use a simple check - for now use node's bcrypt if available
-    // But in Cloudflare Workers, we need to use a compatible approach
-    // For simplicity, we'll check using a custom implementation or use a library
-    // Since we can't easily do bcrypt in Workers without a library,
-    // let's check if we can use the existing password check logic
-    // Actually, let's use the crypto.subtle with PBKDF2 or just add bcryptjs
-    // But Workers don't have node bcrypt. Let's use a WASM bcrypt or just check
-    // For now, let me add a simple bcrypt verification using a small implementation
-    try {
-      // Try to use bcryptjs if available in the worker
-      const bcrypt = await import('bcryptjs');
-      return await bcrypt.compare(password, hash);
-    } catch (e) {
-      // Fallback: direct compare for testing
-      // In production, bcryptjs should be bundled
-      return false;
-    }
-  }
-  
-  // 2. Direct match (plain text or legacy seeds)
-  if (password === hash) return true;
-  
-  // 3. SHA-256 match with salt
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + 'dhani-salt');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
-  if (computedHash === hash) return true;
-  
-  // 4. Fallback for simple SHA-256 without salt
-  const data2 = encoder.encode(password);
-  const hashBuffer2 = await crypto.subtle.digest('SHA-256', data2);
-  const computedHash2 = Array.from(new Uint8Array(hashBuffer2)).map(b => b.toString(16).padStart(2, '0')).join('');
-  if (computedHash2 === hash) return true;
-  
-  return false;
-}
+// Catatan B8: `verifyPassword()` PINDAH ke `functions/_password.js` bersama
+// `hashPassword()`. Dulu ada dua salinan algoritma (satu di `_db.js`, satu di
+// sini) yang bisa menyimpang tanpa ketahuan — kini hanya ada satu sumber.
 
 export async function onRequestOptions() {
   // B5: `Access-Control-Allow-Origin: *` DIHAPUS. Header yang bergantung
