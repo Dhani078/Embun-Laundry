@@ -14,7 +14,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [x] | `21a94ea` |
 | A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [x] | `23e3fe2` |
 | A3 | Migrasi hardcoded color `index.html` → token | P2 | [x] | `796e81e` |
-| A3b | Token baru untuk 9 warna sisa (`#94a3b8` `#f8fafc` `#64748b` `#1e293b` `#090d16` `#f59e0b` `#ef4444`) | P2 | [ ] | — |
+| A3b | Token baru untuk 9 warna sisa (`#94a3b8` `#f8fafc` `#64748b` `#1e293b` `#090d16` `#f59e0b` `#ef4444`) | P2 | [x] | `f782d3d` |
 | A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [x] | `c07ed88` |
 | A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
 | A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [ ] | — |
@@ -27,7 +27,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
-| B1 | Rate limit `/api/auth/login` (in-memory per-IP) | P1 | [ ] | — |
+| B1 | Rate limit `/api/auth/login` (in-memory per-IP) | P1 | [x] | `9981427` `ea05b75` |
 | B2 | Validasi & sanitasi input server-side | P1 | [ ] | — |
 | B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [ ] | — |
 | B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
@@ -116,8 +116,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 ### Status FASE A
 
-Selesai: A1, A2, A3, A4, A5, A7, A8. Tersisa: **A6** (P0, terblokir butuh
-Cloudflare API token) dan opsional **A3b** (P2).
+Selesai: A1, A2, A3, **A3b**, A4, A5, A7, A8. Tersisa: **A6** (P0, terblokir
+butuh Cloudflare API token).
 
 > **B4 SELESAI (jangan diulang).** Header keamanan kini aktif di `/`,
 > `/robots.txt`, `/dashboard`, dan `/api/*` (masing-masing 2 header terverifikasi).

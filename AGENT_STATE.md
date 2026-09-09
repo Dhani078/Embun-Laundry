@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T11:20:00+08:00
-Tick ke: 9
+Terakhir update: 2026-09-09T11:40:00+08:00
+Tick ke: 10
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -27,6 +27,17 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task selesai
 
+- **A3b** — token baru untuk 9 warna sisa (P2) — `f782d3d`
+  - 13 token nilai-persis: `--color-slate-50/400/500/800/950`,
+    `--color-bg-inverse`, `--color-border-inverse`,
+    `--color-text-on-inverse{, -muted, -subtle}`, `--color-rating`,
+    `--color-error-500`
+  - 9 kemunculan dimigrasi di `index.html` → sisa hex 22 → 11
+    (10 di `:root` inline + 1 `<meta theme-color>`)
+  - Bukti: `python tools/verify_a3b.py` → HIJAU 15/15, exit 0
+  - **JANGAN dikerjakan ulang.** Jangan "merapikan" slate → neutral (beda
+    nilai = regresi visual). Jangan definisikan ulang
+    `--color-text-inverse` (sudah ada, `#ffffff`, dipakai halaman lain).
 - **A5** — endpoint `/api/health` — `d6cea6a`
 - **B4** — security headers global — `9632507`
 - **B6** — cookie `HttpOnly; Secure; SameSite=Lax` — (sudah benar sejak awal)
@@ -91,15 +102,15 @@ Model: cbai/hy4-preview (custom:9router)
 ## Tech debt tercatat
 
 1. `wrangler.toml` berisi `TIDB_DATABASE_URL` + `JWT_SECRET` plaintext → **P0**.
-2. `public/index.html` — sisa **22 kemunculan hex pada 22 baris** setelah
-   A3 (`796e81e`), turun dari 49 kemunculan/47 baris. Sisanya:
-   - 12 di blok `:root` inline (definisi, wajar — Gate 5 membolehkan)
+2. `public/index.html` — sisa **11 kemunculan hex pada 11 baris** setelah
+   A3b (`f782d3d`), turun dari 49 kemunculan/47 baris. Sisanya:
+   - 10 di blok `:root` inline (definisi, wajar — Gate 5 membolehkan)
    - 1 `<meta name="theme-color" content="#2563eb">` — `var()` TIDAK
      di-resolve di atribut HTML, jangan diganti
-   - 9 warna tanpa token nilai-persis: `#94a3b8`x4 `#f8fafc`x3
-     `#64748b`x2 `#1e293b`x2 `#090d16` `#f59e0b` `#ef4444`
-     (catatan: `#0f172a` dan `#e2e8f0` hanya ada di `:root`)
-     → calon task **A3b**: tambah token ke `design-tokens.css` dulu.
+   - **9 warna sisa A3b SUDAH SELESAI** (`#94a3b8` `#f8fafc` `#64748b`
+     `#1e293b` `#090d16` `#f59e0b` `#ef4444`) — kini token keluarga
+     **slate** (`--color-slate-*`) terpisah dari **neutral** (warm).
+     Jangan "merapikan" slate → neutral: nilainya berbeda = regresi visual.
    - CATATAN PENGUKURAN: baseline lama mencatat "40" (itu `grep -c` =
      BARIS). Pakai `tools/hexdiff.py` dan laporkan baris DAN kemunculan.
 2a. **B4 belum mencakup aset statis.** Header keamanan
@@ -122,10 +133,11 @@ Model: cbai/hy4-preview (custom:9router)
 
 - **Urutan fokus**: FASE A selesai kecuali **A6** (terblokir, butuh
   Cloudflare API token). FASE B: **B7 selesai** (tick 8), **B1 selesai**
-  (tick 9).
+  (tick 9). A3b selesai (tick 10).
   → **Berikutnya B2** (validasi & sanitasi input server-side, P1) → B5
   (CORS ketat; `Access-Control-Allow-Origin: *` masih ada di `/api/*`).
-  Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+- **A3b JANGAN dikerjakan ulang.** Sudah tuntas `f782d3d`. Untuk memeriksa
+  ulang: `python tools/verify_a3b.py` (exit 0, HASIL: HIJAU).
 - **B1 JANGAN dikerjakan ulang.** Sudah tuntas `ea05b75`. Untuk memeriksa
   ulang: `node tools/verify_b1.mjs` (7 uji, HASIL: HIJAU).
 - **PELAJARAN PENTING (berlaku umum)**: jangan menandai selesai hanya karena
