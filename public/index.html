@@ -488,11 +488,11 @@ a { text-decoration: none; }
 
 /* Footer */
 .site-footer {
-  background: #090d16;
-  color: #94a3b8;
+  background: var(--color-bg-inverse);
+  color: var(--color-text-on-inverse-muted);
   padding: 80px 0 30px;
   margin-top: 100px;
-  border-top: 1px solid #1e293b;
+  border-top: 1px solid var(--color-border-inverse);
 }
 .footer-grid {
   display: grid;
@@ -500,7 +500,7 @@ a { text-decoration: none; }
   gap: 40px;
 }
 .footer-grid h4 {
-  color: #f8fafc;
+  color: var(--color-text-on-inverse);
   font-size: 1.1rem;
   font-weight: 700;
   margin: 0 0 20px;
@@ -510,7 +510,7 @@ a { text-decoration: none; }
 .site-footer p {
   line-height: 1.6;
   font-size: 0.95rem;
-  color: #94a3b8;
+  color: var(--color-text-on-inverse-muted);
   margin-top: 12px;
 }
 .list-plain {
@@ -523,7 +523,7 @@ a { text-decoration: none; }
   font-size: 0.95rem;
 }
 .list-plain li a {
-  color: #94a3b8;
+  color: var(--color-text-on-inverse-muted);
   transition: color 0.2s ease;
 }
 .list-plain li a:hover {
@@ -532,8 +532,8 @@ a { text-decoration: none; }
 .footer-bottom {
   text-align: center;
   padding-top: 30px;
-  color: #64748b;
-  border-top: 1px solid #1e293b;
+  color: var(--color-text-on-inverse-subtle);
+  border-top: 1px solid var(--color-border-inverse);
   margin-top: 50px;
   font-size: 0.9rem;
 }
@@ -815,7 +815,7 @@ body.no-scroll { overflow: hidden; }
       <p class="lead">Terima pesanan, atur kurir, dan pantau pembayaran dalam satu dashboard.</p>
 
       <div class="pill">
-        <span style="color:#f59e0b">★★★★★</span>
+        <span style="color:var(--color-rating)">★★★★★</span>
         <span style="opacity:.9; color: var(--color-neutral-0); margin-left: 4px;">4.9/5 dari 1.200+ pelanggan</span>
       </div>
       <div class="cta-row">
@@ -902,7 +902,7 @@ body.no-scroll { overflow: hidden; }
           class="logo"
           width="36" height="36"
         />
-        <div class="brand-text" style="color:#f8fafc">Embun Laundry</div>
+        <div class="brand-text" style="color:var(--color-text-on-inverse)">Embun Laundry</div>
       </div>
       <p>Solusi terpercaya untuk kebutuhan laundry Anda.</p>
     </div>
@@ -1044,7 +1044,7 @@ async function loadServices() {
     // Attach event delegation for the dynamically injected order buttons
     // Only bind once to the document body to avoid duplicates
   } catch(e) {
-    document.getElementById('pricesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ef4444;">Gagal memuat harga layanan</div>';
+    document.getElementById('pricesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--color-error-500);">Gagal memuat harga layanan</div>';
   }
 }
 loadServices();
