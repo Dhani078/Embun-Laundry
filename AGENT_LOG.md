@@ -372,3 +372,36 @@ jalur serve aset statis di `src/index.js`.
     `terminal` + berkas di `tools/`.
 
 ---
+
+## Tick 9 — 2026-09-09T10:51+08:00
+- Task: **B1** — Rate limit `/api/auth/login` (P1)
+- Perubahan:
+  - Modul baru `functions/_ratelimit.js` — **dua lapis**: memori per-isolate
+    (10/5 menit) + Cache API shared per-datacenter (20/5 menit).
+  - `functions/api/auth/login.js` — `consume()` sebelum sentuh DB; header
+    `X-RateLimit-Limit/-Remaining` + `Retry-After`; jatah dibersihkan lewat
+    `ctx.waitUntil()` setelah login berhasil.
+  - `tools/verify_b1.mjs` (baru) + `tools/mock_tidb.mjs` (bisa suntik baris).
+- Verifikasi: `tools/verify_b1.mjs` 7 uji → **HIJAU**; `node --check` 6 file;
+  B7 audit SQL HIJAU; `audit_throw_sites` AMAN.
+- Commit: `9981427` (lapis 1) · `ea05b75` (lapis 2 — perbaikan inti)
+- Status: **SUKSES**
+- Catatan:
+  - **Post-verify produksi menyelamatkan tick ini.** Lapis memori saja
+    terbukti TIDAK cukup: 13 percobaan gagal berturut-turut → tetap 401,
+    dan `X-RateLimit-Remaining` terukur melonjak 7→6→9→5→9→8. Penyebab:
+    isolate Workers tidak berbagi memori → ambang praktis 10 × jumlah
+    isolate. Setelah lapis Cache API: **429 muncul tepat pada percobaan
+    ke-21** (ambang shared), `Retry-After: 277`.
+  - Dua defek urutan juga ditemukan harness (bukan sekadar "tambah counter"):
+    (1) `getDb()` dipanggil sebelum body di-parse → body rusak jadi 500
+    "Database tidak terhubung"; kini parse+validasi duluan → 400.
+    (2) `X-RateLimit-Remaining` diisi dari nilai sebelum percobaan dihitung;
+    kini diukur ulang lewat `peek()`.
+  - Terbukti **self-healing**: login sah diblokir selama jendela berjalan,
+    lalu 200 + `Remaining: 10` setelah kedaluwarsa — tidak mengunci permanen.
+  - Fail-open sengaja: Cache API mati → tidak memblokir (Uji 7).
+  - Harness memalsukan Cache API supaya lapis 2 ikut teruji, bukan dilewati
+    diam-diam (pola B7: ganti dependensi, ukur nyatanya).
+
+---
