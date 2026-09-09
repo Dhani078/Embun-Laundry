@@ -252,10 +252,10 @@ const App = window.App = {
             <div class="topbar-inner" style="display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center;">
                 <div class="h1" id="pageTitle" style="font-size: 20px; font-weight: 700; margin: 0;">Dashboard</div>
-                <div class="badge" style="margin-left: 8px;">${this.user.role || this.user.user_role}</div>
+                <div class="badge" style="margin-left: 8px;">${esc(this.user.role || this.user.user_role)}</div>
               </div>
               <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 14px; font-weight: 600;">Hai, ${this.user.user_name || this.user.name || 'User'}</span>
+                <span style="font-size: 14px; font-weight: 600;">Hai, ${esc(this.user.user_name || this.user.name || 'User')}</span>
               </div>
             </div>
           </div>
@@ -439,16 +439,16 @@ const App = window.App = {
           </div>
           <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
             <div style="font-size: 13px; color: #64748b; font-weight: 600;">Pesanan Aktif</div>
-            <div style="font-size: 24px; font-weight: 800; color: #2563eb; margin-top: 4px;">${s.active_orders}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #2563eb; margin-top: 4px;">${esc(s.active_orders || 0)}</div>
           </div>
           <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
             <div style="font-size: 13px; color: #64748b; font-weight: 600;">Selesai Hari Ini</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px;">${s.finished_today}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px;">${esc(s.finished_today || 0)}</div>
           </div>
           ${isStaff ? `
             <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
               <div style="font-size: 13px; color: #64748b; font-weight: 600;">Total Pelanggan</div>
-              <div style="font-size: 24px; font-weight: 800; color: #d97706; margin-top: 4px;">${s.total_customers}</div>
+              <div style="font-size: 24px; font-weight: 800; color: #d97706; margin-top: 4px;">${esc(s.total_customers || 0)}</div>
             </div>
           ` : ''}
         </div>
@@ -473,12 +473,12 @@ const App = window.App = {
               <tbody>
                 ${(data.recent_orders || []).map(o => `
                   <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 10px; font-weight: 600;">${o.order_code}</td>
-                    <td style="padding: 10px;">${o.customer_name}</td>
-                    <td style="padding: 10px;">${o.service_name}</td>
-                    <td style="padding: 10px;">${o.weight_kg} kg</td>
+                    <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
+                    <td style="padding: 10px;">${esc(o.customer_name)}</td>
+                    <td style="padding: 10px;">${esc(o.service_name)}</td>
+                    <td style="padding: 10px;">${esc(o.weight_kg)} kg</td>
                     <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
-                    <td style="padding: 10px;"><span class="badge status-${o.status}">${o.status}</span></td>
+                    <td style="padding: 10px;"><span class="badge status-${esc(o.status)}">${esc(o.status)}</span></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -535,25 +535,25 @@ const App = window.App = {
             <tbody id="ordersTableBody">
               ${orders.map(o => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 600;">${o.order_code}</td>
-                  <td style="padding: 10px;">${o.customer_name}</td>
-                  <td style="padding: 10px;">${o.service_name}</td>
-                  <td style="padding: 10px;">${o.weight_kg} kg</td>
+                  <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
+                  <td style="padding: 10px;">${esc(o.customer_name)}</td>
+                  <td style="padding: 10px;">${esc(o.service_name)}</td>
+                  <td style="padding: 10px;">${esc(o.weight_kg)} kg</td>
                   <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
                   <td style="padding: 10px;">
                     ${isStaff ? `
-                      <select class="status-select" data-id="${o.id}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                      <select class="status-select" data-id="${esc(o.id)}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
                         <option value="baru" ${o.status === 'baru' ? 'selected' : ''}>Baru</option>
                         <option value="proses" ${o.status === 'proses' ? 'selected' : ''}>Proses</option>
                         <option value="selesai" ${o.status === 'selesai' ? 'selected' : ''}>Selesai</option>
                         <option value="batal" ${o.status === 'batal' ? 'selected' : ''}>Batal</option>
                       </select>
-                    ` : `<span class="badge status-${o.status}">${o.status}</span>`}
+                    ` : `<span class="badge status-${esc(o.status)}">${esc(o.status)}</span>`}
                   </td>
                   <td style="padding: 10px; text-align: right;">
-                    <a href="/pay.html?code=${o.order_code}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Bayar</a>
+                    <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Bayar</a>
                     ${(isStaff || o.status === 'baru') ? `
-                      <button class="btn btn-del" data-id="${o.id}" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border: 1px solid #ef4444; background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
+                      <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border: 1px solid #ef4444; background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
                     ` : ''}
                   </td>
                 </tr>
@@ -584,7 +584,7 @@ const App = window.App = {
               <div style="margin-bottom: 12px;">
                 <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Pilih Layanan</label>
                 <select id="ordService" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
-                  ${services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name} (Rp ${Number(s.price).toLocaleString('id-ID')}/${s.unit || 'kg'})</option>`).join('')}
+                  ${services.map(s => `<option value="${esc(s.id)}" data-price="${esc(s.price)}">${esc(s.name)} (Rp ${Number(s.price).toLocaleString('id-ID')}/${esc(s.unit || 'kg')})</option>`).join('')}
                 </select>
               </div>
               <div style="margin-bottom: 12px;">
@@ -641,12 +641,12 @@ const App = window.App = {
             <tbody>
               ${customers.map(cust => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 600;">${cust.code}</td>
-                  <td style="padding: 10px;">${cust.full_name}</td>
-                  <td style="padding: 10px;">${cust.phone || '-'}</td>
-                  <td style="padding: 10px;">${cust.address || '-'}</td>
-                  <td style="padding: 10px;"><span class="badge">${cust.computed_tag || cust.tag}</span></td>
-                  <td style="padding: 10px;">${cust.orders_count || 0}</td>
+                  <td style="padding: 10px; font-weight: 600;">${esc(cust.code)}</td>
+                  <td style="padding: 10px;">${esc(cust.full_name)}</td>
+                  <td style="padding: 10px;">${esc(cust.phone || '-')}</td>
+                  <td style="padding: 10px;">${esc(cust.address || '-')}</td>
+                  <td style="padding: 10px;"><span class="badge">${esc(cust.computed_tag || cust.tag)}</span></td>
+                  <td style="padding: 10px;">${esc(cust.orders_count || 0)}</td>
                   <td style="padding: 10px; font-weight: 700;">Rp ${Number(cust.total_spent || 0).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
@@ -674,13 +674,13 @@ const App = window.App = {
           ${services.map(s => `
             <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h4 style="margin: 0 0 8px; font-size: 16px;">${s.name}</h4>
+                <h4 style="margin: 0 0 8px; font-size: 16px;">${esc(s.name)}</h4>
                 <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}">${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
               </div>
               <div style="font-size: 20px; font-weight: 800; color: #2563eb; margin-bottom: 8px;">
-                Rp ${Number(s.price).toLocaleString('id-ID')} <span style="font-size: 13px; color: #64748b; font-weight: 500;">/ ${s.unit || 'kg'}</span>
+                Rp ${Number(s.price).toLocaleString('id-ID')} <span style="font-size: 13px; color: #64748b; font-weight: 500;">/ ${esc(s.unit || 'kg')}</span>
               </div>
-              <p style="font-size: 13px; color: #64748b; margin: 0 0 12px;">Durasi estimasi: ${s.duration_hours || 24} Jam</p>
+              <p style="font-size: 13px; color: #64748b; margin: 0 0 12px;">Durasi estimasi: ${esc(s.duration_hours || 24)} Jam</p>
               <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.renderPesanan()">Pesan Sekarang</button>
             </div>
           `).join('')}
@@ -718,13 +718,13 @@ const App = window.App = {
             <tbody>
               ${tasks.map(t => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 600;">${t.task_code}</td>
-                  <td style="padding: 10px;"><span class="badge">${t.type.toUpperCase()}</span></td>
-                  <td style="padding: 10px;">${t.customer_name}</td>
-                  <td style="padding: 10px;">${t.address || '-'}</td>
-                  <td style="padding: 10px;">${t.courier_name || 'Belum ditugaskan'}</td>
-                  <td style="padding: 10px;">${t.schedule_date}</td>
-                  <td style="padding: 10px;"><span class="badge status-${t.status}">${t.status}</span></td>
+                  <td style="padding: 10px; font-weight: 600;">${esc(t.task_code)}</td>
+                  <td style="padding: 10px;"><span class="badge">${esc(String(t.type || '').toUpperCase())}</span></td>
+                  <td style="padding: 10px;">${esc(t.customer_name)}</td>
+                  <td style="padding: 10px;">${esc(t.address || '-')}</td>
+                  <td style="padding: 10px;">${esc(t.courier_name || 'Belum ditugaskan')}</td>
+                  <td style="padding: 10px;">${esc(t.schedule_date)}</td>
+                  <td style="padding: 10px;"><span class="badge status-${esc(t.status)}">${esc(t.status)}</span></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -757,13 +757,13 @@ const App = window.App = {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">
           ${promos.map(p => `
             <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-              <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700;">${p.code || 'PROMO'}</span>
-              <h4 style="margin: 8px 0 4px; font-size: 16px;">${p.name}</h4>
+              <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700;">${esc(p.code || 'PROMO')}</span>
+              <h4 style="margin: 8px 0 4px; font-size: 16px;">${esc(p.name)}</h4>
               <div style="font-size: 18px; font-weight: 800; color: #059669; margin-bottom: 8px;">
-                ${p.type === 'percent' ? `Diskon ${p.value}%` : `Potongan Rp ${Number(p.value).toLocaleString('id-ID')}`}
+                ${p.type === 'percent' ? `Diskon ${esc(p.value)}%` : `Potongan Rp ${Number(p.value).toLocaleString('id-ID')}`}
               </div>
               <p style="font-size: 12px; color: #64748b; margin: 0 0 12px;">Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</p>
-              <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.claimVoucher(${p.id})">Klaim Voucher</button>
+              <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.claimVoucher(${esc(p.id)})">Klaim Voucher</button>
             </div>
           `).join('')}
         </div>
@@ -782,9 +782,9 @@ const App = window.App = {
             <tbody>
               ${vouchers.map(v => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 700; color: #2563eb;">${v.code}</td>
-                  <td style="padding: 10px;">${v.name}</td>
-                  <td style="padding: 10px;">${v.type === 'percent' ? v.value + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                  <td style="padding: 10px; font-weight: 700; color: #2563eb;">${esc(v.code)}</td>
+                  <td style="padding: 10px;">${esc(v.name)}</td>
+                  <td style="padding: 10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
                   <td style="padding: 10px;">
                     <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
                   </td>
@@ -859,9 +859,9 @@ const App = window.App = {
             <tbody>
               ${daily.map(d => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 600;">${d.d}</td>
-                  <td style="padding: 10px;">${d.orders}</td>
-                  <td style="padding: 10px;">${d.weight} kg</td>
+                  <td style="padding: 10px; font-weight: 600;">${esc(d.d)}</td>
+                  <td style="padding: 10px;">${esc(d.orders)}</td>
+                  <td style="padding: 10px;">${esc(d.weight)} kg</td>
                   <td style="padding: 10px; font-weight: 700;">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
@@ -891,17 +891,17 @@ const App = window.App = {
             <form id="profileForm">
               <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Nama Lengkap</label>
-                <input type="text" id="profName" value="${u.full_name || u.name || ''}" required 
+                <input type="text" id="profName" value="${esc(u.full_name || u.name || '')}" required 
                   style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Email</label>
-                <input type="email" value="${u.email || ''}" disabled 
+                <input type="email" value="${esc(u.email || '')}" disabled  
                   style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 18px;">
                 <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">No. HP</label>
-                <input type="text" id="profPhone" value="${u.phone || ''}" 
+                <input type="text" id="profPhone" value="${esc(u.phone || '')}" 
                   style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
               </div>
               <button type="submit" class="btn btn-primary">Simpan Profil</button>

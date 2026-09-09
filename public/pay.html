@@ -6,6 +6,8 @@
   <title>Pembayaran · Embun Laundry</title>
   <link rel="stylesheet" href="/assets/design-tokens.css"/>
   <link rel="stylesheet" href="/assets/style.css"/>
+  <!-- B9: escaping HTML untuk data pesanan (lihat public/assets/escape.js) -->
+  <script src="/assets/escape.js"></script>
 </head>
 <body style="background: #f8fafc; padding: 20px; display: grid; place-items: center; min-height: 100vh; margin: 0;">
   <div class="card" style="width: 100%; max-width: 440px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
@@ -37,7 +39,7 @@
         const res = await fetch('/api/pay?order_code=' + encodeURIComponent(code));
         const data = await res.json();
         if (!data.ok) {
-          document.getElementById('payContent').innerHTML = '<div class="err">' + (data.msg || 'Gagal memuat pesanan') + '</div>';
+          document.getElementById('payContent').innerHTML = '<div class="err">' + esc(data.msg || 'Gagal memuat pesanan') + '</div>';
           return;
         }
 
@@ -47,13 +49,13 @@
         document.getElementById('payContent').innerHTML = `
           <div style="background: #f1f5f9; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-              <span>Layanan:</span> <span style="font-weight: 600;">${o.service_name} (${o.weight_kg} kg)</span>
+              <span>Layanan:</span> <span style="font-weight: 600;">${esc(o.service_name)} (${esc(o.weight_kg)} kg)</span>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
               <span>Total Tagihan:</span> <span style="font-weight: 800; color: #2563eb; font-size: 16px;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 13px;">
-              <span>Status Bayar:</span> <span style="font-weight: 700;">${o.payment_status || 'unpaid'}</span>
+              <span>Status Bayar:</span> <span style="font-weight: 700;">${esc(o.payment_status || 'unpaid')}</span>
             </div>
           </div>
 
@@ -62,7 +64,7 @@
             <div style="width: 200px; height: 200px; margin: 0 auto; background: #fff; border: 2px dashed #cbd5e1; border-radius: 12px; display: grid; place-items: center;">
               <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">
                 <div style="font-size: 32px; margin-bottom: 8px;">📱</div>
-                QRIS Dinamis<br><strong>${o.order_code}</strong><br>Rp ${Number(o.total_amount).toLocaleString('id-ID')}
+                QRIS Dinamis<br><strong>${esc(o.order_code)}</strong><br>Rp ${Number(o.total_amount).toLocaleString('id-ID')}
               </div>
             </div>
           </div>

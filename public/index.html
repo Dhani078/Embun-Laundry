@@ -961,6 +961,10 @@ body.no-scroll { overflow: hidden; }
   </div>
 </div>
 
+<!-- B9: escaping HTML untuk data dari API (lihat public/assets/escape.js).
+     Dimuat SEBELUM skrip sebaris di bawah ini, karena skrip itu langsung
+     memanggil esc() saat loadServices() dijalankan. -->
+<script src="/assets/escape.js"></script>
 <script>
 let isLoggedIn = false;
 let currentUser = null;
@@ -1004,7 +1008,7 @@ async function checkAuth() {
       if (navActions) {
         navActions.innerHTML = `
           <a class="btn btn-ghost" href="/dashboard.html">Dashboard</a>
-          <a class="btn btn-primary" href="/dashboard.html">Halo, ${data.user.user_name || 'User'}</a>
+          <a class="btn btn-primary" href="/dashboard.html">Halo, ${esc(data.user.user_name || 'User')}</a>
         `;
       }
     }
@@ -1028,14 +1032,14 @@ async function loadServices() {
       return `
         <div class="card ${isPop ? 'popular' : ''}">
           ${isPop ? '<div class="badge">Paling Populer</div>' : ''}
-          <h3>${s.name}</h3>
+          <h3>${esc(s.name)}</h3>
           <div class="price">${rupiah(s.price)}</div>
-          <div class="meta">⏱️ Estimasi ${s.duration_hours || 24} jam</div>
+          <div class="meta">⏱️ Estimasi ${esc(s.duration_hours || 24)} jam</div>
           <button
             class="btn ${isPop ? 'btn-primary' : 'btn-outline'} js-order"
-            data-id="${s.id}"
-            data-name="${s.name}"
-            data-price="${s.price}"
+            data-id="${esc(s.id)}"
+            data-name="${esc(s.name)}"
+            data-price="${esc(s.price)}"
           >Pesan</button>
         </div>
       `;
