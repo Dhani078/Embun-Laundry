@@ -1,5 +1,6 @@
 // functions/api/orders.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions } from '../_db.js';
+import { validateOr400, cleanStr, STATUS_ORDER } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -17,11 +18,21 @@ export async function onRequest({ request, env }) {
   // GET - list orders
   if (request.method === 'GET' && !action) {
     try {
-      const view = url.searchParams.get('view') || 'table';
-      const q = url.searchParams.get('q') || '';
-      const status = url.searchParams.get('status') || '';
-      const start = url.searchParams.get('start') || '';
-      const end = url.searchParams.get('end') || '';
+      const view = cleanStr(url.searchParams.get('view') || '').slice(0, 20) || 'table';
+      const q = cleanStr(url.searchParams.get('q') || '').slice(0, 100);
+      const status = cleanStr(url.searchParams.get('status') || '').slice(0, 20);
+      const start = cleanStr(url.searchParams.get('start') || '').slice(0, 10);
+      const end = cleanStr(url.searchParams.get('end') || '').slice(0, 10);
+
+      // B2 — tanggal harus benar-benar berformat YYYY-MM-DD. Sebelumnya nilai
+      // apa pun digabung mentah ke 'YYYY-MM-DD HH:MM:SS' lalu dikirim ke TiDB.
+      // Filter hanya dipakai kalau keduanya ada (sama seperti sebelumnya),
+      // tetapi nilai yang DIBERIKAN kini wajib berformat benar.
+      for (const [name, val] of [['start', start], ['end', end]]) {
+        if (val && !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          return jsonResponse({ ok: false, msg: `Validasi gagal: ${name} tanggal tidak valid (YYYY-MM-DD)` }, 400);
+        }
+      }
 
       let sql = `
         SELECT o.*, s.name AS service_name
@@ -40,7 +51,7 @@ export async function onRequest({ request, env }) {
         const likeQ = `%${q}%`;
         params.push(likeQ, likeQ, likeQ, likeQ, likeQ);
       }
-      if (['baru', 'proses', 'selesai', 'batal'].includes(status)) {
+      if (STATUS_ORDER.includes(status)) {
         sql += ' AND o.status = ?';
         params.push(status);
       }
@@ -71,15 +82,32 @@ export async function onRequest({ request, env }) {
           return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
         }
 
-        const customer = isStaff ? (body.customer_name || myName) : myName;
-        const phone = body.customer_phone || '';
-        const address = body.customer_address || '';
-        const serviceId = parseInt(body.service_id) || 0;
-        const kg = Math.max(1, parseInt(body.weight_kg) || 1);
-        const disc = Math.max(0, parseInt(body.discount) || 0);
-        let priceKg = parseInt(body.price_per_kg) || 0;
-        const voucherCode = (body.voucher_code || '').toUpperCase().trim();
-        const status = isStaff && ['baru', 'proses', 'selesai', 'batal'].includes(body.status) ? body.status : 'baru';
+        // B2 — berat 1..1000 kg, harga & diskon non-negatif, teks dibatasi.
+        // Sebelumnya `Math.max(1, parseInt(...)||1)` mengizinkan 100000 kg dan
+        // `body.customer_*` dikirim apa adanya tanpa batas panjang.
+        const v = validateOr400(body, {
+          customer_name: { type: 'str', max: 120, label: 'Nama pelanggan' },
+          customer_phone: { type: 'str', max: 30, label: 'Telepon pelanggan' },
+          customer_address: { type: 'str', max: 500, label: 'Alamat pelanggan' },
+          service_id: { type: 'int', required: true, min: 1, label: 'Layanan' },
+          weight_kg: { type: 'int', min: 1, max: 1000, default: 1, label: 'Berat (kg)' },
+          price_per_kg: { type: 'int', min: 0, max: 10000000, default: 0, label: 'Harga per kg' },
+          discount: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Diskon' },
+          voucher_code: { type: 'str', max: 40, label: 'Kode voucher' },
+          status: { type: 'enum', values: STATUS_ORDER, default: 'baru', label: 'Status' }
+        });
+        if (!v.ok) return v.response;
+
+        const d = v.data;
+        const customer = isStaff ? (d.customer_name || myName) : myName;
+        const phone = d.customer_phone;
+        const address = d.customer_address;
+        const serviceId = d.service_id;
+        const kg = d.weight_kg;
+        const disc = d.discount;
+        let priceKg = d.price_per_kg;
+        const voucherCode = d.voucher_code.toUpperCase();
+        const status = isStaff ? d.status : 'baru';
 
         if (!customer || !serviceId) {
           return jsonResponse({ ok: false, msg: 'Data tidak lengkap' }, 400);
@@ -151,11 +179,13 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'move_status' && isStaff) {
-        const id = parseInt(body.id) || 0;
-        const newStatus = body.status;
-        if (!id || !['baru', 'proses', 'selesai', 'batal'].includes(newStatus)) {
-          return jsonResponse({ ok: false, msg: 'Invalid params' }, 400);
-        }
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          status: { type: 'enum', values: STATUS_ORDER, required: true, label: 'Status' }
+        });
+        if (!v.ok) return v.response;
+        const id = v.data.id;
+        const newStatus = v.data.status;
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute(
           `UPDATE orders SET status = ?, finished_at = IF(? = 'selesai', IFNULL(finished_at, ?), finished_at) WHERE id = ?`,
@@ -165,21 +195,25 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'update_order' && isStaff) {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          customer_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama pelanggan' },
+          customer_phone: { type: 'str', max: 30, label: 'Telepon pelanggan' },
+          customer_address: { type: 'str', max: 500, label: 'Alamat pelanggan' },
+          service_id: { type: 'int', required: true, min: 1, label: 'Layanan' },
+          weight_kg: { type: 'int', min: 1, max: 1000, default: 1, label: 'Berat (kg)' },
+          price_per_kg: { type: 'int', min: 0, max: 10000000, default: 0, label: 'Harga per kg' },
+          discount: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Diskon' },
+          status: { type: 'enum', values: STATUS_ORDER, default: 'baru', label: 'Status' }
+        });
+        if (!v.ok) return v.response;
 
-        const customer = body.customer_name;
-        const phone = body.customer_phone || '';
-        const address = body.customer_address || '';
-        const serviceId = parseInt(body.service_id) || 0;
-        const kg = Math.max(1, parseInt(body.weight_kg) || 1);
-        const disc = Math.max(0, parseInt(body.discount) || 0);
-        let priceKg = parseInt(body.price_per_kg) || 0;
-        const status = body.status || 'baru';
-
-        if (!customer || !serviceId || !['baru', 'proses', 'selesai', 'batal'].includes(status)) {
-          return jsonResponse({ ok: false, msg: 'Invalid data' }, 400);
-        }
+        const d = v.data;
+        const { id, customer_name: customer, customer_phone: phone, customer_address: address, service_id: serviceId } = d;
+        const kg = d.weight_kg;
+        const disc = d.discount;
+        let priceKg = d.price_per_kg;
+        const status = d.status;
 
         if (priceKg <= 0) {
           const svc = await db.query('SELECT price FROM services WHERE id = ?', [serviceId]);
@@ -201,8 +235,9 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'delete_order') {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
+        const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
+        if (!v.ok) return v.response;
+        const id = v.data.id;
 
         if (isStaff) {
           await db.execute('DELETE FROM orders WHERE id = ?', [id]);

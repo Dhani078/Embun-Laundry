@@ -1,6 +1,7 @@
 // functions/api/auth/login.js
 import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
 import { clientKey, consume, peek, clearAll } from '../../_ratelimit.js';
+import { validateOr400 } from '../../_validate.js';
 
 // B1 — rate limit: 10 percobaan / 5 menit / IP.
 const RL_LIMIT = 10;
@@ -54,11 +55,20 @@ export async function onRequestPost({ request, env, ctx }) {
       return reply(key, { ok: false, msg: detail.msg }, parsed.response.status);
     }
     const body = parsed.data;
-    const { identity, password } = body;
 
-    if (!identity || !password) {
-      return reply(key, { ok: false, msg: 'Identitas dan kata sandi wajib diisi' }, 400);
+    // B2 — identitas & kata sandi dibatasi panjangnya. Nilainya tetap
+    // ter-parameterisasi (B7), tetapi tanpa batas ini sebuah string 1 MB
+    // bisa dikirim mentah ke TiDB pada setiap percobaan login.
+    const v = validateOr400(body, {
+      identity: { type: 'str', required: true, min: 2, max: 160, label: 'Identitas' },
+      // 'raw': sandi TIDAK dibersihkan — hanya panjangnya yang dibatasi.
+      password: { type: 'raw', required: true, min: 1, max: 200, label: 'Kata sandi' }
+    });
+    if (!v.ok) {
+      const detail = await v.response.json();
+      return reply(key, { ok: false, msg: detail.msg }, v.response.status);
     }
+    const { identity, password } = v.data;
 
     const db = await getDb(env);
     if (!db) {

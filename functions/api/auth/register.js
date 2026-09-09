@@ -1,5 +1,6 @@
 // functions/api/auth/register.js
 import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
+import { validateOr400 } from '../../_validate.js';
 
 export async function onRequestPost({ request, env }) {
   const db = await getDb(env);
@@ -11,21 +12,27 @@ export async function onRequestPost({ request, env }) {
     const parsed = await readJson(request);
     if (!parsed.ok) return parsed.response;
     const body = parsed.data;
-    const { full_name, email, phone, password, confirm, agree } = body;
 
-    if (!full_name || !email || !password) {
-      return jsonResponse({ ok: false, msg: 'Nama lengkap, email, dan kata sandi wajib diisi' }, 400);
-    }
+    // B2 — validasi & sanitasi. Sebelumnya hanya `!full_name || !email ||
+    // !password` dengan regex email longgar; nama/telepon tak dibatasi
+    // panjangnya dan kata sandi tak punya batas minimal sama sekali.
+    const v = validateOr400(body, {
+      full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama lengkap' },
+      email: { type: 'email', required: true, label: 'Email' },
+      phone: { type: 'str', max: 30, label: 'Telepon' },
+      // 'raw': sandi TIDAK dibersihkan — hanya panjangnya yang dibatasi.
+      password: { type: 'raw', required: true, min: 6, max: 128, label: 'Kata sandi' },
+      confirm: { type: 'raw', max: 128, label: 'Konfirmasi sandi' }
+    });
+    if (!v.ok) return v.response;
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return jsonResponse({ ok: false, msg: 'Format email tidak valid' }, 400);
-    }
+    const { full_name, email, phone, password, confirm } = v.data;
 
-    if (password !== confirm) {
+    if (confirm !== password) {
       return jsonResponse({ ok: false, msg: 'Konfirmasi sandi tidak sama' }, 400);
     }
 
-    if (agree === false) {
+    if (body.agree === false) {
       return jsonResponse({ ok: false, msg: 'Anda harus menyetujui Syarat & Ketentuan' }, 400);
     }
 

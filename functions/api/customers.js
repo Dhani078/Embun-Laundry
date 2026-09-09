@@ -1,5 +1,6 @@
 // functions/api/customers.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions } from '../_db.js';
+import { validateOr400, cleanStr } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -15,8 +16,10 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'GET' && !action) {
     try {
-      const q = url.searchParams.get('q') || '';
-      const tag = url.searchParams.get('tag') || '';
+      // B2 — batasi panjang query pencarian; nilainya tetap ter-parameterisasi
+      // (B7), tetapi pembatasan ini mencegah pemindaian LIKE raksasa.
+      const q = cleanStr(url.searchParams.get('q') || '').slice(0, 100);
+      const tag = cleanStr(url.searchParams.get('tag') || '').slice(0, 40);
 
       let sql = `
         SELECT c.*,
@@ -79,10 +82,14 @@ export async function onRequest({ request, env }) {
       const act = body.action || action;
 
       if (act === 'create_customer') {
-        const name = (body.full_name || '').trim();
-        const phone = (body.phone || '').trim();
-        const address = (body.address || '').trim();
-        if (!name) return jsonResponse({ ok: false, msg: 'Nama wajib diisi' }, 400);
+        // B2 — validasi & sanitasi sebelum menyentuh database.
+        const v = validateOr400(body, {
+          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          phone: { type: 'str', max: 30, label: 'Telepon' },
+          address: { type: 'str', max: 500, label: 'Alamat' }
+        });
+        if (!v.ok) return v.response;
+        const { full_name: name, phone, address } = v.data;
 
         // Generate unique code
         let code;
@@ -104,21 +111,23 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'update_customer') {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
-        const name = (body.full_name || '').trim();
-        const phone = (body.phone || '').trim();
-        const address = (body.address || '').trim();
-        if (!name) return jsonResponse({ ok: false, msg: 'Nama wajib diisi' }, 400);
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          phone: { type: 'str', max: 30, label: 'Telepon' },
+          address: { type: 'str', max: 500, label: 'Alamat' }
+        });
+        if (!v.ok) return v.response;
+        const { id, full_name: name, phone, address } = v.data;
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute('UPDATE customers SET full_name=?, phone=?, address=?, updated_at=? WHERE id=?', [name, phone, address, now, id]);
         return jsonResponse({ ok: true });
       }
 
       if (act === 'delete_customer') {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
-        await db.execute('DELETE FROM customers WHERE id = ?', [id]);
+        const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
+        if (!v.ok) return v.response;
+        await db.execute('DELETE FROM customers WHERE id = ?', [v.data.id]);
         return jsonResponse({ ok: true });
       }
 
