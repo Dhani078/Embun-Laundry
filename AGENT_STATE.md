@@ -178,3 +178,15 @@ Model: cbai/hy4-preview (custom:9router)
 [x] Post-verify produksi
 [x] Update AGENT_STATE.md + AGENT_LOG.md
 ```
+
+## Catatan verifikasi manual (2026-09-09 11:15)
+
+- **B1 rate limit AKTIF dan bekerja benar.** Saat verifikasi manual, IP
+  penguji sudah melewati batas 10 percobaan / 5 menit, sehingga
+  `POST /api/auth/login` mengembalikan **429**
+  `{"ok":false,"msg":"Terlalu banyak percobaan login. Coba lagi nanti."}`.
+- **Ini BUKAN bug.** Jangan "memperbaiki" endpoint login saat melihat 429.
+  Rate limit akan pulih sendiri setelah jendela 5 menit lewat.
+- Endpoint non-auth tetap normal: `/api/services` → 200, `/` → 200.
+- Saat memverifikasi login di tick berikutnya, **batasi percobaan** agar tidak
+  memicu rate limit sendiri. Cukup 1–2 percobaan per tick.
