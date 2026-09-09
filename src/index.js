@@ -15,7 +15,7 @@ import * as checkinHandler from '../functions/api/checkin.js';
 import * as payHandler from '../functions/api/pay.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
 import * as healthHandler from '../functions/api/health.js';
-import { withSecurityHeaders } from '../functions/_db.js';
+import { withSecurityHeaders, SECURITY_HEADERS } from '../functions/_db.js';
 
 function rewriteImagePath(pathname) {
   // Handle case-insensitive image requests - rewrite to actual filenames
@@ -105,11 +105,36 @@ export default {
       if (path === '/dashboard' || path.startsWith('/dashboard/')) {
         const dashboardUrl = new URL(request.url);
         dashboardUrl.pathname = '/dashboard.html';
-        return withSecurityHeaders(await env.ASSETS.fetch(dashboardUrl));
+        const dashRes = await env.ASSETS.fetch(dashboardUrl);
+        const dashHeaders = new Headers(dashRes.headers);
+        for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+          if (!dashHeaders.has(k)) dashHeaders.set(k, v);
+        }
+        return new Response(dashRes.body, {
+          status: dashRes.status,
+          statusText: dashRes.statusText,
+          headers: dashHeaders
+        });
       }
-      return withSecurityHeaders(await env.ASSETS.fetch(request));
+
+      const assetRes = await env.ASSETS.fetch(request);
+
+      // B4: Cloudflare's static-asset binding can return an IMMUTABLE response
+      // whose headers are frozen, so withSecurityHeaders() silently no-ops
+      // (confirmed: / and /robots.txt served with CF-Cache-Status: HIT and NO
+      // security headers, while /api/* had them). Rebuild the response so
+      // headers are writable — body is streamed through untouched.
+      const headers = new Headers(assetRes.headers);
+      for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+        if (!headers.has(k)) headers.set(k, v);
+      }
+      return new Response(assetRes.body, {
+        status: assetRes.status,
+        statusText: assetRes.statusText,
+        headers
+      });
     }
 
-    return new Response('Asset not found', { status: 404 });
+    return withSecurityHeaders(new Response('Asset not found', { status: 404 }));
   }
 };
