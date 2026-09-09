@@ -1,5 +1,5 @@
 // functions/api/auth/login.js
-import { getDb, hashPassword, jsonResponse, createSessionToken } from '../../_db.js';
+import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
 
 export async function onRequestPost({ request, env }) {
   const db = await getDb(env);
@@ -8,7 +8,9 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
-    const body = await request.json();
+    const parsed = await readJson(request);
+    if (!parsed.ok) return parsed.response;
+    const body = parsed.data;
     const { identity, password } = body;
 
     if (!identity || !password) {

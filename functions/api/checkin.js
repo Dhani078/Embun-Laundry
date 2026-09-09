@@ -1,9 +1,11 @@
 // functions/api/checkin.js
-import { getDb, jsonResponse, getUserFromSession } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
   if (!db) return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
+
+  if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
   if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);

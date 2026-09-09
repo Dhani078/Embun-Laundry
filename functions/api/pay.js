@@ -1,9 +1,11 @@
 // functions/api/pay.js
-import { getDb, jsonResponse, getUserFromSession } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions } from '../_db.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
   if (!db) return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
+
+  if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
   const url = new URL(request.url);
@@ -35,7 +37,9 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'POST') {
     try {
-      const body = await request.json();
+      const parsed = await readJson(request);
+      if (!parsed.ok) return parsed.response;
+      const body = parsed.data;
       const code = body.order_code || orderCode;
       const method = body.method || 'QRIS';
       const amount = parseInt(body.amount) || 0;
