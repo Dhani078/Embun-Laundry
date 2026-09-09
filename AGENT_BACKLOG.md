@@ -116,9 +116,24 @@ File ini adalah **working copy** yang diupdate setiap tick.
 Selesai: A1, A2, A3, A4, A5, A7, A8. Tersisa: **A6** (P0, terblokir butuh
 Cloudflare API token) dan opsional **A3b** (P2).
 
-> FASE A praktis tuntas kecuali A6. Fokus berikutnya: FASE B (B7 → B1 → B2 → B5).
-> Catatan: B4 perlu diperluas ke aset statis — header keamanan belum ada di
-> respons HTML statis (`/`, `/dashboard`), hanya di `/api/*`.
+> **B4 SELESAI (jangan diulang).** Header keamanan kini aktif di `/`,
+> `/robots.txt`, `/dashboard`, dan `/api/*` (masing-masing 2 header terverifikasi).
+> Mekanismenya DUA jalur:
+> - **Aset statis** → `public/_headers` (native Cloudflare).
+> - **`/api/*`** → `withSecurityHeaders()` di `src/index.js`.
+>
+> **JEBATAN YANG SUDAH DIBUKTIKAN (jangan coba lagi):**
+> 1. `withSecurityHeaders()` TIDAK berlaku untuk aset statis — dengan
+>    konfigurasi `[assets]` bawaan, Cloudflare menyajikan aset **SEBELUM**
+>    Worker dijalankan. Kode tidak pernah dieksekusi (`CF-Cache-Status: HIT`,
+>    nol header kustom).
+> 2. `run_worker_first = true` MEMANG memasang header, tapi **merusak `/` dan
+>    `/dashboard` menjadi 404**. Sudah di-rollback ke `false`.
+> 3. Rebuild `new Response(body, {headers})` di JS juga tidak menolong, karena
+>    akar masalahnya adalah Worker yang tidak dipanggil, bukan response beku.
+>
+> Jadi: untuk header aset statis, satu-satunya jalur yang benar adalah
+> **`public/_headers`**. Jangan "memperbaiki" ini lewat kode Worker.
 
 > Setelah semua P0 selesai, lanjut ke P1 berurutan.
 > Jangan kerjakan P2/P3 sebelum P0/P1 tuntas.
