@@ -31,7 +31,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B2 | Validasi & sanitasi input server-side | P1 | [x] | `c9db43b` |
 | B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [ ] | — |
 | B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
-| B5 | CORS ketat (hanya origin sendiri) | P1 | [ ] | — |
+| B5 | CORS ketat (hanya origin sendiri) | P1 | [x] | `d32c367` |
 | B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
 | B7 | Audit SQL injection (parameterized only) | **P0** | [x] | `ea05d42` |
 | B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [ ] | — |
@@ -106,9 +106,10 @@ File ini adalah **working copy** yang diupdate setiap tick.
 3. **B1** — Rate limit `/api/auth/login` (P1) — **SELESAI** `ea05b75`
 4. **B2** — Validasi & sanitasi input server-side (P1) — **SELESAI** `c9db43b`
    Jangan dikerjakan ulang. Periksa ulang dengan `node tools/verify_b2_run.mjs`.
-5. **B5** — CORS ketat, hanya origin sendiri (P1) — catatan: `jsonResponse`
-   masih mengirim `Access-Control-Allow-Origin: *`; A4 memperbaiki preflight
-   tapi tidak mempersempit origin. Ini bagian B5, belum dikerjakan.
+5. **B5** — CORS ketat, hanya origin sendiri (P1) — **SELESAI** `d32c367`.
+   Modul baru `functions/_cors.js`; 6 titik `*` dihapus; `Vary: Origin`
+   ditambahkan. Periksa ulang dengan `node tools/verify_b5_run.mjs`
+   (HASIL: HIJAU 50/50). Jangan dikerjakan ulang.
 6. **B1** — Rate limit `/api/auth/login` (P1)
 7. **B2** — Validasi & sanitasi input server-side (P1)
 8. **B5** — CORS ketat (P1) — `Access-Control-Allow-Origin: *` masih ada di

@@ -503,3 +503,63 @@ jalur serve aset statis di `src/index.js`.
 
 ---
 
+
+## Tick 12 — 2026-09-09T12:22:00+08:00 (B5 — CORS ketat)
+
+- Task: **B5** — CORS ketat: hanya origin sendiri (P1)
+- Perubahan:
+  - Modul baru `functions/_cors.js` — `isOriginAllowed()`, `corsHeaders()`,
+    `applyCors()`. Daftar izin: origin produksi
+    (`https://embun-laundry.dhanisepeda.workers.dev`) + semua
+    `*.dhanisepeda.workers.dev` (preview deploy) + `localhost`/`127.0.0.1`/
+    `[::1]` (dev) + `ALLOWED_ORIGINS` dari env (bisa diset di dasbor tanpa
+    ubah kode).
+  - 6 titik hardcoded `Access-Control-Allow-Origin: *` DIHAPUS:
+    `jsonResponse()` + `corsOptions()` di `_db.js`, dan `onRequestOptions`
+    di `auth/login.js`, `auth/logout.js`, `auth/register.js`, `health.js`.
+  - `src/index.js`: `applyCors()` dipasang di 3 jalur — preflight OPTIONS,
+    respons handler, dan 404 endpoint. Jadi header CORS terpusat di 1 titik,
+    tidak ada lagi yang bisa lolos.
+  - `Vary: Origin` dikirim bila ada header Origin → CDN tidak mencampur
+    respons antar-origin.
+- File:
+  - BARU: `functions/_cors.js`, `tools/verify_b5.mjs`,
+    `tools/verify_b5_run.mjs`
+  - UBAH: `functions/_db.js`, `src/index.js`,
+    `functions/api/auth/{login,logout,register}.js`, `functions/api/health.js`
+- Verifikasi (lokal):
+  - `node tools/verify_b5_run.mjs` → **HASIL: HIJAU — 50 lulus, 0 gagal**,
+    exit 0. Uji menjalankan `src/index.js` sungguhan (bukan fungsi
+    terisolasi) dengan `env.ASSETS` tiruan, lalu mengukur header yang
+    benar-benar keluar.
+  - Regresi: B7 HIJAU, B1 HIJAU, B2 47/47, A3b 15/15. `node --check` exit 0.
+  - Hex `index.html` tetap 11 (debt lama, tidak bertambah).
+- Verifikasi (produksi, setelah deploy ~95s) — mengukur AKHIRAT:
+  - Origin `https://evil.example.com` → **tanpa ACAO** di `/api/health`,
+    `/api/services`, `/api/orders`, `/api/profile`.
+  - Preflight OPTIONS dari origin jahat → **tanpa ACAO**, tetap 200
+    (tidak 405). Hanya Allow-Methods/Allow-Headers yang masih dikirim
+    (tidak membocorkan apa pun tanpa ACAO).
+  - Origin produksi → `Access-Control-Allow-Origin: https://...dhanisepeda
+    .workers.dev` (persis, bukan `*`), + `Max-Age: 86400`.
+  - `Vary: Origin` terkirim.
+  - Nol regresi: `/` 200, `/api/health` 200 `ok:true`, `/api/services` 200,
+    `/assets/design-tokens.css` 200, login admin **200 ok:true**,
+    `/dashboard` 200, `/api/orders` 200 (dengan cookie).
+- Commit: `d32c367`
+- Status: **SUKSES**
+- Catatan:
+  - Semua `fetch()` di `public/` memakai URL relatif (`/api/...`) → same
+    origin, jadi daftar izin aman dan tidak ada pemanggil yang patah.
+    Sudah diperiksa: 26 pemanggilan di `app.js`, `index.html`, `pay.html`,
+    `auth/*.html`, semuanya relatif.
+  - `Access-Control-Allow-Methods`/`-Headers` sengaja MASIH dikirim ke origin
+    asing: tanpa `Access-Control-Allow-Origin` browser tetap memblokir
+    respons, jadi ini tidak membocorkan data — dan menjaga preflight tidak
+    berubah jadi 405 (kontrak A4).
+  - Jika nanti butuh origin tambahan (domain kustom), set `ALLOWED_ORIGINS`
+    di dasbor Cloudflare — tidak perlu ubah kode.
+- Berikutnya: **B8** (PBKDF2 untuk hash sandi) atau FASE C (fitur). A6 tetap
+  terblokir (butuh Cloudflare API token).
+
+---
