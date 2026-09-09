@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T10:05:00+08:00
-Tick ke: 7
+Terakhir update: 2026-09-09T10:32:00+08:00
+Tick ke: 8
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -20,7 +20,7 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 5 selesai)
+- ID: — (tidak ada; tick 8 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
@@ -46,6 +46,19 @@ Model: cbai/hy4-preview (custom:9router)
     `#090d16` `#f59e0b` `#ef4444`) → calon task **A3b**
   - Tidak diganti juga: `<meta theme-color>` (`var()` tidak resolve di
     atribut HTML) dan blok `:root` inline (Gate 5 membolehkan)
+- **B7** — audit SQL injection (P0) — `ea05d42`
+  - Bukti, bukan keyakinan: 67 string SQL literal diaudit
+    (`tools/audit_sql_injection.py`), 57 ber-placeholder `?`, **0 memakai
+    interpolasi nilai user**. 17 handler diuji runtime
+    (`tools/verify_b7_run.mjs`) dengan canary → **0 SQL kotor**.
+  - 2 modul di-hardening (bukan "sudah aman dari dulu"):
+    - `dashboard.js`: fragmen `${custFilter}`/`${custFilterAnd}` yang
+      disambung ke SQL diganti dua bentuk SQL **penuh terpisah** yang
+      digerakkan boolean `scoped`.
+    - `reports.js`: `?group=` kini lookup di peta konstanta `GROUP_EXPR`;
+      kunci asing jatuh ke 'bulan' (terbukti: canary → `DATE_FORMAT`).
+  - Alat baru ter-commit: `audit_sql_injection.py`, `mock_tidb.mjs`,
+    `sql_guard_loader.mjs`, `verify_b7.mjs`, `verify_b7_run.mjs`.
 - **A4** — semua API `try/catch` → respons JSON `{ok}` konsisten — `c07ed88`
   - 2 defek produksi nyata diperbaiki (bukan sekadar "sudah ada try"):
     (1) body JSON rusak → **500 dari runtime**, kini 400 `{ok:false}`;
@@ -98,12 +111,24 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Catatan untuk tick berikutnya
 
-- **Urutan fokus**: **FASE A hampir tuntas** — A1, A2, A3, A4, A5, A7, A8
-  selesai; tinggal **A6** (terblokir, butuh Cloudflare API token).
-  → **Lanjut FASE B**: B7 (audit SQL injection, P0) → B1 (rate limit
-  `/api/auth/login`) → B2 (validasi input) → B5 (CORS ketat;
-  `Access-Control-Allow-Origin: *` masih terlihat di `/api/health`).
-  Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+- **Urutan fokus**: FASE A selesai kecuali **A6** (terblokir, butuh
+  Cloudflare API token). FASE B: **B7 selesai** (tick 8).
+  → **Berikutnya B1** (rate limit `/api/auth/login`, P1) → B2 (validasi
+  input) → B5 (CORS ketat; `Access-Control-Allow-Origin: *` masih ada di
+  `/api/*`). Opsional P2: **A3b** (token baru untuk 9 warna sisa).
+- **B7 JANGAN dikerjakan ulang.** Sudah tuntas `ea05d42`. Jika ingin
+  memeriksa ulang, jalankan `python tools/audit_sql_injection.py` (exit 0)
+  dan `node tools/verify_b7_run.mjs` (HASIL: HIJAU) — itu cukup, jangan
+  menulis ulang audit dari nol.
+- **Pola verifikasi B7 bisa dipakai lagi** untuk task keamanan lain:
+  ganti dependensi berbahaya dengan mock pencatat lewat ESM loader
+  (`tools/sql_guard_loader.mjs`), lalu ukur apa yang benar-benar dikirim,
+  bukan apa yang tertulis di sumber. Untuk B1 (rate limit) pola ini juga
+  cocok: panggil handler 20x dan hitung respons 429.
+- **`execute_code` DIBLOKIR di cron** (kebijakan: arbitrary local Python
+  butuh persetujuan; cron tidak punya user). Pakai `terminal` + skrip di
+  `tools/`, atau `search_files`. Jangan merencanakan langkah yang butuh
+  `execute_code`.
 - Untuk A3b: tambahkan dulu token ke `design-tokens.css`, baru ganti
   pemakaiannya. Jangan ganti hex ke token yang nilainya berbeda.
 - Blok `:root` inline di `index.html` MASIH ADA dan menang atas
