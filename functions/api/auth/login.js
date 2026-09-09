@@ -1,6 +1,6 @@
 // functions/api/auth/login.js
 import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
-import { clientKey, hit, peek, reset } from '../../_ratelimit.js';
+import { clientKey, consume, peek, clearAll } from '../../_ratelimit.js';
 
 // B1 — rate limit: 10 percobaan / 5 menit / IP.
 const RL_LIMIT = 10;
@@ -30,11 +30,11 @@ function reply(key, data, status, retryAfter = null) {
   return withRateHeaders(jsonResponse(data, status), remaining, retryAfter);
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, ctx }) {
   // Cegah brute-force SEBELUM menyentuh database — percobaan yang ditolak
   // tidak boleh menghabiskan koneksi DB.
   const key = `login:${clientKey(request)}`;
-  const rl = hit(key, RL_OPTS);
+  const rl = await consume(key, RL_OPTS);
   if (!rl.ok) {
     return reply(
       key,
@@ -111,9 +111,10 @@ export async function onRequestPost({ request, env }) {
       }
     });
 
-    // Catatan urutan: reset DULU, lalu tempel header. Kalau dibalik,
+    // Catatan urutan: bersihkan DULU, lalu tempel header. Kalau dibalik,
     // header akan melaporkan sisa 0 pada login yang justru berhasil.
-    reset(key);
+    // Tidak di-await: membersihkan jatah tidak boleh menahan respons login.
+    ctx?.waitUntil?.(clearAll(key));
     return withRateHeaders(res, RL_LIMIT);
   } catch (e) {
     return reply(key, { ok: false, msg: 'Server error: ' + e.message }, 500);

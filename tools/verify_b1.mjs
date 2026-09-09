@@ -13,8 +13,39 @@
 import * as loginHandler from '../functions/api/auth/login.js';
 import { resetAll, reset } from '../functions/_ratelimit.js';
 
+// ---------------------------------------------------------------------------
+// Palsukan Cache API supaya LAPIS 2 ikut teruji, bukan sekadar dilewati.
+//
+// Tanpa ini, `hitShared()` melihat `caches === undefined` di Node dan
+// langsung lulus — semua uji akan hijau untuk alasan yang salah. Pola ini
+// sama dengan B7: ganti dependensi berbahaya dengan pencatat, lalu ukur
+// apa yang benar-benar terjadi.
+// ---------------------------------------------------------------------------
+const sharedStore = new Map();
+const cacheLog = { get: 0, put: 0, del: 0 };
+
+globalThis.caches = {
+  default: {
+    async match(url) {
+      cacheLog.get++;
+      const raw = sharedStore.get(url);
+      if (raw == null) return undefined;
+      return new Response(raw, { headers: { 'Content-Type': 'application/json' } });
+    },
+    async put(url, res) {
+      cacheLog.put++;
+      sharedStore.set(url, await res.text());
+    },
+    async delete(url) {
+      cacheLog.del++;
+      return sharedStore.delete(url);
+    }
+  }
+};
+
 const LIMIT = 10;
 const N = 15;
+const SHARED_LIMIT = 20; // harus sama dengan SHARED_LIMIT di _ratelimit.js
 
 function rq(ip, body) {
   return new Request('https://example.test/api/auth/login', {
@@ -122,6 +153,7 @@ check(afterLimit.status === 429, `percobaan ke-${LIMIT + 1} diblokir 429`);
 
 // Sekarang reset manual (meniru login berhasil) lalu coba lagi.
 reset(`login:${goodIp}`);
+sharedStore.clear(); // lapis shared juga dibersihkan pada login berhasil
 const afterReset = await loginHandler.onRequestPost({
   request: rq(goodIp, { identity: 'admin@gmail.com', password: 'salah' }),
   env
@@ -145,6 +177,53 @@ const blocked = await loginHandler.onRequestPost({
   env
 });
 check(blocked.status === 429, `percobaan ke-${LIMIT + 1} -> 429`);
+
+console.log('\n# Uji 6 — lintas-isolate: memori direset tiap percobaan, shared menahan');
+// Inilah cacat yang ditemukan di produksi: counter memori per isolate, jadi
+// ambang praktis menjadi 10 x jumlah isolate (terukur: Remaining melonjak
+// 7 -> 6 -> 9 -> 5 -> 9 -> 8). Simulasikan "tiap percobaan jatuh ke isolate
+// berbeda" dengan mengosongkan MEMORI saja dan membiarkan entri shared
+// bertahan. Lapis memori saja akan lolos terus; lapis shared harus menahan.
+const nomadIp = '198.51.100.123';
+resetAll();
+sharedStore.clear();
+
+let blockedAt = null;
+for (let i = 1; i <= SHARED_LIMIT + 3; i++) {
+  resetAll(); // jatuh ke "isolate baru": memori selalu kosong
+  const r = await loginHandler.onRequestPost({
+    request: rq(nomadIp, { identity: 'a@b.c', password: 'zz' }),
+    env
+  });
+  if (r.status === 429 && blockedAt === null) blockedAt = i;
+}
+
+check(
+  blockedAt !== null,
+  `percobaan lintas-isolate akhirnya diblokir (mulai percobaan ke-${blockedAt})`
+);
+check(
+  blockedAt === SHARED_LIMIT + 1,
+  `blokir terjadi tepat pada ambang shared (harap ${SHARED_LIMIT + 1}, dapat ${blockedAt})`
+);
+
+console.log('\n# Uji 7 — Cache API mati total TIDAK boleh mengunci pengguna');
+// Kalau `caches` hilang/error, lapis shared harus gagal-terbuka (fail-open):
+// lebih baik tidak ada batas tambahan daripada login sah terblokir.
+const realCaches = globalThis.caches;
+globalThis.caches = undefined;
+resetAll();
+sharedStore.clear();
+let allPassed = true;
+for (let i = 0; i < LIMIT; i++) {
+  const r = await loginHandler.onRequestPost({
+    request: rq('203.0.113.200', { identity: 'x@y.z', password: 'pp' }),
+    env
+  });
+  if (r.status === 429) allPassed = false;
+}
+check(allPassed, 'tanpa Cache API, percobaan 1..' + LIMIT + ' tetap tidak 429 (fail-open)');
+globalThis.caches = realCaches;
 
 console.log(`\nHASIL: ${fail === 0 ? 'HIJAU' : 'MERAH — ' + fail + ' kegagalan'}`);
 process.exit(fail === 0 ? 0 : 1);
