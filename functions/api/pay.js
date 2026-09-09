@@ -26,10 +26,23 @@ export async function onRequest({ request, env }) {
       if (orders.length === 0) return jsonResponse({ ok: false, msg: 'Pesanan tidak ditemukan' }, 404);
       const order = orders[0];
 
+      // B10 — ISOLASI DATA. Halaman pembayaran dibuka lewat kode pesanan
+      // (semacam "capability URL"), jadi ia memang sengaja dapat diakses
+      // tanpa login — dan kode `ORD-<base36 waktu><3 karakter acak>` hanya
+      // punya ~46 ribu kemungkinan per milidetik, jadi bisa ditebak.
+      // Yang DIBUTUHKAN halaman itu hanyalah kode, layanan, berat, total,
+      // dan status bayar. Telepon dan alamat pelanggan tidak pernah
+      // ditampilkan, jadi jangan dikirim ke pemanggil yang bukan pemiliknya.
+      const isStaff = user && ['Admin', 'Owner', 'Staff'].includes(user.user_role);
+      const isOwner = !!user && !!user.user_name && order.customer_name === user.user_name;
+      const safeOrder = (isStaff || isOwner)
+        ? order
+        : { ...order, customer_phone: null, customer_address: null };
+
       // Get payment records
       const payments = await db.query('SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC', [order.id]);
 
-      return jsonResponse({ ok: true, order, payments });
+      return jsonResponse({ ok: true, order: safeOrder, payments });
     } catch (e) {
       return jsonResponse({ ok: false, msg: e.message }, 500);
     }

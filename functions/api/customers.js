@@ -9,10 +9,22 @@ export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
-  const isStaff = user && ['Admin', 'Owner', 'Staff'].includes(user.user_role);
+
+  // B10 — ISOLASI DATA (IDOR). Daftar pelanggan berisi PII (nama, telepon,
+  // alamat) dan tidak pernah dimaksudkan untuk umum: satu-satunya pemanggil
+  // adalah halaman Pelanggan di dashboard, yang cuma ditautkan untuk staf.
+  // Sebelumnya `isStaff` hanya dipakai untuk menolak POST, sehingga
+  // permintaan anonim (dan akun Customer biasa) tetap menerima SELURUH baris.
+  if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+
+  const isStaff = ['Admin', 'Owner', 'Staff'].includes(user.user_role);
 
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || '';
+
+  if (request.method === 'GET' && !isStaff) {
+    return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+  }
 
   if (request.method === 'GET' && !action) {
     try {
