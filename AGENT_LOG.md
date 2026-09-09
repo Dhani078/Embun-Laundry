@@ -405,3 +405,42 @@ jalur serve aset statis di `src/index.js`.
     diam-diam (pola B7: ganti dependensi, ukur nyatanya).
 
 ---
+
+## Tick 10 — 2026-09-09T11:30+08:00
+
+- Task: **A3b** (P2) — token baru untuk 9 warna sisa, hapus hardcoded hex
+- Perubahan: 13 token nilai-persis baru di `design-tokens.css`, lalu
+  migrasi 9 kemunculan hex di `index.html`. Sisa hex turun 22 → 11
+  kemunculan (10 di `:root` inline + 1 `<meta theme-color>`).
+- File: `public/assets/design-tokens.css`, `public/index.html`,
+  `tools/verify_a3b.py` (baru)
+- Verifikasi:
+  - `python tools/verify_a3b.py` → **HASIL: HIJAU (15/15)**, exit 0
+    (13 nilai token OK, 0 tabrakan nama, 27 var() ter-resolve, 0 hex sisa
+    di luar `:root`/`theme-color`)
+  - `python tools/hexdiff.py` → `baris_baru=0 hex_pada_baris_baru=0`
+  - `node --check` ×4 → exit 0; `</html>`=1, `authModal`=0, CSS brace 5/5
+  - Produksi (setelah deploy ~95s): `/` 200, `/api/health` 200,
+    `/api/services` 200, `/assets/design-tokens.css` 200; token baru
+    terlihat di CSS live (baris 87/98/103/105/106/107/110); halaman `/`
+    hanya memuat 2 hex (keduanya di `:root` inline); login admin
+    `ok:true`; `/api/services` 4 layanan
+- Commit: `f782d3d`
+- Status: **SUKSES**
+- Catatan:
+  - **Jebakan nama yang berhasil dihindari**: `--color-text-inverse` SUDAH
+    ada di `design-tokens.css` (nilai `#ffffff`) dan dipakai halaman lain.
+    Redefinisi untuk footer akan jadi tabrakan nilai tersembunyi. Dipakai
+    nama `--color-text-on-inverse*` sebagai gantinya.
+  - Harness verifikasi awalnya **MERAH** karena `var(--delay, 0ms)`.
+    Benar adanya bahwa `--delay` tidak punya deklarasi, tapi AMAN karena
+    semua pemakaiannya punya fallback. Pemeriksaannya DIPERBAIKI untuk
+    membedakan "tak terdefinisi" vs "tak terdefinisi tapi ber-fallback" —
+    bukan dilonggarkan supaya hijau.
+  - Keluarga **slate** sengaja terpisah dari **neutral** (warm): footer
+    landing didesain dengan slate dingin, jadi nilainya dijaga
+    bit-identical. Jangan "merapikan" slate → neutral; itu regresi visual
+    nyata, bukan penyederhanaan.
+
+---
+
