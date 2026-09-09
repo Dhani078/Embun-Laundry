@@ -17,10 +17,11 @@ export async function onRequest() {
 }
 
 export async function onRequestOptions() {
+  // B5: `Access-Control-Allow-Origin: *` DIHAPUS. Header yang bergantung
+  // pada origin dipasang terpusat oleh applyCors() di src/index.js.
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
