@@ -178,9 +178,10 @@ async function verifyPassword(password, hash) {
 }
 
 export async function onRequestOptions() {
+  // B5: `Access-Control-Allow-Origin: *` DIHAPUS. Header yang bergantung
+  // pada origin dipasang terpusat oleh applyCors() di src/index.js.
   return new Response(null, {
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }

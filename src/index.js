@@ -16,6 +16,7 @@ import * as payHandler from '../functions/api/pay.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
 import * as healthHandler from '../functions/api/health.js';
 import { withSecurityHeaders, SECURITY_HEADERS } from '../functions/_db.js';
+import { applyCors } from '../functions/_cors.js';
 
 function rewriteImagePath(pathname) {
   // Handle case-insensitive image requests - rewrite to actual filenames
@@ -60,7 +61,9 @@ export default {
         };
         const h = optMap[path];
         if (h?.onRequestOptions) {
-          return withSecurityHeaders(await h.onRequestOptions(context));
+          // B5: preflight juga lewat applyCors agar hanya origin izin yang
+          // mendapat Access-Control-Allow-Origin.
+          return applyCors(withSecurityHeaders(await h.onRequestOptions(context)), request, env);
         }
         // Handler lain menangani OPTIONS di dalam tubuhnya masing-masing.
       }
@@ -91,12 +94,16 @@ export default {
       else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
       else if (path === '/api/pay') resp = payHandler.onRequest(context);
 
-      if (resp) return withSecurityHeaders(await resp);
+      // B5: satu titik pemasangan header CORS untuk SELURUH /api/*,
+      // termasuk jalur 404 di bawah. Tanpa ini, respons yang dibuat
+      // langsung di sini (bukan lewat handler) tidak akan pernah
+      // mendapat header CORS.
+      if (resp) return applyCors(withSecurityHeaders(await resp), request, env);
 
-      return withSecurityHeaders(new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
+      return applyCors(withSecurityHeaders(new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
-      }));
+      })), request, env);
     }
 
     // Serve static assets from public directory

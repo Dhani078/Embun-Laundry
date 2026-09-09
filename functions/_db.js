@@ -26,10 +26,10 @@ export function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      // B5: `Access-Control-Allow-Origin: *` DIHAPUS dari sini.
+      // Header CORS kini dipasang oleh `applyCors()` di src/index.js
+      // berdasarkan daftar izin origin (functions/_cors.js).
+      'Content-Type': 'application/json; charset=utf-8'
     }
   });
 }
@@ -70,12 +70,17 @@ export async function readJson(request) {
  * Balasan preflight CORS standar.
  * Digunakan handler yang belum punya `onRequestOptions` sendiri supaya
  * browser tidak menerima 405 saat melakukan preflight.
+ *
+ * B5: `Access-Control-Allow-Origin: *` DIHAPUS. Header `Access-Control-*`
+ * yang bergantung pada origin kini dipasang terpusat oleh `applyCors()` di
+ * `src/index.js` (lihat `functions/_cors.js`). Yang masih dipasang di sini
+ * hanyalah daftar metode — itu tidak membocorkan apa pun karena tanpa
+ * `Access-Control-Allow-Origin` browser akan tetap memblokir responsnya.
  */
 export function corsOptions(methods = 'GET, POST, OPTIONS') {
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': methods,
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
