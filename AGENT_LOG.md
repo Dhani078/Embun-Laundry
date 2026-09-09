@@ -328,3 +328,47 @@ jalur serve aset statis di `src/index.js`.
   Setelahnya lanjut FASE B: B7 (audit SQL injection, P0), B1 (rate limit),
   B2 (validasi input), B5 (CORS ketat — `Access-Control-Allow-Origin: *`
   masih terlihat di `/api/health`).
+
+
+## Tick 8 — 2026-09-09T10:21:38+08:00
+
+- Task: **B7** (P0) — Audit SQL injection: buktikan semua query parameterized
+- Perubahan:
+  - `functions/api/dashboard.js` — fragmen `${custFilter}` / `${custFilterAnd}`
+    yang disambung ke SQL diganti dua bentuk SQL **penuh terpisah** yang
+    digerakkan boolean `scoped`. Konstanta `FILTER_WHERE` diberi nama agar
+    audit bisa memutihkannya.
+  - `functions/api/reports.js` — `?group=` tidak lagi memilih ekspresi GROUP BY
+    lewat if/else yang menyambung string; kini lookup di peta `GROUP_EXPR`.
+    Kunci asing (termasuk canary) jatuh ke 'bulan'.
+- File: 2 modul produksi + 5 alat audit baru di `tools/`
+- Verifikasi:
+  - `python tools/audit_sql_injection.py` → 67 SQL literal, 57 ber-`?`,
+    **0 interpolasi** (exit 0)
+  - `node tools/verify_b7_run.mjs` → 17 handler dipanggil sungguhan dengan
+    canary `x' OR 1=1 -- zzCANARYzz` + `zzUNIONzz/**/SELECT`:
+    **Total SQL kotor: 0 → HASIL: HIJAU**
+  - Uji peta GROUP BY: `group=hari` → `DATE(created_at)`;
+    `group="x' OR 1=1 -- zzCANARYzz"` → `DATE_FORMAT(created_at,'%Y-%m')`
+    (fallback aman, tidak bocor)
+  - Uji scoping: role=Customer → 4 query `customer_name = ?`, nama tidak
+    pernah disisipkan mentah; role=Admin → 0 (sesuai desain)
+  - `node --check` 6 file → exit 0
+  - Produksi (~95s): `/` `/api/health` `/api/services` `/dashboard`
+    `/robots.txt` `/assets/design-tokens.css` = 200; login admin & user
+    `ok:true`; `/api/dashboard` & `/api/reports` berisi data; bad-JSON → 400
+    `{ok:false}`; OPTIONS → 204 (kontrak A4 tidak regress)
+- Commit: `ea05d42`
+- Status: **SUKSES**
+- Catatan:
+  - Temuan penting: audit dangkal ("semua pakai `?`") akan mengatakan B7
+    sudah beres sejak awal. Yang sebenarnya rapuh adalah **pola**-nya: dua
+    modul menyambung fragmen SQL. Nilainya konstanta hari ini, tapi satu
+    edit saja bisa mengubahnya jadi vektor injeksi. Diperbaiki secara
+    struktural, bukan diberi komentar.
+  - 5 alat audit ter-commit supaya tick berikutnya mengulang *pengukuran*,
+    bukan mengulang *keyakinan*.
+  - `execute_code` diblokir kebijakan cron → semua skrip dijalankan lewat
+    `terminal` + berkas di `tools/`.
+
+---

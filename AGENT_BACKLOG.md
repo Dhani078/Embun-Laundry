@@ -33,7 +33,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
 | B5 | CORS ketat (hanya origin sendiri) | P1 | [ ] | — |
 | B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
-| B7 | Audit SQL injection (parameterized only) | **P0** | [ ] | — |
+| B7 | Audit SQL injection (parameterized only) | **P0** | [x] | `ea05d42` |
 | B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [ ] | — |
 
 ---
@@ -99,7 +99,10 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 1. **A6** — Secret di `wrangler.toml` (P0, keamanan) — TERBLOKIR, butuh
    Cloudflare API token
-2. **B7** — Audit SQL injection (P0)
+2. **B7** — Audit SQL injection (P0) — **SELESAI** `ea05d42`: 67 SQL
+   literal diaudit, 0 interpolasi nilai user, 2 modul di-hardening.
+   Alat: `tools/audit_sql_injection.py` (statik) + `tools/verify_b7_run.mjs`
+   (runtime, canary). Jangan dikerjakan ulang.
 3. **B1** — Rate limit `/api/auth/login` (P1)
 4. **B2** — Validasi & sanitasi input server-side (P1)
 5. **B5** — CORS ketat, hanya origin sendiri (P1) — catatan: `jsonResponse`
