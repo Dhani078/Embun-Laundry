@@ -172,6 +172,15 @@ const rows = await sql.execute('INSERT INTO users (...) VALUES (...)', [...]);
 10. **Setiap input user divalidasi di server**, bukan hanya client.
 11. **Commit tidak boleh memecah build.** Verifikasi dulu.
 12. **Password tidak pernah di-log**, tidak pernah dikembalikan ke client.
+13. **DILARANG menyalin secret ke file di working tree.** Termasuk
+    `TIDB_DATABASE_URL`, `JWT_SECRET`, atau kredensial apa pun — tidak boleh
+    ditulis ke `.tmp/`, file debug, atau file scratch lain, walau folder itu
+    sudah di-`gitignore`. Secret dibaca langsung dari `env`, bukan disalin.
+    (Pelanggaran nyata: tick pernah membuat `.tmp/dburl.txt` berisi URL DB.)
+14. **Tick tidak boleh menggantung tanpa batas.** Bila satu tick berjalan lebih
+    dari ~20 menit tanpa menghasilkan commit, akhiri dan laporkan di
+    `AGENT_LOG.md`. Lebih baik lapor "tidak selesai" daripada mengunci lock
+    sehingga fire berikutnya dilewati terus.
 
 ---
 
