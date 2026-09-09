@@ -15,15 +15,16 @@ const HERO_CONFIG = {
   canvasHeight: 1080,
 };
 
-// Palette — laundry blues + water tones
+// Palette — tuned for the DARK hero gradient (#1e3a8a → #3b82f6).
+// Values are HSB. Light/low-saturation strokes read as water over dark blue.
 const HERO_PALETTE = {
-  bg: [220, 15, 97],           // Near white with slight blue tint
-  primary: [220, 85, 65],      // Brand blue
-  accent: [180, 65, 55],       // Cyan accent
-  droplet: [220, 70, 75],      // Water droplet
-  ripple: [220, 40, 85],       // Subtle ripple
-  highlight: [45, 80, 95],     // Warm highlight (sunlight on water)
-  particle: [220, 20, 90],     // Ambient particles
+  bg: [220, 60, 18],           // Dark navy — only used when canvas is opaque
+  primary: [210, 80, 95],      // Bright water blue
+  accent: [185, 70, 90],       // Cyan accent
+  droplet: [205, 35, 100],     // Near-white water droplet
+  ripple: [200, 45, 100],      // Light ripple ring
+  highlight: [190, 25, 100],   // Specular highlight on droplet
+  particle: [205, 30, 100],    // Ambient particles
 };
 
 // Global state
@@ -36,11 +37,6 @@ let prefersReducedMotion = false;
 
 // Initialize p5 instance mode
 const heroSketch = (p) => {
-  
-  p.preload = () => {
-    // Disable friendly errors for performance
-    p.disableFriendlyErrors = true;
-  };
   
   p.setup = () => {
     // Check reduced motion preference
@@ -76,7 +72,10 @@ const heroSketch = (p) => {
       if (heroCanvas && container) {
         const nw = container.offsetWidth;
         const nh = container.offsetHeight;
+        if (nw === p.width && nh === p.height) return; // ignore mobile scroll-resize
         p.resizeCanvas(nw, nh);
+        buildOrbBuffer(p);   // orbs are scale-dependent — rebuild
+        initDroplets(p);     // keep droplets inside the new bounds
       }
     });
   };
@@ -88,8 +87,9 @@ const heroSketch = (p) => {
       return;
     }
     
-    // Clear with background
-    p.background(...HERO_PALETTE.bg);
+    // Transparent clear — let the CSS hero gradient show through.
+    // (background() would paint an opaque fill over the gradient.)
+    p.clear();
     
     // Draw subtle radial gradient orbs (ambient depth)
     drawAmbientOrbs(p);
@@ -301,24 +301,44 @@ function drawParticles(p) {
 // AMBIENT ORBS (BACKGROUND DEPTH)
 // ============================================================================
 
-function drawAmbientOrbs(p) {
-  // Three subtle radial gradients
-  const orbs = [
-    { x: p.width * 0.15, y: p.height * 0.2, r: p.width * 0.35, hue: 220, sat: 10, bri: 95, alpha: 8 },
-    { x: p.width * 0.85, y: p.height * 0.15, r: p.width * 0.3, hue: 180, sat: 15, bri: 92, alpha: 6 },
-    { x: p.width * 0.5, y: p.height * 0.9, r: p.width * 0.4, hue: 220, sat: 8, bri: 96, alpha: 5 },
-  ];
-  
-  for (const orb of orbs) {
-    const grad = p.drawingContext.createRadialGradient(
-      orb.x, orb.y, 0,
-      orb.x, orb.y, orb.r
-    );
+// The orbs are STATIC (they never animate), so they are pre-rendered once into
+// an offscreen buffer and blitted as a single image per frame. Rendering them
+// inline would mean 3 full-canvas gradient fills every frame (~6M px at 1920px).
+const HERO_ORBS = [
+  { x: 0.15, y: 0.20, r: 0.35, hue: 215, sat: 70, bri: 60, alpha: 7 },
+  { x: 0.85, y: 0.15, r: 0.30, hue: 185, sat: 75, bri: 55, alpha: 6 },
+  { x: 0.50, y: 0.90, r: 0.40, hue: 220, sat: 65, bri: 50, alpha: 5 },
+];
+
+let heroOrbBuffer = null;
+
+function buildOrbBuffer(p) {
+  if (!heroOrbBuffer) {
+    heroOrbBuffer = p.createGraphics(p.width, p.height);
+    heroOrbBuffer.pixelDensity(1);
+  } else {
+    heroOrbBuffer.resizeCanvas(p.width, p.height);
+  }
+
+  const g = heroOrbBuffer;
+  g.clear();
+  const ctx = g.drawingContext;
+
+  for (const orb of HERO_ORBS) {
+    const cx = orb.x * p.width;
+    const cy = orb.y * p.height;
+    const r = orb.r * p.width;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
     grad.addColorStop(0, `hsla(${orb.hue}, ${orb.sat}%, ${orb.bri}%, ${orb.alpha / 100})`);
     grad.addColorStop(1, `hsla(${orb.hue}, ${orb.sat}%, ${orb.bri}%, 0)`);
-    p.drawingContext.fillStyle = grad;
-    p.drawingContext.fillRect(0, 0, p.width, p.height);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, p.width, p.height);
   }
+}
+
+function drawAmbientOrbs(p) {
+  if (!heroOrbBuffer) buildOrbBuffer(p);
+  p.image(heroOrbBuffer, 0, 0);
 }
 
 // ============================================================================
@@ -326,7 +346,7 @@ function drawAmbientOrbs(p) {
 // ============================================================================
 
 function drawStaticFrame(p) {
-  p.background(...HERO_PALETTE.bg);
+  p.clear();
   drawAmbientOrbs(p);
   
   // Draw a few static droplets
@@ -356,9 +376,13 @@ function drawStaticFrame(p) {
 // ============================================================================
 
 function mountHeroCanvas() {
-  if (typeof p5 !== 'undefined' && !heroP5) {
-    heroP5 = new p5(heroSketch);
-  }
+  // Bail unless the container exists and p5 actually loaded — otherwise p5
+  // would inject a stray default canvas into <body>.
+  if (typeof p5 === 'undefined') return false;
+  if (!document.getElementById('hero-canvas-container')) return false;
+  if (heroP5) return true;
+  heroP5 = new p5(heroSketch);
+  return true;
 }
 
 function unmountHeroCanvas() {
@@ -369,6 +393,10 @@ function unmountHeroCanvas() {
     heroParticles = [];
     heroDroplets = [];
     heroRipples = [];
+  }
+  if (heroOrbBuffer) {
+    heroOrbBuffer.remove();   // free the offscreen canvas
+    heroOrbBuffer = null;
   }
 }
 
