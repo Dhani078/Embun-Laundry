@@ -8,7 +8,7 @@ directory = "./public"
 # security headers in src/index.js were never applied to HTML/CSS/JS (confirmed:
 # /robots.txt returned CF-Cache-Status: HIT with zero custom headers).
 # run_worker_first makes the Worker handle every request, including assets.
-run_worker_first = true
+run_worker_first = false
 
 [vars]
 TIDB_DATABASE = "embun_laundry"

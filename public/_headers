@@ -1,0 +1,11 @@
+# Native Cloudflare static-asset headers (B4).
+# Worker code cannot set these: with the default [assets] config Cloudflare
+# serves static files BEFORE the Worker runs (confirmed: / and /robots.txt
+# returned zero custom headers while /api/* had them). run_worker_first=true
+# did apply headers but broke / and /dashboard into 404, so we use _headers.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
