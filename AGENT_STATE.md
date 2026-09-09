@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T06:20:00+08:00
-Tick ke: 3
+Terakhir update: 2026-09-09T08:12:00+08:00
+Tick ke: 4
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -20,7 +20,7 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 3 selesai)
+- ID: — (tidak ada; tick 4 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
@@ -33,6 +33,9 @@ Model: cbai/hy4-preview (custom:9router)
 - **A7** — verifikasi 16 endpoint terdaftar — (sudah tuntas sejak awal)
 - **A1** — link design-tokens.css **SELESAI PENUH** — `21a94ea`
   - Termasuk perbaikan bug produksi: 2 aset yang belum ter-commit
+- **A2** — hero canvas p5.js + `#hero-canvas-container` — `23e3fe2`
+  - Perbaikan draft: palette dark + `clear()` (bukan `background()`),
+    `pointer-events:none`, guard mount, orbs pre-render ke buffer statis
 
 ## Blokir
 
@@ -48,10 +51,17 @@ Model: cbai/hy4-preview (custom:9router)
 ## Tech debt tercatat
 
 1. `wrangler.toml` berisi `TIDB_DATABASE_URL` + `JWT_SECRET` plaintext → **P0**.
-2. `public/assets/hero-canvas.js` sudah ter-commit & bisa diakses (200), tapi
-   **belum di-link** ke HTML mana pun → task **A2** berikutnya.
-3. `public/index.html` masih 40 hardcoded hex (18 warna unik) di blok `:root`
-   inline + body → task **A3**.
+2. `public/index.html` masih 40 baris hardcoded hex (42 kemunculan, 18 warna
+   unik) di blok `:root` inline + body → task **A3**.
+   - CATATAN PENGUKURAN: baseline tick 3 mencatat "40" karena memakai
+     `grep -c` (menghitung BARIS). `grep -o | wc -l` menghasilkan 42
+     (menghitung KEMUNCULAN). Keduanya benar — 42 kemunculan pada 40 baris.
+     Untuk A3, ukur konsisten dengan `tools/hexdiff.py` (laporkan keduanya).
+2b. p5.js kini dependensi baru (CDN 1.03MB, SRI-pinned, deferred).
+   - Draft `hero-canvas.js` awalnya TIDAK bisa dipakai langsung: palette
+     near-white di atas hero gradient gelap. Sudah diperbaiki.
+   - Jika nanti ingin nol dependensi, port sketch ke raw canvas 2D
+     (~150 baris) dan hapus tag p5 + integrity.
 4. 4 tabrakan nama token `index.html` vs `design-tokens.css`:
    `--radius-lg` (18 vs 12px), `--radius-md` (12 vs 8px), `--radius-sm`
    (8 vs 6px), `--shadow-sm` (beda nilai). Link sengaja diletakkan SEBELUM
@@ -60,17 +70,22 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Catatan untuk tick berikutnya
 
-- **Urutan fokus**: A2 → A3 → A4 → A8 (A6 terblokir, jangan dipaksa).
+- **Urutan fokus**: A3 → A4 → A8 (A6 terblokir, jangan dipaksa).
 - `tools/analyze_tokens.py` ada (belum di-commit) — berguna untuk A3: cetak
   tabrakan token + daftar hex. Hapus atau commit jika tidak dipakai.
-- Saat A2: pakai container `#hero-canvas-container`, p5.js via CDN, dan
-  hormati `prefers-reduced-motion` + jangan `console.log` di draw loop.
+- `tools/hexdiff.py` + `tools/verify_a2.py` berguna untuk verifikasi
+  (hex HEAD vs kerja, dan post-deploy produksi). Belum di-commit.
+- **Browser tool TERBLOKIR** di cron: Chrome minta persetujuan remote
+  debugging manual. Verifikasi runtime harus lewat DOM/HTTP (cukup untuk
+  A3/A4/A8; B1 rate-limit juga bisa di-HTTP).
+- Saat A3: hapus blok `:root` inline di index.html agar token
+  design-tokens.css menang. Waspadai 4 tabrakan nilai (lihat tech debt #4).
 - Ingat: `@tidbcloud/serverless` `execute()` return `[]` untuk INSERT —
   pakai SELECT terpisah.
 - Jangan ubah `name = "embun-laundry"` di `wrangler.toml`.
 - Jangan sentuh `auth/login.html` dan `auth/register.html` (inline CSS stabil).
 
-## Checklist tick terakhir (tick 3)
+## Checklist tick terakhir (tick 4 — A2)
 
 ```
 [x] Baca AGENT24.md + AGENT_STATE.md
