@@ -28,7 +28,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
 | B1 | Rate limit `/api/auth/login` (in-memory per-IP) | P1 | [x] | `9981427` `ea05b75` |
-| B2 | Validasi & sanitasi input server-side | P1 | [ ] | — |
+| B2 | Validasi & sanitasi input server-side | P1 | [x] | `c9db43b` |
 | B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [ ] | — |
 | B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
 | B5 | CORS ketat (hanya origin sendiri) | P1 | [ ] | — |
@@ -103,8 +103,9 @@ File ini adalah **working copy** yang diupdate setiap tick.
    literal diaudit, 0 interpolasi nilai user, 2 modul di-hardening.
    Alat: `tools/audit_sql_injection.py` (statik) + `tools/verify_b7_run.mjs`
    (runtime, canary). Jangan dikerjakan ulang.
-3. **B1** — Rate limit `/api/auth/login` (P1)
-4. **B2** — Validasi & sanitasi input server-side (P1)
+3. **B1** — Rate limit `/api/auth/login` (P1) — **SELESAI** `ea05b75`
+4. **B2** — Validasi & sanitasi input server-side (P1) — **SELESAI** `c9db43b`
+   Jangan dikerjakan ulang. Periksa ulang dengan `node tools/verify_b2_run.mjs`.
 5. **B5** — CORS ketat, hanya origin sendiri (P1) — catatan: `jsonResponse`
    masih mengirim `Access-Control-Allow-Origin: *`; A4 memperbaiki preflight
    tapi tidak mempersempit origin. Ini bagian B5, belum dikerjakan.
