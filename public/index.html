@@ -688,6 +688,24 @@ a { text-decoration: none; }
   100% { transform: translateY(0) rotate(-0.2deg); }
 }
 
+/* Hero canvas (p5.js) — decorative, non-interactive overlay */
+#hero-canvas-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none; /* never block CTA buttons / text selection */
+  overflow: hidden;
+}
+#hero-canvas-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.hero > .container {
+  position: relative;
+  z-index: 1; /* keep copy + CTAs above the canvas */
+}
+
 @media (max-width: 1024px) {
   .hero-grid {
     grid-template-columns: 1fr;
@@ -765,6 +783,8 @@ body.no-scroll { overflow: hidden; }
 </header>
 
 <section class="hero">
+  <!-- Decorative generative water animation (p5.js). aria-hidden + pointer-events:none -->
+  <div id="hero-canvas-container" aria-hidden="true"></div>
   <div class="container hero-grid">
     <div>
       <h1>Laundry jadi cepat,<br/>rapi, dan terpantau.</h1>
@@ -1123,5 +1143,16 @@ if (mock && heroImg) {
   });
 }
 </script>
+
+<!-- Hero canvas: p5.js (SRI-pinned) + sketch. Deferred, non-blocking, decorative only.
+     If the CDN fails, mountHeroCanvas() no-ops and the CSS gradient hero stands alone. -->
+<script
+  src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"
+  integrity="sha384-6Twx1hAeKnwfOYJAHtYeJETRiGD5pRPkjjh0pVbG1QoesncjOpw5e75Y1kOkXeRI"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+  defer
+></script>
+<script src="/assets/hero-canvas.js" defer></script>
 </body>
 </html>
