@@ -8,8 +8,19 @@ export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
-  const isStaff = user && ['Admin', 'Owner', 'Staff'].includes(user.user_role);
-  const myName = user?.user_name || '';
+
+  // B10 — ISOLASI DATA (IDOR). Tugas pickup/delivery memuat nama, telepon,
+  // dan ALAMAT lengkap pelanggan. Tanpa sesi `myName` kosong, sehingga
+  // filter `customer_name` tidak pernah terpasang dan seluruh tugas (termasuk
+  // alamat rumah) terbuka untuk siapa pun. Fail-closed.
+  if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+
+  const isStaff = ['Admin', 'Owner', 'Staff'].includes(user.user_role);
+  const myName = user.user_name || '';
+
+  if (!isStaff && !myName) {
+    return jsonResponse({ ok: false, msg: 'Sesi tidak lengkap' }, 401);
+  }
 
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || '';

@@ -9,8 +9,27 @@ export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
-  const isStaff = user && ['Admin', 'Owner', 'Staff'].includes(user.user_role);
-  const myName = user?.user_name || '';
+
+  // B10 — ISOLASI DATA (IDOR).
+  // Sebelumnya handler ini sengaja mengizinkan `user === null`: tanpa sesi,
+  // `myName` menjadi '' sehingga cabang `!isStaff && myName` TIDAK menambahkan
+  // filter `customer_name` — akibatnya `GET /api/orders` TANPA cookie
+  // mengembalikan SELURUH pesanan (nama, telepon, alamat, nominal) milik
+  // semua pelanggan. Terbukti di produksi: 3 order dari 3 pelanggan berbeda
+  // tampil untuk permintawanonim.
+  // Tidak ada satu pun halaman yang mengambil /api/orders tanpa sesi
+  // (hanya dashboard, setelah /api/me ok), jadi 401 di sini tidak merusak UI.
+  if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+
+  const isStaff = ['Admin', 'Owner', 'Staff'].includes(user.user_role);
+  const myName = user.user_name || '';
+
+  // Gagal tertutup (fail-closed): pelanggan yang sesinya tidak memuat nama
+  // TIDAK boleh jatuh ke "lihat semua". Sebelumnya kondisi ini justru
+  // menjadi jalan pintas menuju seluruh tabel.
+  if (!isStaff && !myName) {
+    return jsonResponse({ ok: false, msg: 'Sesi tidak lengkap' }, 401);
+  }
 
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || '';
@@ -78,10 +97,6 @@ export async function onRequest({ request, env }) {
       const act = body.action || action;
 
       if (act === 'create_order') {
-        if (!isStaff && !user) {
-          return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
-        }
-
         // B2 — berat 1..1000 kg, harga & diskon non-negatif, teks dibatasi.
         // Sebelumnya `Math.max(1, parseInt(...)||1)` mengizinkan 100000 kg dan
         // `body.customer_*` dikirim apa adanya tanpa batas panjang.
