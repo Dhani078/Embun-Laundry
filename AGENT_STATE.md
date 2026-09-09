@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T08:12:00+08:00
-Tick ke: 4
+Terakhir update: 2026-09-09T09:20:00+08:00
+Tick ke: 5
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -20,7 +20,7 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 4 selesai)
+- ID: — (tidak ada; tick 5 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
@@ -36,6 +36,14 @@ Model: cbai/hy4-preview (custom:9router)
 - **A2** — hero canvas p5.js + `#hero-canvas-container` — `23e3fe2`
   - Perbaikan draft: palette dark + `clear()` (bukan `background()`),
     `pointer-events:none`, guard mount, orbs pre-render ke buffer statis
+- **A4** — semua API `try/catch` → respons JSON `{ok}` konsisten — `c07ed88`
+  - 2 defek produksi nyata diperbaiki (bukan sekadar "sudah ada try"):
+    (1) body JSON rusak → **500 dari runtime**, kini 400 `{ok:false}`;
+    (2) preflight OPTIONS → **405/401** di 11/16 endpoint, kini 204/200
+  - Helper baru di `_db.js`: `readJson(request)` + `corsOptions(methods)`
+  - `me.js` dibungkus try/catch (satu-satunya `await` di luar guard)
+  - Alat audit ikut ter-commit: `tools/audit_api_guard.py`,
+    `tools/audit_throw_sites.py`, `tools/probe_api.py`
 
 ## Blokir
 
@@ -70,11 +78,24 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Catatan untuk tick berikutnya
 
-- **Urutan fokus**: A3 → A4 → A8 (A6 terblokir, jangan dipaksa).
-- `tools/analyze_tokens.py` ada (belum di-commit) — berguna untuk A3: cetak
-  tabrakan token + daftar hex. Hapus atau commit jika tidak dipakai.
-- `tools/hexdiff.py` + `tools/verify_a2.py` berguna untuk verifikasi
-  (hex HEAD vs kerja, dan post-deploy produksi). Belum di-commit.
+- **Urutan fokus**: A3 → A8 (A4 SELESAI di tick 5). A6 terblokir, jangan
+  dipaksa. Setelah A3/A8, fase A tuntas → lanjut FASE B (B1 rate limit,
+  B2 validasi input, B5 CORS ketat) atau FASE C.
+- **PENTING — jangan percaya `grep -c try` untuk A4**: 14/16 handler sudah
+  punya `try`, jadi audit dangkal akan bilang "A4 hampir selesai". Yang
+  rusak justru yang tidak terlihat: body JSON rusak dan preflight OPTIONS.
+  Pakai `tools/probe_api.py` (lawan produksi) untuk mengukur kontrak, bukan
+  menghitung kata kunci.
+- `tools/probe_api.py` **TIDAK BISA dipakai apa adanya**: urllib
+  (UA `Python-urllib/*`) diblokir Cloudflare → error 1010, semua respons
+  403. Pakai `curl` (UA default) untuk probe produksi. Jika ingin memakai
+  script itu lagi, set UA browser lewat header.
+- Saat A3: hapus blok `:root` inline di index.html agar token
+  design-tokens.css menang. Waspadai 4 tabrakan nilai (lihat tech debt #4).
+- Sekarang ada 3 alat audit (sudah ter-commit): `audit_api_guard.py`
+  (try/catch per handler), `audit_throw_sites.py` (buktikan handler tanpa
+  try aman = nol throw site), `probe_api.py` (kontrak lawan produksi).
+  `analyze_tokens.py` + `hexdiff.py` + `verify_a2.py` untuk A3.
 - **Browser tool TERBLOKIR** di cron: Chrome minta persetujuan remote
   debugging manual. Verifikasi runtime harus lewat DOM/HTTP (cukup untuk
   A3/A4/A8; B1 rate-limit juga bisa di-HTTP).
