@@ -36,6 +36,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B7 | Audit SQL injection (parameterized only) | **P0** | [x] | `ea05d42` |
 | B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [x] | `87d3fa9` |
 | B9 | Escaping HTML data dari API (stored XSS) | **P0** | [x] | `be7d8cd` |
+| B10 | Isolasi data (IDOR) orders/customers/delivery/pay | **P0** | [x] | `db95930` |
+| B11 | Hak akses laporan + validasi rentang tanggal | **P0** | [x] | `5534bc3` |
 
 ---
 
@@ -122,9 +124,26 @@ File ini adalah **working copy** yang diupdate setiap tick.
    membaca `env.JWT_SECRET`, TETAPI `wrangler.toml` [vars] masih menaruh
    nilai aslinya sehingga fallback hardcoded tidak pernah benar-benar mati.
    Butuh `wrangler secret put` → terblokir bersama A6 (butuh Cloudflare API
-   token).
-8. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
-   lampau (B1/B2/B5/A3b sudah `[x]` di tabel masing-masing). Abaikan.
+   token). Dikonfirmasi ulang tick 15: `npx wrangler whoami` →
+   "You are not authenticated".
+8. **B10** — isolasi data / IDOR (P0) — **SELESAI** `db95930` (tick 14,
+   baru tercatat di backlog pada tick 15). Periksa ulang dengan
+   `node tools/verify_b10_run.mjs` (HASIL: HIJAU 29/29). **PAKAI pembungkus
+   `_run.mjs`** — menjalankan `verify_b10.mjs` langsung menghasilkan MERAH
+   14/29 PALSU karena mock DB tidak terpasang. Jangan dikerjakan ulang.
+9. **B11** — hak akses laporan + rentang tanggal (P0) — **SELESAI**
+   `5534bc3` (tick 15). Dua defek di `/api/reports`: akun Customer menerima
+   200 + seluruh agregat (hardening, BUKAN IDOR — jangan diklaim lebih), dan
+   `?start=`/`?end=` disambung mentah sebelum masuk `BETWEEN` sehingga nilai
+   ngawur diterima 200. BARU `functions/_reportfilter.js` ( satu penjaga
+   `dateRange()`). Periksa ulang dengan `node tools/verify_b11_run.mjs`
+   (HASIL: HIJAU 41/41). Jangan dikerjakan ulang.
+10. **Celakanya cakupan verifier**: B10 dan B11 lolos berbulan-bulan karena
+    tidak ada harness yang memanggil endpointnya. Sebelum mengerjakan task
+    baru, tanyakan "endpoint mana yang belum punya harness?" — saat ini:
+    `checkin.js` dan `vouchers.js`.
+11. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
+    lampau (B1/B2/B5/A3b sudah `[x]` di tabel masing-masing). Abaikan.
 
 ### Status FASE A
 
