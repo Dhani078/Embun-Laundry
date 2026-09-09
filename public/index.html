@@ -102,10 +102,10 @@ a { text-decoration: none; }
   height: 36px;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-neutral-0);
 }
 .brand-text {
-  color: #ffffff;
+  color: var(--color-neutral-0);
   font-weight: 800;
   font-size: 1.25rem;
   font-family: 'Outfit', sans-serif;
@@ -139,7 +139,7 @@ a { text-decoration: none; }
 }
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--color-neutral-0);
   box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover {
@@ -156,7 +156,7 @@ a { text-decoration: none; }
   color: var(--accent);
 }
 .btn-outline {
-  background: #fff;
+  background: var(--color-neutral-0);
   border-color: var(--border-light);
   color: var(--text-main);
 }
@@ -167,14 +167,14 @@ a { text-decoration: none; }
   transform: translateY(-2px);
 }
 .site-header .btn-ghost {
-  color: #ffffff;
+  color: var(--color-neutral-0);
 }
 .site-header .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--color-neutral-0);
 }
 .site-header .btn-primary {
-  background: #ffffff;
+  background: var(--color-neutral-0);
   color: var(--accent);
 }
 .site-header .btn-primary:hover {
@@ -203,8 +203,8 @@ a { text-decoration: none; }
 
 /* Hero */
 .hero {
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-600) 50%, var(--color-brand-500) 100%);
+  color: var(--color-neutral-0);
   padding: 160px 0 100px;
   position: relative;
   overflow: hidden;
@@ -222,7 +222,7 @@ a { text-decoration: none; }
   margin: 0 0 16px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: var(--color-neutral-0);
 }
 .hero p.lead {
   color: rgba(255, 255, 255, 0.85);
@@ -236,7 +236,7 @@ a { text-decoration: none; }
   gap: 8px;
   align-items: center;
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-neutral-0);
   padding: 6px 14px;
   border-radius: 999px;
   font-weight: 600;
@@ -249,7 +249,7 @@ a { text-decoration: none; }
   gap: 16px;
 }
 .hero .btn-primary {
-  background: #ffffff;
+  background: var(--color-neutral-0);
   color: var(--accent);
 }
 .hero .btn-primary:hover {
@@ -261,12 +261,12 @@ a { text-decoration: none; }
 .hero .btn-outline {
   background: transparent;
   border-color: rgba(255, 255, 255, 0.4);
-  color: #ffffff;
+  color: var(--color-neutral-0);
 }
 .hero .btn-outline:hover {
-  border-color: #ffffff;
+  border-color: var(--color-neutral-0);
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-neutral-0);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
@@ -347,7 +347,7 @@ a { text-decoration: none; }
 }
 .promo button.is-active {
   background: var(--accent);
-  color: #fff;
+  color: var(--color-neutral-0);
   border-color: var(--accent);
 }
 
@@ -414,7 +414,7 @@ a { text-decoration: none; }
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent);
-  color: #fff;
+  color: var(--color-neutral-0);
   padding: 4px 14px;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -450,7 +450,7 @@ a { text-decoration: none; }
 .bento-cell.large {
   grid-column: 1 / 2;
   grid-row: 1 / 3;
-  background: linear-gradient(135deg, var(--accent-soft) 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--color-neutral-0) 100%);
   border-color: var(--accent-border);
   min-height: 464px;
 }
@@ -468,7 +468,7 @@ a { text-decoration: none; }
 }
 .bento-cell.large .ic {
   background: var(--accent);
-  color: #fff;
+  color: var(--color-neutral-0);
   border: none;
 }
 .bento-cell h4 {
@@ -527,7 +527,7 @@ a { text-decoration: none; }
   transition: color 0.2s ease;
 }
 .list-plain li a:hover {
-  color: #ffffff;
+  color: var(--color-neutral-0);
 }
 .footer-bottom {
   text-align: center;
@@ -560,7 +560,7 @@ a { text-decoration: none; }
   to { opacity: 1; }
 }
 .sheet {
-  background: #ffffff;
+  background: var(--color-neutral-0);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: min(480px, 100%);
@@ -611,7 +611,7 @@ a { text-decoration: none; }
   font-size: 1rem;
   font-family: inherit;
   color: var(--text-main);
-  background: #fff;
+  background: var(--color-neutral-0);
   transition: all 0.2s ease;
 }
 .sheet .input:focus {
@@ -660,7 +660,7 @@ a { text-decoration: none; }
 
 /* Auth Modal Styles */
 .auth-modal-sheet {
-  background: #ffffff;
+  background: var(--color-neutral-0);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: min(440px, 100%);
@@ -746,7 +746,7 @@ a { text-decoration: none; }
     justify-content: center;
   }
   .site-header {
-    background: #ffffff;
+    background: var(--color-neutral-0);
     border-bottom: 1px solid var(--border-light);
   }
   .site-header .brand-text {
@@ -816,7 +816,7 @@ body.no-scroll { overflow: hidden; }
 
       <div class="pill">
         <span style="color:#f59e0b">★★★★★</span>
-        <span style="opacity:.9; color: #ffffff; margin-left: 4px;">4.9/5 dari 1.200+ pelanggan</span>
+        <span style="opacity:.9; color: var(--color-neutral-0); margin-left: 4px;">4.9/5 dari 1.200+ pelanggan</span>
       </div>
       <div class="cta-row">
         <a class="btn btn-primary js-scroll" href="#harga">Pesan Sekarang</a>
