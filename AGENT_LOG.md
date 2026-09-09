@@ -444,3 +444,62 @@ jalur serve aset statis di `src/index.js`.
 
 ---
 
+## Tick 11 — 2026-09-09T12:15+08:00
+
+- Task: **B2** (P1) — validasi & sanitasi input server-side
+- Perubahan:
+  - Modul baru `functions/_validate.js` (161 baris): `validate(body, spec)`
+    mengembalikan objek hasil (TIDAK melempar) supaya kontrak A4 tetap
+    rapi. Tipe field: `str`, **`raw`**, `int`, `enum`, `bool`, `email`,
+    `date`. `cleanStr()` membuang karakter kontrol (NUL..US, DEL) dan
+    merapikan spasi.
+  - 7 handler dipasang: `customers`, `services`, `orders`, `promos`,
+    `vouchers`, `auth/register`, `auth/login`. Semua parameter GET
+    pencarian (`q`, `cat`, `tag`, `status`) kini dibersihkan + dibatasi.
+- File: `functions/_validate.js` (baru), 7 handler, `tools/verify_b2.mjs`
+  + `tools/verify_b2_run.mjs` (baru)
+- Verifikasi:
+  - `node tools/verify_b2_run.mjs` → **HASIL: HIJAU (47/47)**, exit 0
+    (12 uji satuan validator + 25 uji "input buruk → 400" + 3 uji
+    sanitasi SQL + 1 uji 401 tanpa sesi + 1 uji "string raksasa tidak
+    sampai ke DB")
+  - `node --check` seluruh `functions/**/*.js` → exit 0
+  - Regresi: B7 HIJAU, B1 HIJAU (7 uji), A3b HIJAU (15/15)
+- Commit: `c9db43b`
+- Status: **SUKSES**
+- Defek nyata yang ditemukan (bukan sekadar "tambah validasi"):
+  1. `Math.max(1, parseInt(weight_kg) || 1)` mengizinkan **berat 100000
+     kg** — order senilai miliaran dari satu input; kini 1..1000.
+  2. `bulk_claim` menerima **daftar user tanpa batas** (`[1..100000]`
+     dalam satu permintaan); kini maks 500 dan tiap id wajib bulat.
+  3. Register **tidak punya batas bawah sandi sama sekali** — sandi
+     1 karakter diterima; kini minimal 6.
+  4. `start`/`end` digabung mentah menjadi `'<nilai> 00:00:00'` lalu
+     dikirim ke TiDB; kini wajib `YYYY-MM-DD` (kalender nyata, bukan
+     sekadar regex — `2026-02-30` ditolak).
+  5. Promo tipe `percent` bisa bernilai **500**; kini maks 100.
+- Catatan:
+  - **Jebakan yang berhasil dihindari**: `cleanStr()` pada kata sandi
+    akan MERUSAK sandi yang mengandung spasi ganda. Karena itu
+    ditambahkan tipe **`raw`** — panjang dibatasi, isi tidak disentuh.
+    Semua field sandi (`login.password`, `register.password/confirm`)
+    memakai `raw`.
+  - `cleanStr()` mengganti karakter kontrol jadi **SPASI**, bukan
+    menghapus: `'Budi\0Santoso'` → `'Budi Santoso'`, bukan
+    `'BudiSantoso'` (dua kata tidak melebur).
+  - Harness awalnya **MERAH** karena uji `cleanStr` mengekpektasi
+    penghapusan. Pemeriksanya DIBENARKAN sesuai semantik yang disengaja —
+    bukan dilonggarkan.
+  - **URL produksi ternyata `dhanisepeda`, bukan `dhani078`.** Beberapa
+    menit terbuang untuk resolusi DNS yang gagal; sumber kebenarannya
+    ada di `public/sitemap.xml`. Sudah dicatat di AGENT_STATE.md.
+  - Post-verify produksi mengukur AKHIRAT, bukan "masih 200": login
+    raksasa → 400, register email buruk → 400, `move_status` status asing
+    → 400, persen 500 → 400, **dan jalur sukses tetap jalan**:
+    `create_customer` mengembalikan `"Budi Santoso"` / `"Jl. Melati
+    No. 1"` (spasi dirapikan di server), baris uji lalu dihapus.
+- Berikutnya: **B5** — CORS ketat (`Access-Control-Allow-Origin: *` masih
+  di `jsonResponse()` & `corsOptions()`).
+
+---
+

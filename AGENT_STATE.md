@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T11:40:00+08:00
-Tick ke: 10
+Terakhir update: 2026-09-09T12:15:00+08:00
+Tick ke: 11
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -27,6 +27,25 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task selesai
 
+- **B2** — validasi & sanitasi input server-side (P1) — `c9db43b`
+  - Modul baru `functions/_validate.js`: `validate(body, spec)`,
+    `validateOr400()`, `cleanStr()`, `isEmail()`, `isDate()`.
+    Tipe: `str`, **`raw`** (kata sandi: panjang dibatasi, TIDAK
+    dibersihkan), `int`, `enum`, `bool`, `email`, `date`.
+  - 7 handler dipasang: `customers`, `services`, `orders`, `promos`,
+    `vouchers`, `auth/register`, `auth/login`.
+  - Defek nyata yang diperbaiki (bukan "sudah aman dari dulu"):
+    (1) `Math.max(1, parseInt(weight_kg))` mengizinkan **100000 kg**, kini
+    1..1000; (2) `bulk_claim` menerima **daftar user tak terbatas**, kini
+    maks 500; (3) register **tidak punya batas bawah sandi**, kini min 6;
+    (4) `start`/`end` digabung mentah ke `'... 00:00:00'`, kini wajib
+    `YYYY-MM-DD`; (5) persen promo bisa **500**, kini maks 100.
+  - Bukti: `node tools/verify_b2_run.mjs` → **HIJAU 47/47**, exit 0.
+    Regresi hijau: B7, B1, A3b. `node --check` semua → exit 0.
+  - **JANGAN dikerjakan ulang.**
+  - **PERINGATAN**: `cleanStr()` mengganti karakter kontrol jadi SPASI
+    (bukan menghapus) agar kata tak melebur. Kata sandi wajib pakai tipe
+    `raw` — jangan pernah `cleanStr()` pada sandi.
 - **A3b** — token baru untuk 9 warna sisa (P2) — `f782d3d`
   - 13 token nilai-persis: `--color-slate-50/400/500/800/950`,
     `--color-bg-inverse`, `--color-border-inverse`,
@@ -131,11 +150,18 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Catatan untuk tick berikutnya
 
+- **URL PRODUKSI**: `https://embun-laundry.dhanisepeda.workers.dev` —
+  bukan `dhani078`. Sumber kebenaran: `public/sitemap.xml`.
 - **Urutan fokus**: FASE A selesai kecuali **A6** (terblokir, butuh
-  Cloudflare API token). FASE B: **B7 selesai** (tick 8), **B1 selesai**
-  (tick 9). A3b selesai (tick 10).
-  → **Berikutnya B2** (validasi & sanitasi input server-side, P1) → B5
-  (CORS ketat; `Access-Control-Allow-Origin: *` masih ada di `/api/*`).
+  Cloudflare API token). FASE B: **B7 selesai**, **B1 selesai**,
+  **A3b selesai**, **B2 selesai (tick 11)**.
+  → **Berikutnya B5** (CORS ketat; `Access-Control-Allow-Origin: *` masih
+  ada di `jsonResponse()` dan `corsOptions()` di `functions/_db.js`).
+  Hati-hati: landing page dan dashboard disajikan dari origin yang sama,
+  jadi daftar izin harus memuat domain produksi; uji preflight sungguhan
+  dengan `Origin:` header sebelum menandai selesai.
+- **B2 JANGAN dikerjakan ulang.** Sudah tuntas `c9db43b`. Periksa ulang
+  dengan `node tools/verify_b2_run.mjs` (exit 0, HASIL: HIJAU 47/47).
 - **A3b JANGAN dikerjakan ulang.** Sudah tuntas `f782d3d`. Untuk memeriksa
   ulang: `python tools/verify_a3b.py` (exit 0, HASIL: HIJAU).
 - **B1 JANGAN dikerjakan ulang.** Sudah tuntas `ea05b75`. Untuk memeriksa
