@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T12:15:00+08:00
-Tick ke: 11
+Terakhir update: 2026-09-09T12:40:00+08:00
+Tick ke: 12
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -27,6 +27,28 @@ Model: cbai/hy4-preview (custom:9router)
 
 ## Task selesai
 
+- **B5** — CORS ketat: hanya origin sendiri (P1) — `d32c367`
+  - Modul baru `functions/_cors.js`: `isOriginAllowed()`, `corsHeaders()`,
+    `applyCors()`. Daftar izin: origin produksi + `*.dhanisepeda.workers.dev`
+    (preview) + `localhost`/`127.0.0.1`/`[::1]` (dev) + `ALLOWED_ORIGINS`
+    dari env.
+  - 6 titik hardcoded `Access-Control-Allow-Origin: *` DIHAPUS:
+    `jsonResponse()` + `corsOptions()` (`_db.js`) dan `onRequestOptions` di
+    `auth/login`, `auth/logout`, `auth/register`, `health`.
+  - `src/index.js`: `applyCors()` dipasang di 3 jalur (preflight OPTIONS,
+    respons handler, 404 endpoint) → terpusat, tidak ada yang lolos.
+  - `Vary: Origin` dikirim bila ada header Origin → CDN tidak mencampur
+    respons antar-origin.
+  - Bukti: `node tools/verify_b5_run.mjs` → **HIJAU 50/50**, exit 0.
+    Uji menjalankan `src/index.js` sungguhan (bukan fungsi terisolasi).
+  - Post-verify produksi mengukur AKHIRAT: origin `evil.example.com` →
+    **tanpa ACAO**; origin produksi → ACAO persis + `Max-Age: 86400`;
+    preflight OPTIONS tetap 200 (bukan 405); nol regresi
+    (`/` `/api/health` `/api/services` 200, login admin 200, `/dashboard` 200).
+  - **JANGAN dikerjakan ulang.**
+  - **CATATAN**: `Access-Control-Allow-Methods` / `-Headers` sengaja MASIH
+    dikirim ke origin asing. Itu tidak membocorkan apa pun (tanpa ACAO
+    browser tetap memblokir) dan menjaga preflight tidak jadi 405.
 - **B2** — validasi & sanitasi input server-side (P1) — `c9db43b`
   - Modul baru `functions/_validate.js`: `validate(body, spec)`,
     `validateOr400()`, `cleanStr()`, `isEmail()`, `isDate()`.
@@ -154,12 +176,17 @@ Model: cbai/hy4-preview (custom:9router)
   bukan `dhani078`. Sumber kebenaran: `public/sitemap.xml`.
 - **Urutan fokus**: FASE A selesai kecuali **A6** (terblokir, butuh
   Cloudflare API token). FASE B: **B7 selesai**, **B1 selesai**,
-  **A3b selesai**, **B2 selesai (tick 11)**.
-  → **Berikutnya B5** (CORS ketat; `Access-Control-Allow-Origin: *` masih
-  ada di `jsonResponse()` dan `corsOptions()` di `functions/_db.js`).
-  Hati-hati: landing page dan dashboard disajikan dari origin yang sama,
-  jadi daftar izin harus memuat domain produksi; uji preflight sungguhan
-  dengan `Origin:` header sebelum menandai selesai.
+  **A3b selesai**, **B2 selesai (tick 11)**, **B5 selesai (tick 12)**.
+  → **Berikutnya B8** (hash sandi PBKDF2 via WebCrypto) atau masuk FASE C
+  (fitur). B8 butuh migrasi: sandi lama SHA-256(`dhani-salt` + pw) harus
+  tetap bisa login → simpan format lama dulu, rehash saat login sukses.
+- **B5 JANGAN dikerjakan ulang.** Sudah tuntas `d32c367`. Untuk memeriksa
+  ulang: `node tools/verify_b5_run.mjs` (exit 0, HASIL: HIJAU 50/50).
+  Jangan "memperbaiki" `Access-Control-Allow-Methods` yang masih dikirim ke
+  origin asing — itu disengaja agar preflight tidak jadi 405.
+- Semua `fetch()` di `public/` memakai URL relatif (`/api/...`) → same
+  origin, jadi daftar izin B5 aman. Sudah diperiksa (26 pemanggilan).
+  Jika nanti ada domain kustom, set `ALLOWED_ORIGINS` di dasbor Cloudflare.
 - **B2 JANGAN dikerjakan ulang.** Sudah tuntas `c9db43b`. Periksa ulang
   dengan `node tools/verify_b2_run.mjs` (exit 0, HASIL: HIJAU 47/47).
 - **A3b JANGAN dikerjakan ulang.** Sudah tuntas `f782d3d`. Untuk memeriksa
