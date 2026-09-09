@@ -35,6 +35,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
 | B7 | Audit SQL injection (parameterized only) | **P0** | [x] | `ea05d42` |
 | B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [x] | `87d3fa9` |
+| B9 | Escaping HTML data dari API (stored XSS) | **P0** | [x] | `be7d8cd` |
 
 ---
 

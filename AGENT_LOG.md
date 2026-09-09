@@ -650,3 +650,66 @@ jalur serve aset statis di `src/index.js`.
   terblokir (butuh Cloudflare API token).
 
 ---
+
+---
+
+## Tick 14 — 2026-09-09T14:40:00+08:00
+
+- Task: **B9** — escaping HTML untuk seluruh data dari API (stored XSS, P0)
+- Temuan (bukan task yang direncanakan — ditemukan saat orientasi):
+  - `public/app.js`, `public/index.html`, `public/pay.html` membangun
+    antarmuka dengan `innerHTML` dan menyuntikkan nilai dari API secara
+    MENTAH: `<td>${o.customer_name}</td>`.
+  - `customer_name` berasal dari `users.full_name` yang diisi bebas saat
+    registrasi — `_validate.js` hanya memotong karakter kontrol dan
+    panjang, TIDAK menghapus `<`, `>`, `"`. Pendaftar dengan nama
+    `<img src=x onerror=...>` menjalankan skrip di browser setiap
+    Admin/Owner/Staff yang membuka Dashboard/Pesanan/Pelanggan/Delivery.
+  - Ini stored XSS (P0). Belum pernah tercatat di backlog.
+- Perubahan:
+  - BARU `public/assets/escape.js`: satu helper `esc()` bersama untuk
+    ketiga berkas (bukan tiga salinan). Meng-escape `& < > " '`, aman di
+    isi elemen DAN di nilai atribut ber-tanda kutip ganda.
+    null/undefined -> `''` (tidak ada lagi "null"/"undefined" di UI).
+  - Dimuat sebelum skrip pemakai; di `dashboard.html` SEBELUM `app.js`
+    (urutan ini diuji, karena app.js butuh esc() saatrender).
+  - 46 titik penyuntikan di-escape: orders, customers (`cust.`), services,
+    delivery (`t.`), promos, vouchers, laporan (`d.`, KPI `s.`), profil
+    (`u.`), nav landing page.
+- Perbaikan tambahan (defek nyata yang ditemukan di jalur yang sama):
+  - `href="/pay.html?code=${o.order_code}"` → `encodeURIComponent(...)`:
+    kode pesanan tidak bisa lagi menyuntik parameter URL tambahan.
+  - `t.type.toUpperCase()` → `String(t.type || '').toUpperCase()`:
+    sebelumnya satu baris dengan `type` null membuat `renderDelivery()`
+    TypeError dan seluruh tabel gagal dirender.
+- Alat:
+  - `tools/audit_xss.py` (statik) — pindai semua interpolasi `${...}`.
+  - `tools/verify_b9.mjs` (runtime, 32 uji) — memuat esc() sungguhan lewat
+    `vm` dan membuktikan 6 muatan XSS nyata netral.
+- Verifikasi (lokal):
+  - `node tools/verify_b9.mjs` → **HIJAU 32/32**, exit 0.
+  - `python tools/audit_xss.py` → **HIJAU**, exit 0.
+  - `node --check` semua .js/.mjs → 0 error.
+  - Regresi HIJAU: B1, B2 47/47, B5 50/50, B7, B8 35/35, A3b 15/15.
+- Verifikasi (produksi, setelah deploy ~95 s):
+  - `/` 200, `/api/health` 200, `/api/services` 200, `/dashboard` 200,
+    `/assets/escape.js` **200** (berkas baru terdeploy).
+  - `curl /app.js | grep -c 'esc('` → **47** pemanggilan.
+  - Urutan skrip benar: `escape.js` (baris 79) sebelum `app.js` (80) di
+    `/dashboard`; `escape.js` (967) sebelum skrip sebaris di `/`.
+- Commit: `be7d8cd`
+- Status: **SUKSES**
+- Catatan:
+  - **Pelajaran alat**: audit XSS pertama saya MELEWATKAN `cust.`, `t.`,
+    dan `kpi.` karena daftar variabel DB-nya hanya `o/s/p/v/c/d/r`.
+    Daftar itu sudah diperlebar. Jika menambah renderer baru, jalankan
+    `python tools/audit_xss.py` — jangan andalkan mata.
+  - **Jangan tambah esc() berlapis**: `esc()` sengaja TIDAK idempoten
+    (`esc(esc('<b>'))` → `&amp;lt;b&amp;gt;` merusak tampilan). Satu
+    pemanggilan per titik penyuntikan.
+  - Escaping di klien adalah lapis kedua. Lapis pertama (validasi/sanitasi
+    input saat registrasi) sudah ada di B2, tetapi `_validate.js` memang
+    tidak dimaksudkan untuk menghapus tag HTML — nama seperti "O'Brien"
+    sah. Jadi escaping saat render adalah mekanisme yang benar.
+  - Berikutnya: **B3** (JWT secret dari env) atau FASE C. A6 + B3 masih
+    terblokir (butuh Cloudflare API token).

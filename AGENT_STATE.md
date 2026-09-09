@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T14:35:00+08:00
-Tick ke: 13
+Terakhir update: 2026-09-09T14:52:00+08:00
+Tick ke: 14
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,31 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B9** — escaping HTML untuk seluruh data dari API (P0, stored XSS) —
+  `be7d8cd`
+  - **Defek**: `app.js`, `index.html`, `pay.html` menyuntikkan nilai dari
+    API secara MENTAH ke `innerHTML` (mis. `${o.customer_name}`).
+    `customer_name` berasal dari `users.full_name` yang bebas diisi saat
+    registrasi — `_validate.js` tidak menghapus `<`, `>`, `"`. Pendaftar
+    dengan nama `<img src=x onerror=...>` menjalankan skrip di browser
+    setiap Admin/Owner/Staff yang membuka Dashboard/Pesanan/Pelanggan/
+    Delivery. **Stored XSS yang menarget akun paling berkuasa.**
+  - BARU `public/assets/escape.js`: satu helper `esc()` bersama untuk
+    ketiga berkas. Meng-escape `& < > " '` — aman di isi elemen DAN di
+    nilai atribut ber-tanda kutip ganda. null/undefined → `''`.
+  - 46 titik penyuntikan di-escape. `dashboard.html` memuat `escape.js`
+    SEBELUM `app.js` (urutan diuji).
+  - **JANGAN tambah esc() berlapis**: `esc()` sengaja TIDAK idempoten
+    (`esc(esc('<b>'))` merusak tampilan). Satu pemanggilan per titik.
+  - Perbaikan sampingan: `pay.html?code=` kini `encodeURIComponent`;
+    `t.type.toUpperCase()` → `String(t.type || '').toUpperCase()` (dulu
+    satu baris `type` null merusak seluruh tabel delivery).
+  - Periksa ulang: `node tools/verify_b9.mjs` (32/32) dan
+    `python tools/audit_xss.py` (keduanya exit 0). Jangan dikerjakan ulang.
+  - **Pelajaran alat**: audit XSS pertama MELEWATKAN `cust.`, `t.`,
+    `kpi.` karena daftar variabel DB terlalu sempit. Sudah diperlebar.
+    Setiap menambah renderer baru, wajib jalankan `tools/audit_xss.py`.
 
 - **B8** — migrasi hash sandi → PBKDF2-HMAC-SHA256 (P2) — `87d3fa9`
   - Modul baru `functions/_password.js`: `hashPassword()`, `verifyPassword()`,
