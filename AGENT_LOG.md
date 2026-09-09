@@ -173,3 +173,54 @@ Riwayat tick (append-only).
   - Next tick: **A3** (migrasi 40 baris hex → token; hapus `:root` inline).
 
 ---
+
+## Tick 5 — 2026-09-09T09:20:00+08:00
+
+- Task: **A4** — pastikan semua API `try/catch` → respons JSON `{ok}` konsisten
+- Perubahan:
+  - `_db.js`: tambah `readJson(request)` (hasil objek, tidak melempar) dan
+    `corsOptions(methods)` (preflight 204 bersama)
+  - Migrasi 10 pemanggilan `request.json()` mentah → `readJson()`
+  - Tambah penanganan OPTIONS di customers, delivery, pay, orders, profile,
+    services, vouchers, promos, checkin, dashboard, reports, me
+  - `src/index.js`: dispatch OPTIONS ke `onRequestOptions` bila ada, supaya
+    preflight tidak bergantung pada urutan if/else per endpoint
+  - `me.js`: bungkus pembacaan sesi dalam try/catch
+- File: `_db.js`, `src/index.js`, 13 handler di `functions/api/`, 7 `tools/`
+- Verifikasi (SEMUA terhadap produksi, setelah deploy ~95s):
+  - **Defek #1 — body JSON rusak**: SEBELUM `POST /api/auth/login "{bad json"`
+    → **500**; SESUDAH → **400** `{"ok":false,"msg":"Body JSON tidak valid"}`.
+    Sama untuk orders, pay, delivery, dan (dengan sesi admin) promos,
+    customers, services, vouchers, profile — semua 400, bukan 500.
+  - **Defek #2 — preflight OPTIONS**: SEBELUM 11/16 endpoint → 405/401
+    (`/api/orders` 405, `/api/services` 405, `/api/me` 401, dst);
+    SESUDAH **16/16 → 204 atau 200**.
+  - Regresi: 16 endpoint GET terautentikasi → `ok:true` dengan data nyata
+    (dashboard revenue 175000, orders, customers, reports, dll)
+  - Auth: admin/staff/user login → `ok:true`; password salah → 401
+    `{ok:false}`, bukan 500
+  - `node --check` 20/20 file → exit 0
+  - `npx wrangler deploy --dry-run` → OK (115.35 KiB / gzip 25.58)
+  - Gate struktur: `</html>`=1, `authModal`=0, `<h1>`=1
+  - Security headers (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`,
+    `Permissions-Policy`) tetap aktif
+  - `/api/tidak-ada` → 404 JSON `{"ok":false}` (bukan HTML)
+  - `tools/audit_throw_sites.py`: 8 handler tanpa try/catch terbukti
+    **nol throw site** → tidak bisa melempar saat runtime
+- Commit: `c07ed88`
+- Status: SUKSES
+- Catatan:
+  - **Pelajaran metode**: audit `grep -c try` menghasilkan "14/16 sudah ada
+    try, A4 hampir selesai" — itu MENYESATKAN. Kerusakan nyata ada di
+    preflight OPTIONS dan body JSON rusak. Ukur kontrak lawan produksi
+    (`curl`), jangan hitung kata kunci.
+  - **Jebakan verifikasi**: `tools/probe_api.py` (urllib) diblokir Cloudflare
+    → error 1010, semua 403. Semua angka di atas diambil dengan `curl`.
+    Jangan melaporkan 403 itu sebagai bug aplikasi.
+  - Urutan 401 pada promos/customers/services/vouchers/profile saat body
+    rusak TANPA sesi adalah BENAR: guard auth jalan sebelum parse body.
+    Dengan sesi admin, semuanya 400 seperti yang diharapkan.
+  - **A4 SELESAI.** Next tick: **A3** (migrasi hex → token, hapus `:root`
+    inline), lalu A8. A6 tetap terblokir.
+
+---

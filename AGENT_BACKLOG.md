@@ -14,7 +14,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | A1 | Link `design-tokens.css` ke `index.html` + `dashboard.html` + `auth/*.html` | P1 | [x] | `21a94ea` |
 | A2 | Link `hero-canvas.js` (p5.js CDN) + container `#hero-canvas-container` | P2 | [x] | `23e3fe2` |
 | A3 | Migrasi hardcoded color `index.html` → token | P2 | [ ] | — |
-| A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [ ] | — |
+| A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [x] | `c07ed88` |
 | A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
 | A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [ ] | — |
 | A7 | Verifikasi 14 endpoint terdaftar di `src/index.js` | P1 | [x] | (verifikasi) |
@@ -96,12 +96,20 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 ## Prioritas Mutlak (kerjakan ini dulu)
 
-1. **A6** — Secret di `wrangler.toml` (P0, keamanan)
-2. **B3** — JWT secret dari env (P0)
-3. **B6** — Cookie flags (P0)
-4. **B7** — Audit SQL injection (P0)
-5. **A1** — Link design tokens (P1, fondasi desain)
-6. **A5** — Endpoint `/api/health` (P1)
+1. **A6** — Secret di `wrangler.toml` (P0, keamanan) — TERBLOKIR, butuh
+   Cloudflare API token
+2. **B7** — Audit SQL injection (P0)
+3. **B1** — Rate limit `/api/auth/login` (P1)
+4. **B2** — Validasi & sanitasi input server-side (P1)
+5. **B5** — CORS ketat, hanya origin sendiri (P1) — catatan: `jsonResponse`
+   masih mengirim `Access-Control-Allow-Origin: *`; A4 memperbaiki preflight
+   tapi tidak mempersempit origin. Ini bagian B5, belum dikerjakan.
+6. **A3** — Migrasi hardcoded hex → token (P2)
+7. **A8** — robots.txt + favicon + meta/OG tags (P3)
+
+### Status FASE A
+
+Selesai: A1, A2, A4, A5, A7. Tersisa: A3 (P2), A6 (P0, terblokir), A8 (P3).
 
 > Setelah semua P0 selesai, lanjut ke P1 berurutan.
 > Jangan kerjakan P2/P3 sebelum P0/P1 tuntas.
