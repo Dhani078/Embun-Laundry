@@ -83,7 +83,7 @@ export function corsOptions(methods = 'GET, POST, OPTIONS') {
 }
 
 // Security headers applied to every response (B4).
-const SECURITY_HEADERS = {
+export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
