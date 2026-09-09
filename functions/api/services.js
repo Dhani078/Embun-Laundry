@@ -1,5 +1,6 @@
 // functions/api/services.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions } from '../_db.js';
+import { validateOr400, cleanStr } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -16,9 +17,9 @@ export async function onRequest({ request, env }) {
   // GET - list services
   if (request.method === 'GET' && !action) {
     try {
-      const q = url.searchParams.get('q') || '';
-      const cat = url.searchParams.get('cat') || '';
-      const status = url.searchParams.get('status') || '';
+      const q = cleanStr(url.searchParams.get('q') || '').slice(0, 100);
+      const cat = cleanStr(url.searchParams.get('cat') || '').slice(0, 50);
+      const status = cleanStr(url.searchParams.get('status') || '').slice(0, 20);
 
       let sql = `SELECT * FROM services WHERE 1=1`;
       const params = [];
@@ -55,30 +56,38 @@ export async function onRequest({ request, env }) {
       const act = body.action || action;
 
       if (act === 'toggle_active') {
-        const id = parseInt(body.id) || 0;
-        const val = parseInt(body.is_active) || 0;
-        await db.execute('UPDATE services SET is_active = ?, updated_at = NOW() WHERE id = ?', [val, id]);
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          is_active: { type: 'bool', default: 0, label: 'Status aktif' }
+        });
+        if (!v.ok) return v.response;
+        await db.execute('UPDATE services SET is_active = ?, updated_at = NOW() WHERE id = ?', [v.data.is_active, v.data.id]);
         return jsonResponse({ ok: true });
       }
 
       if (act === 'create_service') {
-        const code = body.code || `SRV-${Date.now().toString(36).toUpperCase().slice(-4)}`;
-        const name = body.name || '';
-        const description = body.description || '';
-        const unit = body.unit || 'kg';
-        const price = Math.max(0, parseInt(body.price) || 0);
-        const hours = Math.max(0, parseInt(body.est_hours) || 0);
-        const cat = body.category || 'Reguler';
-        const badge = body.badge || '';
-        const active = parseInt(body.is_active) || 1;
+        // B2 — nama wajib; harga dan durasi dijaga tidak negatif;
+        // panjang semua teks dibatasi supaya tidak ada baris raksasa di TiDB.
+        const v = validateOr400(body, {
+          code: { type: 'str', max: 40, label: 'Kode' },
+          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          description: { type: 'str', max: 1000, label: 'Deskripsi' },
+          unit: { type: 'enum', values: ['kg', 'pcs', 'item', 'meter', 'set'], default: 'kg', label: 'Satuan' },
+          price: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Harga' },
+          est_hours: { type: 'int', min: 0, max: 720, default: 0, label: 'Estimasi jam' },
+          category: { type: 'str', max: 60, default: 'Reguler', label: 'Kategori' },
+          badge: { type: 'str', max: 40, label: 'Badge' },
+          is_active: { type: 'bool', default: 1, label: 'Status aktif' }
+        });
+        if (!v.ok) return v.response;
 
-        if (!name) return jsonResponse({ ok: false, msg: 'Nama wajib diisi' }, 400);
-
+        const d = v.data;
+        const code = d.code || `SRV-${Date.now().toString(36).toUpperCase().slice(-4)}`;
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute(
           `INSERT INTO services (code, name, description, unit, price, duration_hours, category, is_active, badge, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [code, name, description, unit, price, hours, cat, active, badge, now, now]
+          [code, d.name, d.description, d.unit, d.price, d.est_hours, d.category, d.is_active, d.badge, now, now]
         );
 
         const newSvc = await db.query('SELECT * FROM services WHERE code = ?', [code]);
@@ -86,34 +95,34 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'update_service') {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          code: { type: 'str', required: true, max: 40, label: 'Kode' },
+          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          description: { type: 'str', max: 1000, label: 'Deskripsi' },
+          unit: { type: 'enum', values: ['kg', 'pcs', 'item', 'meter', 'set'], default: 'kg', label: 'Satuan' },
+          price: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Harga' },
+          est_hours: { type: 'int', min: 0, max: 720, default: 0, label: 'Estimasi jam' },
+          category: { type: 'str', max: 60, default: 'Reguler', label: 'Kategori' },
+          badge: { type: 'str', max: 40, label: 'Badge' },
+          is_active: { type: 'bool', default: 1, label: 'Status aktif' }
+        });
+        if (!v.ok) return v.response;
 
-        const code = body.code || '';
-        const name = body.name || '';
-        const description = body.description || '';
-        const unit = body.unit || 'kg';
-        const price = Math.max(0, parseInt(body.price) || 0);
-        const hours = Math.max(0, parseInt(body.est_hours) || 0);
-        const cat = body.category || 'Reguler';
-        const badge = body.badge || '';
-        const active = parseInt(body.is_active) || 1;
-
-        if (!name) return jsonResponse({ ok: false, msg: 'Nama wajib diisi' }, 400);
-
+        const d = v.data;
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute(
           `UPDATE services SET code=?, name=?, description=?, unit=?, price=?, duration_hours=?, category=?, is_active=?, badge=?, updated_at=? WHERE id=?`,
-          [code, name, description, unit, price, hours, cat, active, badge, now, id]
+          [d.code, d.name, d.description, d.unit, d.price, d.est_hours, d.category, d.is_active, d.badge, now, d.id]
         );
 
         return jsonResponse({ ok: true });
       }
 
       if (act === 'delete_service') {
-        const id = parseInt(body.id) || 0;
-        if (!id) return jsonResponse({ ok: false, msg: 'Invalid id' }, 400);
-        await db.execute('DELETE FROM services WHERE id = ?', [id]);
+        const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
+        if (!v.ok) return v.response;
+        await db.execute('DELETE FROM services WHERE id = ?', [v.data.id]);
         return jsonResponse({ ok: true });
       }
 
