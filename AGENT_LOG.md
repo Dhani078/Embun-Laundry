@@ -250,3 +250,81 @@ dan jeda antar-tick tidak terasa "berhenti".
     inline), lalu A8. A6 tetap terblokir.
 
 ---
+
+## Tick 7 — A3: migrasi hardcoded hex → design token (`796e81e`)
+
+**Task:** A3 (P2) — migrasi hardcoded color di `public/index.html` ke
+design token.
+
+**Hasil: SUKSES** — 25 baris diubah, 27 kemunculan diganti.
+
+### Strategi: hanya substitusi yang NILAINYA IDENTIK
+
+Inventaris awal: **49 kemunculan hex pada 47 baris, 18 warna unik**.
+Dari itu, hanya **31 baris yang punya kecocokan nilai persis** dengan token
+di `design-tokens.css`. Aku sengaja TIDAK mengarang token baru dan TIDAK
+memakai token "yang kira-kira mirip" — karena substitusi value-identical
+berarti **nol regresi visual secara terbukti**, bukan sekadar klaim.
+
+Yang diganti (value-identical, aman):
+
+| Hex | Token | Jml |
+|---|---|---|
+| `#ffffff` / `#fff` | `--color-neutral-0` | 25 |
+| `#2563eb` | `--color-brand-600` | 1 |
+| `#1e3a8a` | `--color-brand-900` | 1 |
+| `#3b82f6` | `--color-brand-500` | 1 |
+
+Yang SENGAJA tidak diganti (18 kemunculan, tidak ada token dengan nilai
+persis — jadi tech debt, bukan kelalaian):
+`#94a3b8`(4) `#f8fafc`(3) `#64748b`(2) `#1e293b`(2) `#0f172a` `#e2e8f0`
+`#090d16` `#f59e0b` `#ef4444`. Plus blok `:root` inline (Gate 5
+membolehkan) dan `<meta theme-color>` — `var()` **tidak** di-resolve di
+atribut HTML, jadi menggantinya akan merusak warna browser chrome.
+
+### Bukti verifikasi
+
+```
+</html> = 1          <html = 1         authModal = 0      <h1> = 1
+script setelah </html> = 0
+baris: 1182 -> 1182  (tidak ada rewrite total)
+hex: 47 baris/49 kemunculan -> 22 baris/22 kemunculan (net -27)
+token dipakai tapi tak terdefinisi: TIDAK ADA
+  (--delay muncul di audit = pre-existing, 0 kemunculan di diff)
+line endings: 1182 LF sebelum & sesudah = sama dengan HEAD (CRLF aman)
+node --check: src/index.js, public/app.js, functions/_db.js,
+              public/assets/hero-canvas.js -> semua exit 0
+diff --stat: 1 file changed, 25 insertions(+), 25 deletions(-)
+```
+
+Post-deploy (produksi, ~95s): `/` `/api/health` `/api/services`
+`/assets/design-tokens.css` `/assets/hero-canvas.js` = **200**.
+HTML yang disajikan memuat `24x var(--color-neutral-0)` +
+`1x --color-brand-500/600/900`. Login admin `ok:true`.
+Bad-JSON body tetap 400 (kontrak A4 tidak regress).
+
+### Temuan baru (bukan regresi, catat sebagai debt)
+
+**B4 tidak berlaku untuk halaman statis.** Header keamanan
+(`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy`) hadir di respons `/api/*` tetapi **TIDAK** ada di
+respons HTML statis seperti `/` dan `/dashboard`. Task B4 dulu ditandai
+selesai karena diverifikasi lewat endpoint API saja. Perlu header juga di
+jalur serve aset statis di `src/index.js`.
+
+### Catatan untuk tick berikutnya
+
+- A3 **selesai untuk warna yang punya token persis**. Sisa 18 kemunculan
+  butuh keputusan: tambah token baru ke `design-tokens.css`
+  (mis. `--color-slate-400: #94a3b8`, `--color-warning-star: #f59e0b`)
+  atau biarkan. Ini bisa jadi tick tersendiri (A3b).
+- Blok `:root` inline di `index.html` MASIH ADA dan masih menang atas
+  `design-tokens.css` karena link diletakkan sebelum `<style>`. Menghapusnya
+  (rencana lama) akan mengubah 4 nilai radius/shadow → butuh uji visual,
+  jangan dilakukan buta.
+- A8 sudah selesai di tick 6 (`a502402`) meski tabel backlog belum
+  ditandai `[x]` — perlu disinkronkan.
+- **Fase A tinggal A6** (terblokir, butuh Cloudflare API token).
+  Setelahnya lanjut FASE B: B7 (audit SQL injection, P0), B1 (rate limit),
+  B2 (validasi input), B5 (CORS ketat — `Access-Control-Allow-Origin: *`
+  masih terlihat di `/api/health`).
