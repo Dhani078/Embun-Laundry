@@ -1,9 +1,11 @@
 // functions/api/profile.js
-import { getDb, jsonResponse, getUserFromSession, hashPassword } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, hashPassword, readJson, corsOptions } from '../_db.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
   if (!db) return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
+
+  if (request.method === 'OPTIONS') return corsOptions('GET, POST, OPTIONS');
 
   const user = await getUserFromSession(request, env);
   if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
@@ -20,7 +22,9 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'POST') {
     try {
-      const body = await request.json();
+      const parsed = await readJson(request);
+      if (!parsed.ok) return parsed.response;
+      const body = parsed.data;
       const act = body.action || '';
 
       if (act === 'update_profile') {

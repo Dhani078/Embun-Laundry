@@ -48,6 +48,23 @@ export default {
       const context = { request, env, ctx, params: {} };
       let resp;
 
+      // Preflight CORS: pakai handler `onRequestOptions` bila ada, supaya
+      // browser tidak menerima 405/401. (A4 — kontrak respons konsisten)
+      if (request.method === 'OPTIONS') {
+        const optMap = {
+          '/api/auth/login': loginHandler,
+          '/api/auth/register': registerHandler,
+          '/api/auth/logout': logoutHandler,
+          '/api/health': healthHandler,
+          '/api/me': meHandler
+        };
+        const h = optMap[path];
+        if (h?.onRequestOptions) {
+          return withSecurityHeaders(await h.onRequestOptions(context));
+        }
+        // Handler lain menangani OPTIONS di dalam tubuhnya masing-masing.
+      }
+
       if (path === '/api/auth/login') {
         if (request.method === 'POST') resp = loginHandler.onRequestPost(context);
         else if (request.method === 'OPTIONS') resp = loginHandler.onRequestOptions(context);

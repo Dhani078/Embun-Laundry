@@ -1,7 +1,9 @@
 // functions/api/reports.js
-import { getDb, jsonResponse, getUserFromSession } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
 
 export async function onRequestGet({ request, env }) {
+  if (request.method === 'OPTIONS') return corsOptions('GET, OPTIONS');
+
   const db = await getDb(env);
   if (!db) return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
 

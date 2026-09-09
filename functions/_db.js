@@ -34,6 +34,54 @@ export function jsonResponse(data, status = 200) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// A4 — Kontrak respons API
+// ---------------------------------------------------------------------------
+
+/**
+ * Baca body permintaan sebagai JSON dengan aman.
+ *
+ * Memanggil `request.json()` langsung di banyak handler membuat body yang
+ * rusak berubah menjadi reject promise -> 500 dari runtime, BUKAN dari
+ * handler. Helper ini mengembalikan objek hasil, bukan melempar, sehingga
+ * setiap handler bisa membalas dengan JSON `{ ok: false }` yang rapi.
+ *
+ * @returns {{ok: true, data: object} | {ok: false, response: Response}}
+ */
+export async function readJson(request) {
+  try {
+    const data = await request.json();
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+      return {
+        ok: false,
+        response: jsonResponse({ ok: false, msg: 'Body harus berupa objek JSON' }, 400)
+      };
+    }
+    return { ok: true, data };
+  } catch (e) {
+    return {
+      ok: false,
+      response: jsonResponse({ ok: false, msg: 'Body JSON tidak valid' }, 400)
+    };
+  }
+}
+
+/**
+ * Balasan preflight CORS standar.
+ * Digunakan handler yang belum punya `onRequestOptions` sendiri supaya
+ * browser tidak menerima 405 saat melakukan preflight.
+ */
+export function corsOptions(methods = 'GET, POST, OPTIONS') {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': methods,
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    }
+  });
+}
+
 // Security headers applied to every response (B4).
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
