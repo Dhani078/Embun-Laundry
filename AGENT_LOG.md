@@ -713,3 +713,89 @@ jalur serve aset statis di `src/index.js`.
     sah. Jadi escaping saat render adalah mekanisme yang benar.
   - Berikutnya: **B3** (JWT secret dari env) atau FASE C. A6 + B3 masih
     terblokir (butuh Cloudflare API token).
+
+## Tick 15 — 2026-09-09T18:55:00+08:00 (B11 — hak akses laporan + rentang tanggal)
+
+- Task: **B11** — ditemukan saat orientasi, BELUM pernah ada di backlog.
+- Orientasi: `git pull --rebase` bersih. Baseline: B10 29/29, B9 32/32,
+  B8 35/35, B5 50/50, B2 47/47, B7 HIJAU, B1 HIJAU, A3b 15/15,
+  audit_xss HIJAU, audit_sql 0 temuan, `node --check` 0 error.
+- **Jebakan yang menghabiskan waktu tick ini (catat!)**: menjalankan
+  `node tools/verify_b10.mjs` LANGSUNG menghasilkan MERAH 14/29. Itu PALSU.
+  Tanpa pembungkus `verify_b10_run.mjs`, loader `sql_guard_loader.mjs` tidak
+  dipasang, `@tidbcloud/serverless` tidak diganti mock-nya, handler gagal
+  menyambung DB → 500. SELALU pakai `*_run.mjs`. Begitu dibuktikan,
+  hasilnya HIJAU 29/29 (pernah juga sempat MERAH karena saya menyuntik
+  `console.log` debug — sudah dibersihkan dengan `git checkout`).
+  `verify_b8_run.mjs` juga sempat MERAH pada "2 hash < 10 ms" (12.57 ms);
+  jalankan ulang → 8.09 ms HIJAU. Uji berbasis waktu itu FLAKY.
+- **Kenapa defek ini bisa lolos dari SEMUA verifier**: tidak ada satu pun
+  harness yang pernah memanggil `/api/reports`. `verify_b7` (kanari SQL)
+  dan `verify_b10` (IDOR) tidak menyentuhnya. Pelajaran: cakupan verifier
+  = daftar endpoint yang orang ingat, bukan daftar endpoint yang ada.
+- Temuan 1 — HAK AKSES (hardening, BUKAN IDOR):
+  - Akun Customer menerima 200 + `kpi`/`chart`/`daily` lengkap. Memang ada
+    filter `customer_name = ?`, jadi ini BUKAN kebocoran baris orang lain —
+    jangan diklaim sebagai IDOR.
+  - Yang membuatnya layak diperbaiki: tidak ada satu pun halaman pelanggan
+    yang memanggil `/api/reports` (menu Laporan hanya dirender untuk
+    `isStaff` di `public/app.js`). Jadi 3 query agregat per permintaan
+    murni terbuang, dan permukaannya harus diuji setiap kali skema laporan
+    berubah.
+- Temuan 2 — RENTANG TANGGAL:
+  - `?start=`/`?end=` diambil mentah, lalu DISAMBUNG ke string
+    `' 00:00:00'`/`' 23:59:59'` sebelum masuk `BETWEEN ? AND ?`.
+  - Placeholder mencegah injeksi (B7), tetapi bukan mencegah nilai ngawur:
+    `start=bukan-tanggal` → 200 menyapu nol baris, rentang terbalik → 200,
+    rentang 10.000 tahun → 200 menyapu seluruh tabel, kirim salah satu saja
+    = "tanpa batas".
+  - `tools/audit_sql_injection.py` TIDAK menemukannya: aturannya "nilai yang
+    sudah lewat `cleanStr()` dianggap aman" — benar untuk placeholder `?`,
+    SALAH untuk penyambungan string. **Pembersihan ≠ validasi format.**
+- Perubahan:
+  - BARU `functions/_reportfilter.js`: satu penjaga `dateRange()`.
+    Mengembalikan string datetime LENGKAP supaya pemanggil tidak perlu
+    menyambung apa pun (sumber nilai mentah pada temuan 2). Menolak format
+    salah, `2026-02-31`, rentang terbalik, >3660 hari, rentang sebelah.
+  - `reports.js`: 403 untuk bukan staf SEBELUM menyentuh DB; `dateRange()`
+    menggantikan penyambungan string; `custFilter` dihapus (staf melihat
+    seluruh toko → dead code setelah 403).
+  - `.gitignore`: tambah `.tmp/` (scratch tick).
+- Alat: `tools/verify_b11.mjs` + `verify_b11_run.mjs` — 41 uji yang mengukur
+  status, isi JSON, DAN SQL yang benar-benar terkirim lewat `mock_tidb`.
+- **Bukti defek (diukur, bukan diklaim)**: kode lama di-checkout dari HEAD,
+  harness dijalankan → **MERAH 23/41**, dengan baris
+  `reports sebagai Customer -> status=200` dan
+  `start tidak valid -> terkirim=3 SELECT`. Kode baru → **HIJAU 41/41**.
+- Verifikasi (lokal): B11 41/41; regresi B1 HIJAU, B2 47/47, B5 50/50,
+  B7 HIJAU (0 temuan, 68 literal), B8 35/35, B9 32/32, B10 29/29,
+  A3b 15/15, audit_xss HIJAU, `node --check` 0 error.
+- Verifikasi (produksi, setelah deploy ~100 s):
+  - `/` 200, `/api/health` 200, `/api/services` 200, `/dashboard` 200.
+  - `/api/reports` tanpa sesi → **401** `{"ok":false,"msg":"Unauthorized"}`.
+  - Token Customer yang DITANDATANGANI DENGAN KUNCI PRODUKSI
+    (`JWT_SECRET` dari wrangler.toml) → **403**
+    `{"ok":false,"msg":"Laporan hanya tersedia untuk Admin, Owner, dan
+    Staff"}` — jadi 403 itu bukan artefak uji lokal.
+  - Token Customer yang sama: `/api/orders` 200, `/api/dashboard` 200 →
+    fitur pelanggan TIDAK rusak.
+  - Login admin 1× (hati-hati rate limit): tanpa rentang → 200 dengan isi
+    nyata (`kpi.rev 175000`); rentang sah `2026-09-01..2026-09-09` → 200;
+    `start=bukan-tanggal` → **400** `Format start tidak valid (YYYY-MM-DD)`;
+    hanya `start` → **400** `Rentang tanggal tidak lengkap`; terbalik →
+    **400** `Rentang tanggal terbalik`.
+  - Admin: dashboard/orders/customers/delivery tetap 200.
+- Commit: `5534bc3`
+- Status: **SUKSES**
+- Catatan:
+  - Perbaikan ini sengaja TIDAK diklaim sebagai IDOR. Menutup akses yang
+    tak terpakai adalah hardening; menyebutnya kebocoran data akan
+    menyesatkan tick berikutnya.
+  - Peringatan untuk tick berikutnya: kalau pelanggan kelak perlu "riwayat +
+    total belanjaku" (backlog C6), buat endpoint BARU dengan agregat per
+    pelanggan — BUKAN membuka kembali `/api/reports`.
+  - Berikutnya: masih ada endpoint yang belum punya harness — `checkin.js`
+    dan `vouchers.js` belum pernah diukur. Kandidat task tick 16.
+    A6 + B3 tetap terblokir (butuh Cloudflare API token; `npx wrangler
+    whoami` → "You are not authenticated").
+=====

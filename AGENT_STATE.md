@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T14:52:00+08:00
-Tick ke: 14
+Terakhir update: 2026-09-09T18:55:00+08:00
+Tick ke: 15
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,69 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B11** — hak akses laporan + validasi rentang tanggal (P0 hardening) —
+  `5534bc3`
+  - Dua defek di `/api/reports`, keduanya lolos dari SEMUA verifier karena
+    tidak ada satu pun harness yang pernah memanggil endpoint ini
+    (`verify_b7` kanari SQL dan `verify_b10` IDOR tidak menyentuh reports).
+  - **Defek 1 — hak akses** (hardening, BUKAN IDOR — jangan diklaim lebih
+    dari kenyataan): akun Customer menerima 200 + `kpi`/`chart`/`daily`.
+    Memang ada filter `customer_name = ?`, jadi bukan kebocoran baris orang
+    lain. Tetapi tidak ada satu pun halaman pelanggan yang memanggil
+    `/api/reports` (menu Laporan hanya dirender untuk `isStaff` di
+    `public/app.js`), jadi 3 query agregat per permintaan murni terbuang.
+    Kini: bukan staf → 403 SEBELUM ada query dijalankan.
+  - **Defek 2 — rentang tanggal**: `?start=`/`?end=` diambil mentah lalu
+    DISAMBUNG ke string `' 00:00:00'`/`' 23:59:59'` sebelum masuk
+    `BETWEEN ? AND ?`. Placeholder mencegah injeksi (B7), tetapi bukan nilai
+    ngawur: `start=bukan-tanggal` → 200, rentang terbalik → 200, rentang
+    10.000 tahun → 200 menyapu seluruh tabel, kirim salah satu saja =
+    "tanpa batas". Kini semua itu 400 dan SATU pun SELECT tidak terkirim.
+  - BARU `functions/_reportfilter.js`: satu penjaga `dateRange()`.
+    Mengembalikan string datetime LENGKAP supaya pemanggil tidak perlu
+    menyambung apa pun (sumber nilai mentah pada defek 2). Menolak format
+    salah, `2026-02-31`, rentang terbalik, >3660 hari, dan rentang sebelah.
+  - `custFilter` DIHAPUS dari reports.js: staf melihat seluruh toko, jadi
+    setelah 403 itu menjadi dead code.
+  - **Peringatan untuk tick berikutnya**: kalau pelanggan kelak perlu
+    "riwayat + total belanjaku" (backlog C6), itu endpoint BARU dengan
+    agregat per pelanggan — BUKAN membuka kembali `/api/reports`.
+  - **Pelajaran alat (catat!)**: `tools/audit_sql_injection.py` TIDAK
+    menemukan defek 2 karena aturannya "nilai yang sudah lewat `cleanStr()`
+    dianggap aman". Itu benar untuk placeholder `?`, tetapi SALAH untuk
+    penyambungan string. **Pembersihan ≠ validasi format.** Audit statis
+    tidak bisa melihat ini; yang menemukannya adalah membaca handler dan
+    membuat harness yang memanggilnya.
+  - **Pelajaran verifier (catat!)**: `tools/verify_b8_run.mjs` sesekali
+    MERAH pada uji "2 hash < 10 ms" (12.57 ms saat mesin sedang sibuk).
+    Itu FLAKY, bukan regresi — jalankan ulang sebelum menyimpulkan. Pola
+    yang sama berlaku untuk semua uji berbasis waktu.
+  - **Cara menjalankan harness dengan benar**: SELALU pakai pembungkus
+    `*_run.mjs` (`node tools/verify_b10_run.mjs`), BUKAN `verify_b10.mjs`
+    langsung. Tanpa loader `sql_guard_loader.mjs`, `@tidbcloud/serverless`
+    tidak diganti mock-nya → handler 500 → 14/29 MERAH PALSU. Ini sudah
+    menghabiskan waktu satu tick; jangan ulangi.
+  - Periksa ulang: `node tools/verify_b11_run.mjs` (41/41). Jangan dikerjakan
+    ulang.
+
+- **B10** — isolasi data (IDOR) pada orders/customers/delivery/pay (P0) —
+  `db95930`
+  - **Ini HANYA tercatat di commit dan tick 15; AGENT_STATE.md tick 14 belum
+    memuatnya.** Jangan dikerjakan ulang.
+  - Defek: `GET /api/orders`, `/api/customers`, `/api/delivery` mengembalikan
+    SELURUH baris untuk permintaan TANPA sesi. Penyebabnya halus: handler
+    mengizinkan `user === null`, lalu `myName` menjadi `''` sehingga cabang
+    `!isStaff && myName` tidak pernah menambahkan filter `customer_name`.
+    Terbukti di produksi: 3 pesanan dari 3 pelanggan berbeda tampil untuk
+    permintaan anonim, lengkap dengan nama/telepon/alamat/nominal.
+  - orders.js, delivery.js: 401 bila tanpa sesi; fail-closed juga bila sesi
+    sah tetapi tidak memuat nama. customers.js: daftar PII khusus staf.
+  - pay.js: halaman pembayaran sengaja bisa dibuka tanpa login (capability
+    URL), jadi tidak di-401; sebagai gantinya PII (telepon + alamat) dibuang
+    untuk pemanggil yang bukan pemilik atau staf.
+  - Periksa ulang: `node tools/verify_b10_run.mjs` (29/29) — PAKAI
+    pembungkus `_run`, jangan file `verify_b10.mjs` langsung.
 
 - **B9** — escaping HTML untuk seluruh data dari API (P0, stored XSS) —
   `be7d8cd`
