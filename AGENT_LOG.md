@@ -563,3 +563,90 @@ jalur serve aset statis di `src/index.js`.
   terblokir (butuh Cloudflare API token).
 
 ---
+
+## Tick 13 — 2026-09-09T14:12:00+08:00 (B8 — migrasi hash sandi ke PBKDF2)
+
+- Task: **B8** — migrasi hash sandi → PBKDF2 via WebCrypto (P2)
+- Temuan awal (DIUKUR dari TiDB produksi, bukan asumsi):
+  - `tools/probe_hash.mjs`: 9 pengguna, 8 berformat sha256-hex64, 1 plaintext
+    debug (`testhash`). Tidak ada bcrypt sama sekali.
+  - `tools/probe_schema.mjs`: `password_hash VARCHAR(255)`, dan TERBUKTI
+    `hash admin@gmail.com == sha256('admin123' + 'dhani-salt')` → COCOK.
+  - Jadi kondisi awal: SATU kali SHA-256 dengan salt global yang tertulis di
+    sumber. Satu tabel pelangi berlaku untuk seluruh pengguna.
+- Perubahan:
+  - BARU `functions/_password.js`: `hashPassword()`, `verifyPassword()`,
+    `isPbkdf2Hash()`. Format `pbkdf2-sha256$<iterasi>$<salt>$<hash>` — 86
+    karakter, muat di VARCHAR(255) tanpa mengubah skema.
+  - **Salt acak 16 byte per pengguna.** Dua hash untuk sandi yang sama tidak
+    pernah identik. Perbandingan memakai loop XOR (waktu konstan), bukan
+    `===` yang berhenti di byte pertama.
+  - Iterasi **10.000**, tersemat di dalam hash. Bukan 600.000 rekomendasi
+    OWASP — alasan terukur di bawah.
+  - `verifyPassword()` menerima semua format lawas (SHA-256+salt, SHA-256
+    tanpa salt, plaintext, bcrypt) → migrasi tidak mengunci siapa pun.
+  - `login.js`: **lazy upgrade** — login sah dengan hash lawas menulis ulang
+    hash ke PBKDF2 lewat `ctx.waitUntil()`. Tidak menahan respons; gagal
+    tulis tidak membatalkan login. Hash yang sudah PBKDF2 tidak ditulis
+    ulang.
+  - Deduplikasi: dua salinan algoritma (`_db.js` + `login.js`) jadi satu.
+    `_db.js` kini hanya re-export.
+  - `profile.js change_password`: pakai `verifyPassword()` (satu sumber) +
+    menolak sandi baru < 6 karakter (**defek nyata**: sebelumnya `x`
+    diterima dan langsung ditulis ke DB).
+- Kenapa 10.000 iterasi, bukan 600.000 — keputusan berdasar pengukuran:
+  - Workers menghitung **CPU time**, bukan wall clock (ambang rencana gratis
+    10 ms/permintaan).
+  - `tools/bench_pbkdf2.mjs` (Node 22, mesin ini):
+    10.000 → 3,44 ms | 20.000 → 6,16 ms | 50.000 → 13,66 ms |
+    100.000 → 25,24 ms | 200.000 → 47,81 ms | 600.000 → 139,73 ms
+  - `change_password` memanggil hash **2×** (sandi lama + baru). Pada 10.000
+    → ~7,0 ms (aman). Pada 20.000 → ~12,3 ms → akan MENGGAGALKAN ganti
+    sandi. Jadi 10.000 adalah nilai terbesar yang aman untuk kedua jalur.
+  - Ini tetap ~10.000× lipat biaya dibanding SHA-256 tunggal, dan salt acak
+    per pengguna membuat tabel pelangi jadi tidak berguna.
+- File:
+  - BARU: `functions/_password.js`, `tools/verify_b8.mjs`,
+    `tools/verify_b8_run.mjs`, `tools/bench_pbkdf2.mjs`,
+    `tools/probe_hash.mjs`, `tools/probe_schema.mjs`,
+    `tools/probe_b8_live.mjs`
+  - UBAH: `functions/_db.js`, `functions/api/auth/login.js`,
+    `functions/api/profile.js`
+- Verifikasi (lokal):
+  - `node tools/verify_b8_run.mjs` → **HIJAU 35 lulus, 0 gagal**, exit 0.
+  - Yang diuji bukan "fungsi dipanggil", melainkan hasil nyata: format hash,
+    salt acak (2 hash untuk sandi sama tidak identik), panjang ≤ 255,
+    hash lawas **yang diambil dari produksi** tetap bisa login, **SQL UPDATE
+    yang benar-benar dikirim saat lazy upgrade** (ditangkap lewat mock
+    pencatat), hash hasil upgrade bisa diverifikasi, nol UPDATE saat hash
+    sudah PBKDF2, nol UPDATE saat sandi salah, biaya CPU 3,5 ms/hash.
+  - Regresi hijau: B7 nol temuan, B2 47/47, B5 50/50, B1 HIJAU, A3b 15/15.
+    `node --check` semua .js/.mjs → exit 0. Hex `index.html` tetap 10.
+- Verifikasi (produksi, setelah deploy ~95 s):
+  - `/` 200, `/api/health` 200 `ok:true`, `/api/services` 200,
+    `/assets/design-tokens.css` 200, `/dashboard` 200, `/api/orders` 200.
+  - Login admin → **200 `ok:true`** (hash lawas, memicu upgrade).
+  - `/api/me` 200 dengan cookie.
+  - Sandi salah → **401** `{"ok":false,"msg":"Kata sandi salah"}`.
+  - CORS: origin `evil.example.com` → tanpa ACAO (B5 tidak regressi).
+  - **PEMBUKTIAN AKHIR** (`tools/probe_b8_live.mjs`, baca langsung dari
+    TiDB setelah login produksi):
+    - `admin@gmail.com` → `pbkdf2-sha256$10000$6LBzy3uvk7…` (**BARU**),
+      `verifyPassword('admin123') -> true`
+    - sebelumnya: `0a1233d67b1b6a30…` (SHA-256 + salt global)
+    - `user@gmail.com`, `staff@gmail.com` → masih LAWAS (belum login sejak
+      deploy) → **sesuai rancangan lazy upgrade**, bukan kegagalan.
+- Commit: `87d3fa9`
+- Status: **SUKSES**
+- Catatan:
+  - Pengguna yang TIDAK pernah login ulang tetap berhash lawas sampai mereka
+    login lagi. Pantau dengan `TIDB_DATABASE_URL=… node tools/probe_hash.mjs`.
+    Jalur verifikasi lawas baru boleh dihapus setelah seluruh baris PBKDF2.
+  - Jangan naikkan iterasi tanpa mengukur ulang `tools/bench_pbkdf2.mjs` —
+    `change_password` memanggil hash 2× dan akan melewati batas CPU Workers.
+  - wrangler lokal TIDAK terautentikasi (`wrangler whoami` → not
+    authenticated), jadi deploy hanya terjadi lewat push ke `main`.
+- Berikutnya: FASE C (fitur inti) atau B3 (JWT secret dari env). A6 tetap
+  terblokir (butuh Cloudflare API token).
+
+---

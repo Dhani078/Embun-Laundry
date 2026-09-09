@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T12:40:00+08:00
-Tick ke: 12
+Terakhir update: 2026-09-09T14:35:00+08:00
+Tick ke: 13
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,51 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B8** — migrasi hash sandi → PBKDF2-HMAC-SHA256 (P2) — `87d3fa9`
+  - Modul baru `functions/_password.js`: `hashPassword()`, `verifyPassword()`,
+    `isPbkdf2Hash()`. Format `pbkdf2-sha256$<iterasi>$<salt>$<hash>` (86
+    karakter, MUAT di `password_hash VARCHAR(255)` yang sudah ada).
+  - **Salt acak 16 byte per pengguna** — dua hash untuk sandi yang sama
+    TIDAK pernah identik. Ini inti perbaikannya: dulu salt-nya GLOBAL
+    (`dhani-salt`, tertulis di sumber), jadi satu tabel pelangi berlaku
+    untuk seluruh pengguna.
+  - Iterasi 10.000 (BUKAN 600.000 rekomendasi OWASP) karena Workers
+    menghitung **CPU time**, bukan wall clock: `tools/bench_pbkdf2.mjs`
+    mengukur 10.000 → 3,4 ms, 20.000 → 6,2 ms. `change_password`
+    memanggil hash **2×** (sandi lama + baru), jadi 10.000 adalah nilai
+    terbesar yang masih di bawah ambang 10 ms CPU. Terukur: 3,5 ms/hash,
+    7,0 ms untuk 2 hash.
+  - Iterasi tersemat DI DALAM hash → konstanta bisa dinaikkan nanti tanpa
+    membatalkan hash lama.
+  - `verifyPassword()` tetap menerima semua format lawas yang masih hidup:
+    SHA-256 + salt, SHA-256 tanpa salt, plaintext (baris debug `testhash`),
+    bcrypt. Migrasi tidak mengunci siapa pun.
+  - **Lazy upgrade di `login.js`**: login sah dengan hash lawas → tulis
+    ulang ke PBKDF2 lewat `ctx.waitUntil()`. Tidak menahan respons; gagal
+    tulis tidak membatalkan login. Hash yang SUDAH PBKDF2 tidak ditulis
+    ulang (terbukti: nol UPDATE pada login kedua).
+  - **Deduplikasi**: dulu ada DUA salinan algoritma (`_db.js` dan
+    `login.js`) yang bisa menyimpang tanpa ketahuan. `_db.js` kini hanya
+    re-export dari `_password.js`.
+  - `profile.js change_password`: pakai `verifyPassword()` (satu sumber)
+    dan menolak sandi baru < 6 karakter — **defek nyata**, sebelumnya
+    sandi 1 karakter diterima dan langsung ditulis ke DB.
+  - **TERBUKTI DI PRODUKSI** (`tools/probe_b8_live.mjs`, setelah deploy):
+    `admin@gmail.com` → `pbkdf2-sha256$10000$6LBzy3uvk7…`,
+    `verifyPassword('admin123') -> true`. Sebelumnya
+    `0a1233d67b1b6a30…` (SHA-256 + salt global).
+  - Bukti: `node tools/verify_b8_run.mjs` → **HIJAU 35/35**, exit 0. Uji
+    menangkap SQL UPDATE yang benar-benar dikirim (bukan menebak).
+    Regresi: B7 nol temuan, B2 47/47, B5 50/50, B1 HIJAU, A3b 15/15.
+  - **JANGAN dikerjakan ulang.**
+  - **CATATAN**: jangan naikkan iterasi tanpa mengukur ulang
+    `tools/bench_pbkdf2.mjs` — `change_password` memanggil hash 2× dan akan
+    melewati batas CPU Workers pada > 10.000.
+  - **CATATAN**: `verifyPassword()` sengaja masih menerima plaintext dan
+    SHA-256 lawas. Itu BUKAN regresi — itu syarat agar pengguna yang belum
+    login ulang tidak terkunci. Hapus jalur lawas hanya setelah seluruh
+    baris berformat PBKDF2 (pantau dengan `tools/probe_hash.mjs`).
 
 - **B5** — CORS ketat: hanya origin sendiri (P1) — `d32c367`
   - Modul baru `functions/_cors.js`: `isOriginAllowed()`, `corsHeaders()`,

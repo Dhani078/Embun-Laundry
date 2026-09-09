@@ -34,7 +34,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B5 | CORS ketat (hanya origin sendiri) | P1 | [x] | `d32c367` |
 | B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
 | B7 | Audit SQL injection (parameterized only) | **P0** | [x] | `ea05d42` |
-| B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [ ] | — |
+| B8 | Migrasi hash → PBKDF2 via WebCrypto | P2 | [x] | `87d3fa9` |
 
 ---
 
@@ -110,11 +110,20 @@ File ini adalah **working copy** yang diupdate setiap tick.
    Modul baru `functions/_cors.js`; 6 titik `*` dihapus; `Vary: Origin`
    ditambahkan. Periksa ulang dengan `node tools/verify_b5_run.mjs`
    (HASIL: HIJAU 50/50). Jangan dikerjakan ulang.
-6. **B1** — Rate limit `/api/auth/login` (P1)
-7. **B2** — Validasi & sanitasi input server-side (P1)
-8. **B5** — CORS ketat (P1) — `Access-Control-Allow-Origin: *` masih ada di
-   `/api/*`; A4 memperbaiki preflight tapi tidak mempersempit origin
-9. **A3b** — Token baru untuk 9 warna sisa (P2)
+6. **B8** — Hash sandi PBKDF2 (P2) — **SELESAI** `87d3fa9`. Modul baru
+   `functions/_password.js`; salt acak 16 byte per pengguna; lazy upgrade
+   di `login.js`; terbukti di produksi (`admin@gmail.com` kini
+   `pbkdf2-sha256$10000$…`). Periksa ulang dengan
+   `node tools/verify_b8_run.mjs` (HASIL: HIJAU 35/35). Jangan dikerjakan
+   ulang. Iterasi sengaja 10.000 — jangan dinaikkan tanpa mengukur ulang
+   `tools/bench_pbkdf2.mjs`.
+7. **B3** — JWT secret dari `env.JWT_SECRET` (P0) — BELUM: `_db.js` sudah
+   membaca `env.JWT_SECRET`, TETAPI `wrangler.toml` [vars] masih menaruh
+   nilai aslinya sehingga fallback hardcoded tidak pernah benar-benar mati.
+   Butuh `wrangler secret put` → terblokir bersama A6 (butuh Cloudflare API
+   token).
+8. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
+   lampau (B1/B2/B5/A3b sudah `[x]` di tabel masing-masing). Abaikan.
 
 ### Status FASE A
 
