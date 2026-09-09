@@ -84,6 +84,30 @@
   --color-error-light:    #fee2e2;
   --color-info:           var(--color-brand-500);
   --color-info-light:     var(--color-brand-50);
+  --color-error-500:      #ef4444;  /* inline error text on light background */
+
+  /* ------------------------------------------------------------------------
+     SLATE — cool blue-gray family (footer / dark surfaces).
+     Distinct from the warm Neutral scale above: the landing footer was
+     designed against cool slate, so its values are kept bit-identical.
+     ---------------------------------------------------------------------- */
+  --color-slate-50:  #f8fafc;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-800: #1e293b;
+  --color-slate-950: #090d16;
+
+  /* Semantic aliases for dark/inverse surfaces (footer, dark panels).
+     NOTE: `--color-text-inverse` (line ~61) is already #ffffff and is used
+     by other pages — do NOT redefine it. These are the slate variants. */
+  --color-bg-inverse:            var(--color-slate-950);
+  --color-border-inverse:        var(--color-slate-800);
+  --color-text-on-inverse:       var(--color-slate-50);
+  --color-text-on-inverse-muted: var(--color-slate-400);
+  --color-text-on-inverse-subtle: var(--color-slate-500);
+
+  /* Rating (stars) */
+  --color-rating: #f59e0b;
 
   /* --------------------------------------------------------------------------
      TYPOGRAPHY — Inter + Plus Jakarta Sans (existing) + Geist Mono for code
