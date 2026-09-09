@@ -1,6 +1,17 @@
 // functions/api/reports.js
 import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
 
+// B7 — Peta ekspresi GROUP BY yang DIIZINKAN.
+//
+// Nilai `?group=` dari user TIDAK pernah disisipkan mentah ke SQL: ia hanya
+// dipakai sebagai kunci pencarian di peta ini. Menambah cara pengelompokan
+// = menambah entri di sini, bukan menyambung string.
+const GROUP_EXPR = Object.freeze({
+  hari: 'DATE(created_at)',
+  minggu: "CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0'))",
+  bulan: "DATE_FORMAT(created_at, '%Y-%m')"
+});
+
 export async function onRequestGet({ request, env }) {
   if (request.method === 'OPTIONS') return corsOptions('GET, OPTIONS');
 
@@ -37,11 +48,9 @@ export async function onRequestGet({ request, env }) {
     `;
     const kpiRes = await db.query(kpiSql, [...dateParams, ...custFilterParams]);
 
-    // Chart grouping
-    let groupExpr;
-    if (group === 'hari') groupExpr = 'DATE(created_at)';
-    else if (group === 'minggu') groupExpr = "CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0'))";
-    else groupExpr = "DATE_FORMAT(created_at, '%Y-%m')";
+    // Chart grouping — kunci asing jatuh kembali ke 'bulan', tidak pernah
+    // dipakai untuk menyusun SQL.
+    const groupExpr = GROUP_EXPR[group] || GROUP_EXPR.bulan;
 
     const chartSql = `
       SELECT ${groupExpr} as g,

@@ -1,6 +1,14 @@
 // functions/api/dashboard.js
 import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
 
+// B7 — Fragmen WHERE untuk memisahkan data milik pelanggan.
+//
+// INI KONSTANTA, bukan hasil olahan input. Tidak ada satu pun nilai yang
+// berasal dari user; nama pelanggan sendiri dikirim lewat placeholder `?`
+// (lihat `params` di bawah). Konstanta sengaja diberi nama agar audit
+// SQL-injection bisa memutihkan pemakaiannya.
+const FILTER_WHERE = ' WHERE customer_name = ?';
+
 export async function onRequestGet({ request, env }) {
   if (request.method === 'OPTIONS') return corsOptions('GET, OPTIONS');
 
@@ -14,27 +22,33 @@ export async function onRequestGet({ request, env }) {
   const myName = user.user_name || '';
 
   try {
-    const custFilter = (!isStaff && myName) ? ' WHERE customer_name = ?' : '';
-    const custFilterAnd = (!isStaff && myName) ? ' AND customer_name = ?' : '';
-    const params = (!isStaff && myName) ? [myName] : [];
+    // Pelanggan non-staff hanya melihat order atas namanya sendiri.
+    const scoped = !isStaff && !!myName;
+    const params = scoped ? [myName] : [];
 
-    // KPI: total revenue
-    const revRes = await db.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total_rev FROM orders ${custFilter ? custFilter + " AND (status IS NULL OR status<>'batal')" : "WHERE (status IS NULL OR status<>'batal')"}`,
-      params
-    );
+    // KPI: total revenue.
+    // Dua bentuk SQL dipisah penuh (bukan disambung) supaya tidak ada
+    // operator logika yang bisa "dibajak" lewat fragmen.
+    const revSql = scoped
+      ? "SELECT COALESCE(SUM(total_amount), 0) as total_rev FROM orders WHERE customer_name = ? AND (status IS NULL OR status<>'batal')"
+      : "SELECT COALESCE(SUM(total_amount), 0) as total_rev FROM orders WHERE (status IS NULL OR status<>'batal')";
+    const revRes = await db.query(revSql, params);
     const totalRev = revRes[0]?.total_rev || 0;
 
-    // Active orders (baru or proses)
+    // Active orders (baru or proses) — dua bentuk terpisah, bukan disambung.
     const activeRes = await db.query(
-      `SELECT COUNT(*) as total_active FROM orders WHERE status IN ('baru', 'proses') ${custFilterAnd}`,
+      scoped
+        ? "SELECT COUNT(*) as total_active FROM orders WHERE status IN ('baru', 'proses') AND customer_name = ?"
+        : "SELECT COUNT(*) as total_active FROM orders WHERE status IN ('baru', 'proses')",
       params
     );
     const activeOrders = activeRes[0]?.total_active || 0;
 
     // Finished orders today
     const finRes = await db.query(
-      `SELECT COUNT(*) as fin_today FROM orders WHERE status = 'selesai' AND DATE(finished_at) = CURDATE() ${custFilterAnd}`,
+      scoped
+        ? "SELECT COUNT(*) as fin_today FROM orders WHERE status = 'selesai' AND DATE(finished_at) = CURDATE() AND customer_name = ?"
+        : "SELECT COUNT(*) as fin_today FROM orders WHERE status = 'selesai' AND DATE(finished_at) = CURDATE()",
       params
     );
     const finishedToday = finRes[0]?.fin_today || 0;
@@ -47,15 +61,19 @@ export async function onRequestGet({ request, env }) {
     }
 
     // Recent orders
-    const recentOrders = await db.query(
-      `SELECT o.*, s.name as service_name
-       FROM orders o
-       JOIN services s ON s.id = o.service_id
-       ${custFilter}
-       ORDER BY o.created_at DESC
-       LIMIT 10`,
-      params
-    );
+    const recentSql = scoped
+      ? `SELECT o.*, s.name as service_name
+         FROM orders o
+         JOIN services s ON s.id = o.service_id
+         ${FILTER_WHERE}
+         ORDER BY o.created_at DESC
+         LIMIT 10`
+      : `SELECT o.*, s.name as service_name
+         FROM orders o
+         JOIN services s ON s.id = o.service_id
+         ORDER BY o.created_at DESC
+         LIMIT 10`;
+    const recentOrders = await db.query(recentSql, params);
 
     // Vouchers available / claimed for user
     const vouchersRes = await db.query(
