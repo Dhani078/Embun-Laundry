@@ -4,6 +4,11 @@ compatibility_date = "2024-09-01"
 
 [assets]
 directory = "./public"
+# B4: by default Cloudflare serves static assets BEFORE the Worker runs, so
+# security headers in src/index.js were never applied to HTML/CSS/JS (confirmed:
+# /robots.txt returned CF-Cache-Status: HIT with zero custom headers).
+# run_worker_first makes the Worker handle every request, including assets.
+run_worker_first = true
 
 [vars]
 TIDB_DATABASE = "embun_laundry"
