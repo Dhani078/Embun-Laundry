@@ -1028,3 +1028,30 @@ celah operasional yang ditemukan saat memantau loop.
 - Status: **SUKSES**
 - Catatan untuk tick berikutnya:
   - FASE C: C2 selesai. Task P2 berikutnya: C1 (Katalog Layanan publik + filter) atau C3 (Notifikasi status polling).
+
+---
+
+## Tick 21 — 2026-09-10T18:12:00+08:00
+
+- Task: **C1** — Halaman "Layanan" publik + filter (P2)
+- Perubahan:
+  - `functions/api/services.js`: publik secara default diproteksi hanya melihat layanan aktif (`is_active = 1`); staf dapat melihat non-aktif dengan `?status=nonaktif`
+  - `public/index.html`:
+    - Bilah pencarian instan `#serviceSearchInput` untuk mencari nama atau deskripsi pakaian
+    - Filter kategori dinamis `#categoryPills` (`Semua`, `Reguler`, `Express`, `Satuan`, `Dry Cleaning`) dengan indikator aktif & tablist aksesibilitas
+    - Kartu layanan dinamis dengan badge kategori, harga/satuan (`/kg`, `/pcs`), durasi, deskripsi, dan tombol order modal
+    - Tampilan kosong (empty state) ramah dengan tombol "Reset Filter"
+  - `public/track.html`: Halaman mandiri pelacakan pesanan publik terintegrasi
+  - Harness uji: `tools/verify_c1.mjs` & `tools/verify_c1_run.mjs` (18/18 uji HIJAU)
+- File: `functions/api/services.js`, `public/index.html`, `public/track.html`, `tools/verify_c1.mjs`, `tools/verify_c1_run.mjs`, `tools/run_all_verifiers.sh`
+- Verifikasi:
+  - Gate 1: `node --check` sintaks bersih → exit 0
+  - Gate 2: `</html>` tepat 1 di `index.html` dan `track.html`
+  - Gate 5: 0 warna hex baru (semua via CSS tokens)
+  - Gate 6: Aksesibilitas `role="tab"` + `aria-selected` + `aria-label`
+  - Gate 7: Struktur `#pricesGrid` utuh
+  - Verifier suite: `tools/run_all_verifiers.sh` → 13/13 HIJAU
+- Commit: `1a02520`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - FASE C: C1 dan C2 selesai. Task P2 berikutnya: C3 (Notifikasi status polling) atau C6 (Riwayat order pelanggan).
