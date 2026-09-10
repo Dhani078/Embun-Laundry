@@ -1,5 +1,11 @@
 // functions/api/checkin.js
 import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
+// B12 — hari check-in dihitung di zona operasional (Asia/Jakarta), bukan UTC.
+// Lihat functions/_today.js: `toISOString()` membuat check-in antara
+// 00:00–06:59 WIB tercatat sebagai hari SEBELUMNYA, sehingga penjaga
+// "sudah check-in hari ini" tidak pernah melihatnya dan satu hari bisa
+// menghasilkan dua baris.
+import { todayIn } from '../_today.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -12,7 +18,7 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'GET') {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayIn();
       const rows = await db.query('SELECT * FROM daily_checkins WHERE user_id = ? AND day = ? LIMIT 1', [user.id, today]);
       const totalRows = await db.query('SELECT COUNT(*) as c FROM daily_checkins WHERE user_id = ?', [user.id]);
 
@@ -28,7 +34,7 @@ export async function onRequest({ request, env }) {
 
   if (request.method === 'POST') {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayIn();
       const existing = await db.query('SELECT id FROM daily_checkins WHERE user_id = ? AND day = ? LIMIT 1', [user.id, today]);
 
       if (existing.length > 0) {
