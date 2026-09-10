@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-09T18:55:00+08:00
-Tick ke: 15
+Terakhir update: 2026-09-10T16:20:00+08:00
+Tick ke: 16
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,39 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B12** — hari check-in di zona operasional (Asia/Jakarta), bukan UTC —
+  `1c2af13`
+  - **Defek**: `functions/api/checkin.js` menghitung hari dengan
+    `new Date().toISOString().split('T')[0]`. `toISOString()` SELALU UTC;
+    Workers jalan di UTC, operasional laundry di WIB (UTC+7). Antara pukul
+    00:00–06:59 WIB — jam toko mulai buka — "hari ini" menurut kode adalah
+    **kemarin**. Akibat ganda: check-in pagi tercatat di baris kemarin,
+    sehingga penjaga "sudah check-in hari ini" tidak pernah melihatnya dan
+    satu hari bisa membuahkan DUA baris.
+  - **Bukti defek (diukur)**: kode lama di-checkout dari HEAD, harness
+    dijalankan → **MERAH 29/33**, dengan baris
+    `06:00 WIB -> hari terkirim=2026-09-10 (harus 2026-09-11)`. Kode baru
+    → **HIJAU 33/33**.
+  - BARU `functions/_today.js`: `todayIn()` memakai
+    `Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Jakarta'})`. `en-CA` karena
+    format lokalnya persis `YYYY-MM-DD`. Fallback ke UTC bila `Intl` gagal.
+  - `tools/mock_tidb.mjs`: `__MOCK_ROWS` kini boleh berupa FUNGSI
+    `(sql, params) => rows`, bukan hanya array — perlu karena check-in
+    menjalankan SELECT "sudah ada?" lalu SELECT COUNT(*), dan harness harus
+    membedakan jawabannya.
+  - BARU `tools/verify_b12.mjs` + `verify_b12_run.mjs` — 33 uji untuk
+    `checkin.js` (GET/POST, zona waktu, check-in ganda) DAN `vouchers.js`
+    POST (hak akses, validasi `promo_id`, `bulk_claim`). Keduanya belum
+    pernah punya harness sama sekali — celah yang dicatat sendiri tick 15.
+  - **Terbukti di produksi**: tanpa sesi 401; admin GET `checked_today:false`
+    → POST `Check-in sukses` → GET `checked_today:true` → POST lagi **400
+    "Sudah check-in hari ini"**. Penjaga hari bekerja pada hari yang benar.
+  - **Peringatan untuk tick berikutnya**: pola `toISOString().split('T')[0]`
+    masih ada di `functions/api/delivery.js` untuk `schedule_date`. Di sana
+    hanya NILAI BAWAAN saat klien tak mengirim tanggal, jadi jauh lebih
+    tidak berbahaya — tetapi kalau nanti ada fitur "jadwal hari ini",
+    pakai `_today.js`.
 
 - **B11** — hak akses laporan + validasi rentang tanggal (P0 hardening) —
   `5534bc3`

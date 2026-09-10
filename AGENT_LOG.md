@@ -799,3 +799,60 @@ jalur serve aset statis di `src/index.js`.
     A6 + B3 tetap terblokir (butuh Cloudflare API token; `npx wrangler
     whoami` → "You are not authenticated").
 =====
+
+## Tick 16 — 2026-09-10T16:20:00+08:00 (B12 — hari check-in Asia/Jakarta, bukan UTC)
+
+- Task: B12 — zona waktu `daily_checkins` + harness untuk `checkin.js` dan
+  `vouchers.js` (dua endpoint yang dicatat tick 15 sebagai "belum punya
+  harness").
+- Temuan — `new Date().toISOString().split('T')[0]` menghasilkan hari **UTC**.
+  Workers berjalan di UTC; operasional laundry di WIB (UTC+7). Antara pukul
+  00:00–06:59 WIB — persis jam toko mulai buka — "hari ini" menurut kode
+  adalah **kemarin**. Dampaknya dua arah: check-in pagi tercatat di baris
+  kemarin, sehingga penjaga "sudah check-in hari ini" tidak pernah melihatnya
+  dan hari yang sama bisa membuahkan DUA baris.
+- Perubahan:
+  - BARU `functions/_today.js` — `APP_TZ = 'Asia/Jakarta'` dan `todayIn()`;
+    memakai `Intl.DateTimeFormat('en-CA', …)` karena format lokalnya persis
+    `YYYY-MM-DD`. Fallback ke UTC bila `Intl` gagal (lebih baik salah jam
+    daripada 500).
+  - `functions/api/checkin.js`: dua pemanggilan `toISOString()` diganti
+    `todayIn()` (GET + POST).
+  - `tools/mock_tidb.mjs`: `__MOCK_ROWS` boleh berupa FUNGSI
+    `(sql, params) => rows`, bukan hanya array. Perlu karena check-in
+    menjalankan SELECT "sudah ada?" lalu SELECT COUNT(*) dan harness harus
+    membedakan jawabannya.
+  - BARU `tools/verify_b12.mjs` + `verify_b12_run.mjs` — 33 uji yang mengukur
+    status, isi JSON, dan SQL + params yang benar-benar terkirim.
+- **Bukti defek (diukur, bukan diklaim)**: kode lama di-checkout dari HEAD
+  (`git show HEAD:functions/api/checkin.js`), harness dijalankan →
+  **MERAH 29/33**, dengan baris `06:00 WIB -> hari terkirim=2026-09-10 (harus
+  2026-09-11)` dan `POST 06:00 WIB -> [9,"2026-09-10"]`. Kode baru →
+  **HIJAU 33/33**. Berkas lama dikembalikan setelahnya.
+- Verifikasi (lokal): B12 33/33; regresi B1 HIJAU, B2 47/47, B5 50/50,
+  B7 HIJAU (0 temuan interpolasi, 68 literal), B8 35/35, B9 32/32, B10 29/29,
+  B11 41/41, A3b 15/15, audit_xss HIJAU, `node --check` 0 error.
+- Verifikasi (produksi, setelah deploy ~100 s):
+  - `/` 200, `/api/health` 200, `/api/services` 200, `/dashboard` 200.
+  - `/api/checkin` tanpa sesi → **401** `{"ok":false,"msg":"Unauthorized"}`.
+  - Login admin (field `identity`, bukan `email` — salah pakai `email` memberi
+    400 "Identitas wajib diisi"), lalu:
+    GET → `{"ok":true,"checked_today":false,"total_checkins":"0"}`;
+    POST → `{"ok":true,"msg":"Check-in sukses!","total_checkins":"1"}`;
+    GET → `{"ok":true,"checked_today":true,"total_checkins":"1"}`;
+    POST lagi → **400** `{"ok":false,"msg":"Sudah check-in hari ini"}`.
+    Penjaga hari bekerja pada hari yang benar.
+- Commit: `1c2af13`
+- Status: **SUKSES**
+- Catatan:
+  - Endpoint `/api/auth/login` menerima field `identity` (bukan `email`) —
+    berguna untuk tick berikutnya yang perlu token produksi.
+  - `vouchers.js` ikut terukur oleh harness B12 dan ternyata SUDAH aman:
+    tanpa sesi 401, `promo_id` bukan angka/nol/negatif/hilang 400, aksi tak
+    dikenal 400, `claim` sebagai Customer 401, `bulk_claim` 501 id 400,
+    sebagai Admin 200 + 1 INSERT. Jangan diubah tanpa alasan.
+  - Berikutnya: pola `toISOString().split('T')[0]` masih ada di
+    `functions/api/delivery.js` (`schedule_date`). Hanya nilai bawaan saat
+    klien tak mengirim tanggal, jadi tidak ada penjaga "sudah ada" yang
+    bergantung padanya — prioritas rendah. A6 + B3 tetap terblokir
+    (butuh Cloudflare API token).

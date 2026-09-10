@@ -138,11 +138,19 @@ File ini adalah **working copy** yang diupdate setiap tick.
    ngawur diterima 200. BARU `functions/_reportfilter.js` ( satu penjaga
    `dateRange()`). Periksa ulang dengan `node tools/verify_b11_run.mjs`
    (HASIL: HIJAU 41/41). Jangan dikerjakan ulang.
-10. **Celakanya cakupan verifier**: B10 dan B11 lolos berbulan-bulan karena
-    tidak ada harness yang memanggil endpointnya. Sebelum mengerjakan task
-    baru, tanyakan "endpoint mana yang belum punya harness?" — saat ini:
-    `checkin.js` dan `vouchers.js`.
-11. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
+10. **B12** — hari check-in di zona operasional (P1) — **SELESAI** `1c2af13`
+    (tick 16). `checkin.js` memakai `toISOString()` (UTC) sehingga antara
+    00:00–06:59 WIB "hari ini" = kemarin → penjaga "sudah check-in" buta dan
+    satu hari bisa dua baris. BARU `functions/_today.js` (`todayIn()`,
+    `Asia/Jakarta`). Periksa ulang `node tools/verify_b12_run.mjs`
+    (HASIL: HIJAU 33/33). Jangan dikerjakan ulang.
+11. **Celakanya cakupan verifier**: B10, B11, dan B12 lolos berbulan-bulan
+    karena tidak ada harness yang memanggil endpointnya. Sebelum mengerjakan
+    task baru, tanyakan "endpoint mana yang belum punya harness?" — setelah
+    tick 16, `checkin.js` dan `vouchers.js` SUDAH punya (`verify_b12`, 33
+    uji; `vouchers.js` terbukti sudah aman). Belum punya harness khusus:
+    `me.js`, `logout.js`, `profile.js`.
+12. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
     lampau (B1/B2/B5/A3b sudah `[x]` di tabel masing-masing). Abaikan.
 
 ### Status FASE A
