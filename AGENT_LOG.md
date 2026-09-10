@@ -909,3 +909,59 @@ jalur serve aset statis di `src/index.js`.
   - Endpoint yang tercatat "belum punya harness" (tick 15/16) kini semuanya
     terukur: `me`, `logout`, `profile`, `checkin`, `vouchers`.
   - A6 + B3 tetap terblokir (butuh Cloudflare API token).
+
+## Tick 18 — 2026-09-10T17:20:00+08:00
+- Task: B14 — pesan error generik di 20 titik (11 modul) + validasi `/api/pay`
+  (P1). Ini adalah AGENT_BACKLOG.md entri 12 ("sisa pekerjaan yang nyata"),
+  lanjutan langsung dari B13.
+- Temuan (diukur, bukan diasumsikan):
+  - Pola `msg: e.message` ternyata **20 titik** di 11 modul — bukan 18
+    seperti catatan tick 17: checkin (2), customers (2), dashboard (1),
+    delivery (2), orders (2), pay (2), promos (2), reports (1), services
+    (2), vouchers (2), login (1), register (1).
+  - `e.message` berasal dari driver @tidbcloud/serverless → dapat memuat
+    connection string, nama database, nama tabel, nomor baris. Harness
+    menyuntikkan pesan berpenanda; teksnya muncul utuh di 20 endpoint.
+  - **Celah B2 baru di `/api/pay`**, 4 sub-defek:
+    (a) `parseInt([1,2])` = 1 → array menjadi nilai uang yang sah, INSERT
+        tetap jalan, 200.
+    (b) tanpa batas atas → `amount: 2000000000` diterima.
+    (c) `method` mentah ke kolom ENUM → nilai asing = 500 dari TiDB.
+    (d) `order_code` tak dibatasi padahal VARCHAR(20).
+- Perubahan:
+  - BARU `SERVER_ERROR` di `functions/_db.js` — satu sumber pesan 500
+    generik; 20 titik kini memakainya.
+  - `functions/api/pay.js`: `amount`/`method`/`order_code` lewat
+    `validateOr400()`; enum `method` mengikuti DATABASE_SCHEMA.md;
+    GET `?order_code=` > 40 karakter → 400.
+  - BARU `tools/verify_b14.mjs` + `verify_b14_run.mjs` (76 uji) dan
+    `tools/probe_b14_live.sh` (uji produksi).
+  - `tools/run_all_verifiers.sh`: B14 ikut dijalankan.
+- Verifikasi (lokal): B14 **76/76**; B1, B2 47/47, B5, B7, B8, B9,
+  B10 29/29, B11 41/41, B12 33/33, B13 66/66 HIJAU; `node --check` 0 error.
+  Catatan: B8 sempat MERAH pada uji WAKTU "2 hash < 10 ms" (13,65 ms) saat
+  11 verifier dijalankan berurutan → HIJAU 35/35 pada 3x ulang terpisah.
+  `_password.js` tidak disentuh.
+- Verifikasi (produksi, setelah deploy ~100 s) — `bash tools/probe_b14_live.sh`:
+  - `/` 200, `/dashboard` 200, `/api/health` 200, `/api/services` 200.
+  - Tanpa sesi: `/api/me`, `/api/orders`, `/api/customers`, `/api/reports`
+    401; `/api/pay` 400.
+  - `/api/pay`: amount array → 400; amount 2e9 → 400; amount -1000 → 400;
+    body JSON rusak → 400; order_code raksasa → 400; method asing → 400
+    `{"ok":false,"msg":"Validasi gagal: Metode pembayaran tidak valid"}`
+    (teks baru membuktikan kode baru sudah hidup).
+  - Login admin → 200; `/api/me`, `/api/orders`, `/api/dashboard`,
+    `/api/checkin`, `/api/vouchers` bersesi → 200 (fitur tidak mati).
+  - Header B4 utuh: nosniff, X-Frame-Options: DENY, Referrer-Policy.
+- Commit: `58fb1b5`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - Dua angka 404 di probe BUKAN kegagalan: `pay GET ?order_code=200X`
+    ditolak validasi lebih dulu, dan `method` asing berhenti di "pesanan
+    tidak ditemukan" sebelum `method` diuji. Uji dengan order_code yang ADA.
+  - `verify_b8` mengandung uji WAKTU — ulangi sebelum menyimpulkan regresi.
+  - Audit statik di `verify_b14` membuang komentar dulu; tanpa itu
+    `profile.js` MERAH PALSU (komentar B13 menyebut `msg: e.message`).
+  - A6 + B3 tetap terblokir (butuh Cloudflare API token).
+  - Backlog: FASE B kini tinggal A6/B3 (terblokir). FASE C (C1–C10) belum
+    tersentuh; prioritas berikutnya P2 = C1/C2/C3/C6/C7/C8.

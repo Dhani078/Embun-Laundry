@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T16:55:00+08:00
-Tick ke: 17
+Terakhir update: 2026-09-10T17:20:00+08:00
+Tick ke: 18
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,59 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B14** — pesan error generik di 20 titik (11 modul) + validasi `/api/pay`
+  (P1) — `58fb1b5` (tick 18)
+  - Ini adalah entri 12 di AGENT_BACKLOG.md yang dulu berbunyi "sisa
+    pekerjaan yang nyata — pola `msg: e.message` ada di 18 titik lain".
+    Setelah dihitung ulang saat implementasi, ternyata **20 titik** di
+    11 modul: `checkin` (2), `customers` (2), `dashboard` (1), `delivery`
+    (2), `orders` (2), `pay` (2), `promos` (2), `reports` (1), `services`
+    (2), `vouchers` (2), `login` (1), `register` (1).
+  - **Defek 1 — kebocoran pesan internal**: `e.message` berasal dari driver
+    `@tidbcloud/serverless` dan dapat memuat connection string, nama
+    database, nama tabel, dan nomor baris. Terbukti: harness menyuntikkan
+    pesan berpenanda `RAHASIA: connection string mysql://...` dan teks itu
+    muncul utuh di badan respons 20 endpoint (sebelum diperbaiki).
+    Solusi: BARU konstanta `SERVER_ERROR` di `functions/_db.js` — satu
+    sumber pesan generik agar tidak ada modul yang lupa. Ini melengkapi
+    B13, yang baru membersihkan `profile.js`.
+  - **Defek 2 — celah B2 di `/api/pay`** (4 sub-defek, semua terbukti):
+    - `parseInt(body.amount) || 0` menerima ARRAY: `amount: [1,2]` →
+      bernilai 1, INSERT ke `payments` tetap dijalankan, respons 200.
+      **Nilai uang berasal dari array.**
+    - Tidak ada batas atas: `amount: 2000000000` diterima mentah.
+    - `method` dikirim apa adanya ke kolom
+      `ENUM('QRIS','DANA','OVO','GOPAY','TRANSFER','CASH')` → nilai asing
+      berakhir sebagai 500 dari TiDB, bukan 400 dari kita.
+    - `order_code` tidak dibatasi padahal kolomnya `VARCHAR(20)`; 5000
+      karakter hanya berakhir sebagai 500 dari DB.
+    Kini ketiganya lewat `validateOr400()`; enum `method` mengikuti skema
+    `DATABASE_SCHEMA.md`. GET `?order_code=` > 40 karakter juga ditolak 400.
+  - **Bukti defek (diukur)**: kode lama → **MERAH 46/76**; kode baru →
+    **HIJAU 76/76**. Tidak ada hijau kosong.
+  - Jalur sukses diuji tidak mati: login PBKDF2 sah tetap **200** + cookie
+    `HttpOnly; Secure; SameSite=Lax`; `amount` wajar tetap 200 + INSERT
+    ter-parameterisasi; `method: 'DANA'` tetap 200.
+  - Terbukti di produksi (`bash tools/probe_b14_live.sh`): `amount` array /
+    2e9 / negatif → **400**; `method` asing → 400
+    `{"ok":false,"msg":"Validasi gagal: Metode pembayaran tidak valid"}`
+    (teks baru = kode baru sudah hidup); `order_code` raksasa → 400; login
+    admin 200; `/api/me`, `/api/orders`, `/api/dashboard`, `/api/checkin`,
+    `/api/vouchers` bersesi → 200; tanpa sesi → 401; header B4 utuh.
+  - **Catatan untuk tick berikutnya — jangan terkecoh dua angka 404**:
+    `pay GET ?order_code=200X` dan `pay POST method asing` bisa
+    mengembalikan 404, BUKAN 400. Itu karena `order_code` 200 karakter
+    ditolak lebih dulu, dan untuk `method` asing kodenya berhenti di
+    "pesanan tidak ditemukan" SEBELUM `method` diuji — urutan yang benar.
+    Uji ulang dengan `order_code` yang ADA untuk melihat 400 validasi.
+  - **Pelajaran — `verify_b8` punya uji WAKTU.** Uji "2 hash < 10 ms"
+    pernah MERAH pada 13,65 ms saat 11 verifier dijalankan berurutan;
+    HIJAU 35/35 pada tiga kali ulang terpisah. `_password.js` tidak
+    disentuh commit ini. Ulangi sebelum menyimpulkan regresi.
+  - **Pelajaran — audit statik wajib buang komentar dulu.** Pemeriksaan
+    `msg: ... e.message` mula-mula MERAH pada `profile.js` padahal file itu
+    benar sejak B13 — yang cocok adalah kalimat komentarnya.
 
 - **B13** — validasi input `/api/profile` + pesan error generik (P1,
   melengkapi B2) — `3145171` (tick 17)
