@@ -41,6 +41,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B12 | Hari check-in di zona `Asia/Jakarta`, bukan UTC | P1 | [x] | `1c2af13` |
 | B13 | Validasi input `/api/profile` + pesan error generik | P1 | [x] | `3145171` |
 | B14 | Pesan error generik 20 titik (11 modul) + validasi `/api/pay` | P1 | [x] | `58fb1b5` |
+| B15 | Validasi input `/api/delivery` + jadwal bawaan `Asia/Jakarta` | P1 | [x] | `abc9922` |
 
 ---
 
@@ -155,8 +156,31 @@ File ini adalah **working copy** yang diupdate setiap tick.
     mengirim `msg: e.message` → connection string bisa bocor. Periksa ulang
     dengan `node tools/verify_b13_run.mjs` (HASIL: HIJAU 66/66). Jangan
     dikerjakan ulang.
-11. **B14 — pesan error generik di 20 titik + validasi `/api/pay` (P1) —
-    SELESAI `58fb1b5`** (tick 18). Ini ADALAH entri 12 yang dulu berbunyi
+- **B15 — validasi input `/api/delivery` + jadwal bawaan Asia/Jakarta (P1) —
+  SELESAI `abc9922`** (tick 23). `delivery.js` adalah satu-satunya modul yang
+  TIDAK ikut dipasangi `validateOr400()` pada B2. Tiga defek nyata, semua
+  diukur sebelum diperbaiki: (a) 13 input ngawur diterima 200 — termasuk
+  alamat array dan telepon objek yang tersimpan ke kolom alamat/telepon
+  pelanggan; (b) `parseInt([5,9])` = 5, jadi `id` array lolos dan elemen
+  pertamanya dipakai; (c) jadwal bawaan `toISOString()` (UTC), padahal
+  `schedule_date` DATE NOT NULL. BARU tipe `time` di `_validate.js` dan
+  `type:'int'` kini menolak objek/array. Periksa ulang dengan
+  `node tools/verify_b15_run.mjs` (HASIL: HIJAU 93/93). Jangan dikerjakan
+  ulang.
+- **Pelajaran tick 23 — tiga hijau palsu ditemukan pada harness SENDIRI.**
+  Hijau tidak berarti harness punya gigi; hanya uji mutasi yang membuktikannya.
+  1. `if (patch.type === undefined) delete body.type;` pada tabel patch:
+     karena hampir semua patch tidak punya kunci `type`, SETIAP kasus
+     kehilangan `type` dan 400 karena alasan yang SALAH. Mutasi "batas nama
+     dibuka" tetap HIJAU 91/91. Perbaikan: `'type' in patch && ...`.
+     **Waspadai pola ini di semua harness berbasis tabel patch.**
+  2. Uji zona waktu tidak bisa membedakan benar/salah bila WIB dan UTC sedang
+     hari yang sama — mutasi "jadwal balik UTC" HIJAU. Wajib ada uji dengan
+     **jam dibekukan** (`2026-09-10T23:00:00Z` = 06:00 WIB hari berikutnya).
+  3. Membekukan `Date` menyentuh scope global — wajib ada uji bahwa jam pulih
+     sesudahnya, atau semua uji berikutnya mengukur waktu yang salah.
+- **B14 — pesan error generik di 20 titik + validasi `/api/pay` (P1) —
+  SELESAI `58fb1b5`** (tick 18). Ini ADALAH entri 12 yang dulu berbunyi
     "sisa pekerjaan yang nyata"; kini selesai, jangan dikerjakan ulang.
     Periksa ulang dengan `node tools/verify_b14_run.mjs` (HASIL: HIJAU
     76/76). Bukti: kode lama MERAH 46/76, kode baru HIJAU 76/76.

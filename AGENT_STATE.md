@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T18:12:00+08:00
-Tick ke: 21
+Terakhir update: 2026-09-10T18:58:00+08:00
+Tick ke: 23
 Model: cbai/hy4-preview (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -50,6 +50,49 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B15** — validasi input `/api/delivery` + jadwal bawaan Asia/Jakarta (P1,
+  melengkapi B2) — `abc9922` (tick 23)
+  - `delivery.js` adalah satu-satunya modul yang TIDAK ikut dipasangi
+    `validateOr400()` pada B2. Celahnya sudah dicatat sendiri di `_today.js`
+    sejak B12. Satu tick menutup dua hal: input tanpa validasi, dan tanggal
+    yang salah zona.
+  - **Defek 1 — 13 input ngawur diterima 200** (diukur dulu dengan probe
+    sementara): `customer_name` 5.000 char (kolom VARCHAR(80) -> 500 dari
+    TiDB), `phone` objek -> `[object Object]` tersimpan, `address` array ->
+    `"a,b"` tersimpan di alamat, `order_code` 9.000 char, `notes` 20.000
+    char, `schedule_date: 'besok-saja'`, `start_time: 'pagi sekali'`.
+    **Kolom yang dipertaruhkan: alamat dan telepon pelanggan.**
+  - **Defek 2 — `parseInt(body.id)` pada ARRAY**: `id: [5,9]` bernilai 5 —
+    elemen pertama dipakai, sisanya dibuang, tanpa keluhan. `id: -3` dan
+    `courier_id: -7` juga lolos.
+  - **Defek 3 — jadwal bawaan UTC**: `toISOString().split('T')[0]`.
+    `schedule_date` adalah DATE NOT NULL, jadi tugas yang dibuat antara
+    00:00–06:59 WIB tercatat sebagai hari KEMARIN dan langsung tampil
+    "lewat jadwal". Kini `todayIn()` dari `_today.js`.
+  - Perubahan: `delivery.js` seluruh field `create_task` + 3 aksi lain lewat
+    `validateOr400()` (batas mengikuti `DATABASE_SCHEMA.md`); parameter GET
+    dibersihkan. `_validate.js` mendapat TIPE BARU **`time`**
+    (`HH:MM`/`HH:MM:SS`) + `isTime()`, dan `type:'int'` kini MENOLAK
+    objek/array (dulu `Number([3])` = 3 lolos).
+  - BARU `tools/verify_b15.mjs` + `verify_b15_run.mjs` — **93 uji**.
+    Periksa ulang dengan `node tools/verify_b15_run.mjs`.
+  - **Uji mutasi 7x — semua MERAH** (batas nama dibuka, `date`/`time` jadi
+    str bebas, jadwal balik UTC, Customer boleh pilih kurir, validasi
+    dilewati, filter GET dimatikan). Dipulihkan: HIJAU 93/93.
+  - **TIGA HIJAU PALSU pada harness sendiri — pelajaran terpenting tick ini:**
+    1. `if (patch.type === undefined) delete body.type;` membuat SETIAP kasus
+       kehilangan `type` -> 400 karena "Tipe wajib diisi", bukan karena field
+       yang diuji. Mutasi "batas nama -> 100.000" tetap HIJAU 91/91 padahal
+       kode rusak. Perbaikan: `'type' in patch && patch.type === undefined`.
+       **Pola ini berbahaya di semua harness berbasis tabel patch.**
+    2. Uji zona waktu tidak bisa membedakan benar/salah bila WIB dan UTC
+       sedang hari yang sama. Wajib ada uji dengan **jam dibekukan**
+       (`2026-09-10T23:00:00Z` = 06:00 WIB hari berikutnya).
+    3. Membekukan `Date` menyentuh scope global — wajib ada uji bahwa jam
+       pulih sesudahnya, atau uji berikutnya mengukur waktu yang salah.
+  - **JANGAN dikerjakan ulang.** Terbukti di produksi: 10 input ngawur ->
+    400; jalur sukses 200; B10 401 tanpa sesi; B4 + B5 utuh; preflight 204.
 
 - **C1** — Halaman "Layanan" publik + filter (P2) — `1a02520` (tick 21)
   - Endpoint `/api/services`: publik secara default diproteksi hanya melihat layanan aktif (`is_active = 1`).
