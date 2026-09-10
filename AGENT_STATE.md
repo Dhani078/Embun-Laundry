@@ -469,6 +469,25 @@ Model: cbai/hy4-preview (custom:9router)
   → **Berikutnya B8** (hash sandi PBKDF2 via WebCrypto) atau masuk FASE C
   (fitur). B8 butuh migrasi: sandi lama SHA-256(`dhani-salt` + pw) harus
   tetap bisa login → simpan format lama dulu, rehash saat login sukses.
+- **FASE C sudah dimulai**: **C2 selesai** (`1551773` + `7362779`),
+  **C1 selesai** (`1a02520` + `292523c`). Berikutnya C3 (notifikasi
+  real-time status) atau C6 (riwayat order pelanggan).
+- **C2 JANGAN dikerjakan ulang.** Endpoint `/api/track` sudah ada dan
+  teruji 58/58. Periksa ulang dengan `node tools/verify_c2_run.mjs`.
+  Yang perlu diingat: endpoint ini **publik tanpa login**, dan kode pesanan
+  hanya ~46 ribu kemungkinan per milidetik → `publicView()` adalah
+  allowlist. Menambah field ke sana tanpa uji "TIDAK bocor" = celah PII.
+- **Ada agent lain mengerjakan repo ini bersamaan** (terbukti tick 22:
+  `run_all_verifiers.sh` dan `AGENT_LOG.md` diubah oleh sibling subagent,
+  dan C1/C2 ter-commit di luar tick). Karena itu:
+  - SELALU `git status` + `git diff HEAD` sebelum menyimpulkan
+    "pekerjaanku hilang" — bisa jadi sudah ter-commit oleh sibling.
+  - Refresh `.agent-lock` di tengah tick yang panjang, jangan hanya di awal.
+  - Jangan menulis file .md tanpa `git pull --rebase` sesaat sebelum itu.
+- **Uji mutasi adalah cara membuktikan harness punya gigi.** Hijau saja
+  tidak berarti apa-apa. Tick 22 merusak kode sengaja 3x (hapus
+  `?order_code=`, bocorkan PII, salah `progress_step`) dan harness MERAH
+  setiap kali (56/58, 54/58, 57/58). Terapkan pola ini ke verifier baru.
 - **B5 JANGAN dikerjakan ulang.** Sudah tuntas `d32c367`. Untuk memeriksa
   ulang: `node tools/verify_b5_run.mjs` (exit 0, HASIL: HIJAU 50/50).
   Jangan "memperbaiki" `Access-Control-Allow-Methods` yang masih dikirim ke
