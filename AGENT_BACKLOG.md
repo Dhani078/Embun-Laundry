@@ -46,6 +46,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B17 | Wajib sesi pada `POST /api/pay` (penulisan terbuka) | **P0** | [x] | `a8ca085` |
 | B18 | Audit kata kerja TULIS semua modul (jaring regresi B17) | P1 | [x] | `ab7026e` |
 | B19 | Harga & diskon bukan hak pelanggan (`create_order`) | P1 | [x] | `3709f0f` |
+| B20 | Jumlah bayar dibatasi sisa tagihan (`POST /api/pay`) | P1 | [x] | `858262a` |
 
 ---
 

@@ -662,6 +662,28 @@ Model: cbai/hy4-preview (custom:9router)
 - Saat memverifikasi login di tick berikutnya, **batasi percobaan** agar tidak
   memicu rate limit sendiri. Cukup 1–2 percobaan per tick.
 
+## Ringkas tick 28 (B20) — batas uang yang benar, bukan batas tipe
+
+- **B20** `858262a` (tick 28) — `POST /api/pay` kini menolak `amount` yang
+  melebihi **sisa tagihan** pesanan. **SELESAI, jangan dikerjakan ulang.**
+  Periksa ulang dengan `node tools/verify_b20_run.mjs` (HASIL: HIJAU 37/37,
+  terdaftar di `run_all_verifiers.sh`, kini 19 verifier).
+- Sisa = `total_amount - paid_amount - SUM(payments 'pending'+'paid')`.
+  Mengabaikan yang ketiga membuat "bayar pas dua kali" tetap lolos.
+- **Yang belum selesai dan BUKAN bagian B20**: `pay.js` tidak pernah menulis
+  `orders.paid_amount` / `payment_status`. Baris `payments` berstatus
+  `pending` selamanya, jadi "lunas" di `/pay` dan `/track` tidak pernah
+  berubah. Itu celah FUNGSIONAL — task sendiri, jangan disatukan ke B20.
+- Dua jebakan yang nyaris membuat klaim tick ini bohong (rincian di
+  AGENT_LOG.md):
+  - **Buktikan alat ukur sebelum menyalahkan kode.** `colOf()` di harness
+    memetakan `params[i]` ke kolom[i], padahal INSERT `payments` menyisipkan
+    literal `'manual'`/`'pending'` di tengah — jadi ia mengembalikan
+    `qr_payload` saat diminta `amount`.
+  - **`git checkout` pada skrip mutasi menghapus perbaikan yang belum
+    di-commit.** Tandanya: angka MERAH **identik** untuk mutasi yang berbeda
+    (20/37). Pulihkan dari cadangan `.tmp/`, bukan dari git.
+
 ## Ringkas tick 25 (B17) + penuntasan buku tick 24 (B16)
 
 - **B16** `502d56a` (tick 24, crash sebelum merapikan dokumen) — batas
