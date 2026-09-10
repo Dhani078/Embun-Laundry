@@ -1,5 +1,5 @@
 // functions/api/auth/login.js
-import { getDb, jsonResponse, createSessionToken, readJson } from '../../_db.js';
+import { getDb, jsonResponse, createSessionToken, readJson, SERVER_ERROR } from '../../_db.js';
 import { clientKey, consume, peek, clearAll } from '../../_ratelimit.js';
 import { validateOr400 } from '../../_validate.js';
 // B8 — verifikasi sandi kini PBKDF2 (dengan fallback ke format lawas).
@@ -148,7 +148,7 @@ export async function onRequestPost({ request, env, ctx }) {
     ctx?.waitUntil?.(clearAll(key));
     return withRateHeaders(res, RL_LIMIT);
   } catch (e) {
-    return reply(key, { ok: false, msg: 'Server error: ' + e.message }, 500);
+    return reply(key, { ok: false, msg: SERVER_ERROR }, 500);
   }
 }
 

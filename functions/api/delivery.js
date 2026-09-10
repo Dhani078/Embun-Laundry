@@ -1,5 +1,5 @@
 // functions/api/delivery.js
-import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -73,7 +73,7 @@ export async function onRequest({ request, env }) {
 
       return jsonResponse({ ok: true, tasks, couriers });
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
     }
   }
 
@@ -157,7 +157,7 @@ export async function onRequest({ request, env }) {
 
       return jsonResponse({ ok: false, msg: 'Unknown action' }, 400);
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
     }
   }
 

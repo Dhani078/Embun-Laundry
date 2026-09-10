@@ -1,5 +1,5 @@
 // functions/api/auth/register.js
-import { getDb, hashPassword, jsonResponse, createSessionToken, readJson } from '../../_db.js';
+import { getDb, hashPassword, jsonResponse, createSessionToken, readJson, SERVER_ERROR } from '../../_db.js';
 import { validateOr400 } from '../../_validate.js';
 
 export async function onRequestPost({ request, env }) {
@@ -100,7 +100,7 @@ export async function onRequestPost({ request, env }) {
     });
 
   } catch (e) {
-    return jsonResponse({ ok: false, msg: 'Terjadi kesalahan: ' + e.message }, 500);
+    return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
   }
 }
 
