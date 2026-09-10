@@ -636,6 +636,36 @@ Model: cbai/hy4-preview (custom:9router)
   pembayaran dibuka lewat tautan berkode dan B10 sudah menyensor
   telepon/alamat. Jangan "diperbaiki" menjadi 401.
 
+## Ringkas tick 26 (B18) — jaring regresi untuk kelas defek B17
+
+- **B18** `ab7026e` (tick 26) — audit kata kerja TULIS pada SEMUA modul.
+  **Bukan perbaikan defek**: nol baris di `functions/` diubah. B17 lolos
+  bertahun-tahun karena `verify_b10` mengimpor `pay.js` tetapi hanya menguji
+  GET; B18 menutup polanya. **SELESAI, jangan dikerjakan ulang.**
+- Hasil: **HIJAU 76/76**, nol jalur tulis terbuka. Periksa ulang dengan
+  `node tools/verify_b18_run.mjs` (terdaftar di `run_all_verifiers.sh`,
+  kini 17 verifier).
+- Yang diukur adalah **SQL tulis yang benar-benar terkirim**, bukan status —
+  401 yang dikembalikan SETELAH `db.execute()` tetap meninggalkan baris.
+- **Registrasi diuji dengan asersi TERBALIK**: mendaftar adalah satu-satunya
+  penulisan yang memang harus bisa tanpa sesi. Jangan "diperbaiki" jadi 401.
+- Uji mutasi 5x: 1 MERAH 73/76, 2 HIJAU 76/76 (bukan celah — penjaga masih
+  mendahului tulis), 3 MERAH 72/76, 4 MERAH 74/76, 5 MERAH 74/76.
+
+### Pelajaran tick 26 (berlaku umum)
+
+- **Mutasi yang HIJAU belum tentu berarti harness lemah.** Mutasi "tulis
+  sebelum penjaga" pada `delivery.js` tetap HIJAU 76/76, dan itu BENAR:
+  `delivery.js` punya penjaga `!user` di tingkat atas sehingga mutasi
+  setempat tak bisa menghasilkan penulisan. Baru di `services.js` (GET
+  publik, tanpa penjaga atas) pola B17 terbukti MERAH 72/76. **Sebelum
+  menyimpulkan harness tak punya gigi, cek penjaga lapis lain di modul.**
+- `audit_api_guard.py` mengembalikan exit 1 dengan 10 handler tanpa
+  try/catch — **keadaan lama, bukan regresi**. Semuanya dispatcher
+  (`onRequest`) / `health` / `me.js` yang tidak menyentuh DB, dan
+  `audit_throw_sites.py` (exit 0) membuktikan nol throw site. Jangan
+  "diperbaiki" tanpa bukti defek nyata.
+
 ### Pelajaran tick 25 (berlaku umum)
 
 - **Uji keamanan yang hanya menyentuh GET buta terhadap celah TULIS.**
