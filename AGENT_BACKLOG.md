@@ -366,3 +366,21 @@ tidak merusak dirinya sendiri. Baca sebelum menjalankan tick.
 - **B1 rate limit** → `POST /api/auth/login` memang mengembalikan **429**
   bila dipanggil berulang dari IP yang sama. Itu perilaku benar, bukan bug.
   Batasi 1–2 percobaan login per verifikasi.
+
+### Model LLM untuk cron loop (PENTING)
+
+- Job cron memakai `model.default` global dari `config.yaml`. Default global
+  saat ini `cbai/hy4-preview` — model ini **sering kehabisan kredit**
+  (`HTTP 429 code 14018 "Credits exhausted"`). Bila itu terjadi, SEMUA tick
+  gagal dan gejalanya menyesatkan (seolah bug kode).
+- Solusi yang dipakai: model **per-job**, bukan global:
+  `hermes cron edit 6644cfdf9118 --model combomaut --provider custom`
+  (idem untuk `4af45b321a8c`). `combomaut` adalah router 9Router yang
+  terbukti hidup (balas `HTTP 200`, SSE, via claude-sonnet-4-6).
+- Verifikasi model hidup TANPA menunggu tick:
+  `curl -s -m 60 http://localhost:20128/v1/chat/completions -H "Authorization: Bearer $HERMES_CUSTOM_LOCALHOST_20128_API_KEY" -H 'Content-Type: application/json' -d '{"model":"combomaut","messages":[{"role":"user","content":"say PONG"}],"max_tokens":20}'`
+- **Jangan** buru-buru menyimpulkan "kode rusak" saat banyak tick gagal
+  serentak; baca dulu `error` di `executions.db` atau file output terbaru di
+  `cron/output/<job_id>/`.
+- `hermes cron doctor` melaporkan sehat walau tick gagal berulang. Percaya
+  `hermes cron runs` + kolom `error` di `executions.db`.
