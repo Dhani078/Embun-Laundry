@@ -1253,3 +1253,78 @@ validasi, dan tanggal yang salah zona.
   - Field login adalah `identity` (bukan `email`/`username`); `customers`
     POST memakai `full_name` (bukan `name`); `orders` list = GET tanpa
     `action`. Salah field menghasilkan 400 yang tampak seperti bug.
+
+## Tick 26 — B18: audit kata kerja TULIS semua modul (`ab7026e`)
+
+Tindak lanjut langsung dari catatan tick 25: "uji kata kerja TULIS pada
+setiap modul yang GET-nya sengaja publik." Kandidat yang disebut (`track.js`)
+diperiksa lebih dulu — ternyata ia GET-saja dengan 405 untuk kata kerja lain,
+jadi aman. Alih-alih memeriksa satu per satu tanpa bukti, dibuat jaring
+regresi untuk SELURUH kelas defeknya.
+
+- **Bukan perbaikan defek.** Tidak ada baris `functions/` yang diubah;
+  `git diff --stat` untuk direktori itu kosong. Ini murni penambahan harness.
+- **Yang diukur:** 29 aksi tulis pada 10 modul dipanggil TANPA cookie; yang
+  dicek adalah SQL tulis yang benar-benar terkirim ke driver, bukan status.
+  Alasan (pelajaran B17): 401 yang dikembalikan SETELAH `db.execute()` tetap
+  meninggalkan baris, jadi status bisa menipu.
+- Cakupan: orders (4 aksi), customers (3), services (4), promos (4),
+  vouchers (4), delivery (4), pay, profile (2), checkin, register.
+  Tambahan: 4 kata kerja terlarang pada `track.js`, 10 uji jalur sukses
+  staf, 3 uji GET publik tidak ikut tertutup (C1/C2/B10).
+- **Registrasi diuji dengan asersi TERBALIK** — mendaftar ialah satu-satunya
+  penulisan yang memang harus bisa tanpa sesi. Bila kelak ia "diperbaiki"
+  menjadi 401, harness harus MERAH.
+
+### Hasil
+
+`node tools/verify_b18_run.mjs` → **HIJAU 76/76**. Nol jalur tulis terbuka.
+
+### Uji mutasi (5x, kode dipulihkan setelah masing-masing)
+
+| # | Mutasi | Hasil |
+|---|--------|-------|
+| 1 | hapus penjaga `isStaff` di services.js (B17 terulang) | MERAH 73/76 |
+| 2 | penjaga digeser sesudah `validate` (masih sebelum tulis) | HIJAU 76/76 |
+| 3 | **tulis SEBELUM penjaga**, services.js | MERAH 72/76 |
+| 4 | `track.js` menerima POST | MERAH 74/76 |
+| 5 | `isStaff = false` (fitur mati) | MERAH 74/76 |
+
+Mutasi 3 yang terpenting: status **401 namun UPDATE tetap terkirim** —
+persis pola B17. Tanpa mengukur SQL, mutasi ini tampak "benar".
+
+**Mutasi 2 sengaja HIJAU, dan itu bukan kelemahan harness** — penjaga masih
+mendahului penulisan, jadi memang bukan celah. Dicatat agar tick berikutnya
+tidak "memperbaiki" harness gara-gara angka hijau.
+
+### Temuan yang layak dicatat: mutasi 3 gagal di `delivery.js`
+
+Mutasi "tulis sebelum penjaga" mula-mula dicoba pada `delivery.js` dan tetap
+HIJAU 76/76. Diagnosis: `delivery.js` punya penjaga `!user` di **tingkat
+atas**, sehingga mutasi setempat tidak dapat menghasilkan penulisan. Baru
+setelah mutasi dipindah ke `services.js` (GET publik, tanpa penjaga atas)
+pola B17 terbukti MERAH. Pelajaran umum: sebelum menyimpulkan harness lemah,
+periksa apakah modul yang dimutasi punya penjaga lapis lain.
+
+### Regresi & verifikasi
+
+- `run_all_verifiers.sh` **17/17 HIJAU** (B18 76/76 masuk daftar).
+- `audit_sql_injection.py` exit 0; `audit_throw_sites.py` exit 0 ("setiap
+  handler tanpa try/catch terbukti nol throw site"); `audit_xss.py` HIJAU.
+- `audit_api_guard.py` exit 1 — **sudah ada sebelumnya, bukan regresi**: 10
+  handler tanpa try/catch, semuanya dispatcher (`onRequest`) / `health` /
+  `me.js` yang tidak menyentuh DB, dan `audit_throw_sites.py` membuktikan
+  nol throw site. Jangan "diperbaiki" tanpa bukti ada defek.
+- `node --check` bersih di semua `functions/**` plus berkas baru.
+- **Terbukti di produksi:** POST `/api/pay` tanpa sesi → 401; POST
+  `/api/services` tanpa sesi → 401; POST `/api/track` → 405; GET
+  `/api/services` dan `/api/promos` → 200. Baseline `/`, `/dashboard`,
+  `/api/health`, `/api/services`, `/assets/design-tokens.css` → 200.
+
+### Catatan untuk tick berikutnya
+
+- Perubahan bersifat test-only, jadi tidak ada perilaku produksi yang
+  berubah; verifikasi produksi di atas hanya membuktikan keadaan sudah benar.
+- Pola audit berikutnya yang belum dilakukan: **harness untuk modul yang
+  masih belum punya** — `dashboard.js` dan `reports.js` (keduanya GET dan
+  sudah berpenjaga `!user`, jadi kemungkinan besar bersih).

@@ -44,6 +44,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B15 | Validasi input `/api/delivery` + jadwal bawaan `Asia/Jakarta` | P1 | [x] | `abc9922` |
 | B16 | Batas validasi selaras lebar kolom TiDB | P1 | [x] | `502d56a` |
 | B17 | Wajib sesi pada `POST /api/pay` (penulisan terbuka) | **P0** | [x] | `a8ca085` |
+| B18 | Audit kata kerja TULIS semua modul (jaring regresi B17) | P1 | [x] | `ab7026e` |
 
 ---
 
@@ -185,6 +186,28 @@ File ini adalah **working copy** yang diupdate setiap tick.
   hanya GET; B10 sudah menyensor telepon & alamat) — jangan "diperbaiki".
   Periksa ulang dengan `node tools/verify_b17_run.mjs` (HASIL: HIJAU 19/19).
   Jangan dikerjakan ulang.
+- **B18 — audit kata kerja TULIS semua modul (P1) — SELESAI `ab7026e`**
+  (tick 26). **Bukan perbaikan defek, melainkan jaring regresi untuk kelas
+  defek B17.** B17 lolos bertahun-tahun karena `verify_b10` mengimpor
+  `pay.js` tetapi hanya menguji GET. B18 menutup polanya: **29 aksi tulis
+  pada 10 modul** dipanggil TANPA cookie dan yang diukur adalah SQL tulis
+  yang benar-benar terkirim — bukan status. HASIL: **HIJAU 76/76**, tidak
+  ada satu pun jalur tulis yang terbuka. Periksa ulang dengan
+  `node tools/verify_b18_run.mjs`. Jangan dikerjakan ulang.
+  Yang diuji: orders/customers/services/promos/vouchers/delivery/pay/
+  profile/checkin (semua aksi tulisnya), 4 kata kerja terlarang pada
+  `track.js`, 10 uji jalur sukses staf, 3 uji GET publik tak ikut tertutup.
+  **Registrasi diuji dengan asersi TERBALIK** — mendaftar adalah satu-satunya
+  penulisan yang memang harus bisa tanpa sesi; jangan "diperbaiki" jadi 401.
+- **Pelajaran tick 26 — uji mutasi yang HIJAU belum tentu kegagalan harness.**
+  Mutasi "penjaga dipindah SETELAH penulisan" pada `delivery.js` tetap HIJAU
+  76/76, dan itu BENAR: `delivery.js` punya penjaga `!user` di tingkat atas,
+  jadi mutasi itu tidak bisa menghasilkan penulisan. Untuk membuktikan
+  harness punya gigi pada pola B17, mutasi harus diletakkan di modul yang
+  GET-nya publik dan TIDAK punya penjaga atas (`services.js`) — di situ
+  status 401 tetap terkirim bersama UPDATE, MERAH 72/76. **Sebelum
+  menyimpulkan harness lemah, cek apakah modul yang dimutasi punya penjaga
+  lapis lain.**
 - **Pelajaran tick 25 — mengukur batas B16 di produksi secara tak sengaja
   menemukan B17.** Pencarian kode pesanan nyata untuk uji batas memicu
   `POST /api/pay` tanpa cookie: 200, bukan 401. Dua pelajaran:
