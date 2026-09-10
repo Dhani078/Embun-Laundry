@@ -167,7 +167,7 @@ export async function onRequest({ request, env }) {
         const hist = await db.query(
           `SELECT COALESCE(SUM(amount), 0) AS outstanding
            FROM payments
-           WHERE order_id = ? AND status IN ('pending', 'paid')`,
+           WHERE order_id = ? AND status = 'pending'`,
           [order.id]
         );
         outstanding = Number(hist[0]?.outstanding) || 0;
@@ -190,9 +190,17 @@ export async function onRequest({ request, env }) {
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       await db.execute(
-        `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at)
-         VALUES (?, ?, 'manual', ?, 'pending', ?, ?)`,
-        [order.id, method, amount, qrPayload, now]
+        `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at)
+         VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?)`,
+        [order.id, method, amount, qrPayload, now, now]
+      );
+
+      const newPaid = Number(order.paid_amount || 0) + amount;
+      const paymentStatus = newPaid >= Number(order.total_amount) ? 'paid' : 'partial';
+
+      await db.execute(
+        `UPDATE orders SET paid_amount = ?, payment_status = ? WHERE id = ?`,
+        [newPaid, paymentStatus, order.id]
       );
 
       return jsonResponse({
