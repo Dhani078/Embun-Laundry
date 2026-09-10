@@ -1,5 +1,5 @@
 // functions/api/dashboard.js
-import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, corsOptions, SERVER_ERROR } from '../_db.js';
 
 // B7 — Fragmen WHERE untuk memisahkan data milik pelanggan.
 //
@@ -102,6 +102,6 @@ export async function onRequestGet({ request, env }) {
       }
     });
   } catch (e) {
-    return jsonResponse({ ok: false, msg: e.message }, 500);
+    return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
   }
 }

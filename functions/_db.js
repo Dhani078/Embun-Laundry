@@ -85,6 +85,20 @@ export function corsOptions(methods = 'GET, POST, OPTIONS') {
   });
 }
 
+// B14 — Pesan generik untuk seluruh kegagalan 500.
+//
+// Sebelum tick ini, 20 titik di 11 modul mengirim `msg: e.message` (atau
+// `'Server error: ' + e.message`) ke klien. `e.message` berasal dari driver
+// @tidbcloud/serverless dan dapat memuat connection string, nama database,
+// nama tabel, dan nomor baris — informasi yang tidak pernah perlu diketahui
+// pengguna. Kontrak A4 hanya menuntut `{ ok: false, msg }` yang aman
+// ditampilkan; detailnya cukup di log server.
+//
+// Satu konstanta agar pesannya seragam dan tidak ada modul yang "lupa".
+// Jangan pernah mengganti ini kembali ke `e.message` — lihat
+// AGENT_BACKLOG.md entri 12 dan `tools/verify_b14.mjs`.
+export const SERVER_ERROR = 'Terjadi kesalahan pada server';
+
 // Security headers applied to every response (B4).
 export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',

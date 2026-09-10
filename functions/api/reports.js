@@ -1,5 +1,5 @@
 // functions/api/reports.js
-import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, corsOptions, SERVER_ERROR } from '../_db.js';
 // B11 — rentang tanggal divalidasi oleh satu penjaga (functions/_reportfilter.js).
 import { dateRange } from '../_reportfilter.js';
 
@@ -118,6 +118,6 @@ export async function onRequestGet({ request, env }) {
       daily: dailyRows
     });
   } catch (e) {
-    return jsonResponse({ ok: false, msg: e.message }, 500);
+    return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
   }
 }

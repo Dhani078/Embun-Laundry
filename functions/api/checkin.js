@@ -1,5 +1,5 @@
 // functions/api/checkin.js
-import { getDb, jsonResponse, getUserFromSession, corsOptions } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, corsOptions, SERVER_ERROR } from '../_db.js';
 // B12 — hari check-in dihitung di zona operasional (Asia/Jakarta), bukan UTC.
 // Lihat functions/_today.js: `toISOString()` membuat check-in antara
 // 00:00–06:59 WIB tercatat sebagai hari SEBELUMNYA, sehingga penjaga
@@ -28,7 +28,7 @@ export async function onRequest({ request, env }) {
         total_checkins: totalRows[0]?.c || 0
       });
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
     }
   }
 
@@ -53,7 +53,7 @@ export async function onRequest({ request, env }) {
         total_checkins: totalDays
       });
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
     }
   }
 
