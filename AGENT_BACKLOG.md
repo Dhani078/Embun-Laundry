@@ -38,6 +38,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B9 | Escaping HTML data dari API (stored XSS) | **P0** | [x] | `be7d8cd` |
 | B10 | Isolasi data (IDOR) orders/customers/delivery/pay | **P0** | [x] | `db95930` |
 | B11 | Hak akses laporan + validasi rentang tanggal | **P0** | [x] | `5534bc3` |
+| B12 | Hari check-in di zona `Asia/Jakarta`, bukan UTC | P1 | [x] | `1c2af13` |
+| B13 | Validasi input `/api/profile` + pesan error generik | P1 | [x] | `3145171` |
 
 ---
 
@@ -144,12 +146,34 @@ File ini adalah **working copy** yang diupdate setiap tick.
     satu hari bisa dua baris. BARU `functions/_today.js` (`todayIn()`,
     `Asia/Jakarta`). Periksa ulang `node tools/verify_b12_run.mjs`
     (HASIL: HIJAU 33/33). Jangan dikerjakan ulang.
-11. **Celakanya cakupan verifier**: B10, B11, dan B12 lolos berbulan-bulan
-    karena tidak ada harness yang memanggil endpointnya. Sebelum mengerjakan
-    task baru, tanyakan "endpoint mana yang belum punya harness?" — setelah
-    tick 16, `checkin.js` dan `vouchers.js` SUDAH punya (`verify_b12`, 33
-    uji; `vouchers.js` terbukti sudah aman). Belum punya harness khusus:
-    `me.js`, `logout.js`, `profile.js`.
+11. **B13 — validasi input `/api/profile` + pesan error generik (P1) —
+    SELESAI `3145171`** (tick 17). Menutup tiga celah yang ditemukan
+    harness: (a) `update_profile` hanya cek `if (!name)` → nama 100.000
+    char lolos ke TiDB; (b) `phone` bukan string → TypeError **500** dengan
+    pesan `(body.phone || "").trim is not a function`; (c) kedua `catch`
+    mengirim `msg: e.message` → connection string bisa bocor. Periksa ulang
+    dengan `node tools/verify_b13_run.mjs` (HASIL: HIJAU 66/66). Jangan
+    dikerjakan ulang.
+12. **SISA PEKERJAAN YANG NYATA — pola `msg: e.message` ada di 18 titik
+    lain**: `checkin.js` (2), `customers.js` (2), `dashboard.js`,
+    `delivery.js` (2), `orders.js` (2), `pay.js` (2), `promos.js` (2),
+    `profile.js` (sudah beres), `reports.js`, `services.js` (2),
+    `vouchers.js` (2), `login.js`, `register.js`. Setiap modul punya
+    kontraknya sendiri — kerjakan per modul beserta harness-nya. Jangan
+    sapu semua sekaligus tanpa uji.
+13. **Pelajaran dari tick 17 — uji "kolom rahasia tidak bocor" mudah
+    HIJAU PALSU.** Kalau baris tiruan tidak punya `password_hash`, uji itu
+    lolos sekalipun handler memakai `SELECT *`; kalau tiruan mengembalikan
+    baris utuh, uji itu MERAH sekalipun SELECT-nya benar. `verify_b13`
+    mengatasi ini dengan `projectRow()`: memotong baris sesuai daftar kolom
+    di SELECT, sehingga yang diukur adalah handler, bukan tiruan.
+14. **Celakanya cakupan verifier** (catatan lama, masih berlaku): B10, B11,
+    B12, B13 lolos berbulan-bulan karena tidak ada harness yang memanggil
+    endpointnya. Setelah tick 17, SEMUA endpoint yang pernah dicatat
+    "belum punya harness" sudah terukur (`me`, `logout`, `profile`,
+    `checkin`, `vouchers`). Alat: `bash tools/run_all_verifiers.sh`
+    menjalankan 10 verifier sekaligus; `bash tools/baseline.sh` untuk cek
+    produksi cepat.
 12. Entri 6–9 di bawah ini adalah SALINAN usang yang tertinggal dari tick
     lampau (B1/B2/B5/A3b sudah `[x]` di tabel masing-masing). Abaikan.
 

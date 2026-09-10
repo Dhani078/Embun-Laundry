@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T16:20:00+08:00
-Tick ke: 16
+Terakhir update: 2026-09-10T16:55:00+08:00
+Tick ke: 17
 Model: cbai/hy4-preview (custom:9router)
 
 ## Baseline terakhir
@@ -26,6 +26,38 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B13** — validasi input `/api/profile` + pesan error generik (P1,
+  melengkapi B2) — `3145171` (tick 17)
+  - Task ini lahir dari catatan tick 16: "endpoint mana yang belum punya
+    harness?" Jawabannya `me.js`, `logout.js`, `profile.js`. Ketiganya kini
+    terukur oleh `tools/verify_b13.mjs` (66 uji).
+  - **Defek 1 — celah B2 di `update_profile`**: `full_name` hanya dicek
+    `if (!name)`. Nama 100.000 karakter diteruskan mentah ke TiDB → 200
+    (kolom VARCHAR(120) akan memotong/menolak → 500 dari DB, bukan 400 dari
+    kita). Modul `_validate.js` sudah ada sejak B2, hanya belum dipakai.
+  - **Defek 2 — 500 nyata, terukur**: `phone` bukan string membuat
+    `(body.phone || '').trim()` melempar TypeError → 500 dengan pesan
+    `(body.phone || "").trim is not a function`. Bila `phone` objek, nilai
+    `[object Object]` tersimpan di kolom VARCHAR.
+  - **Defek 3 — kebocoran pesan internal**: kedua `catch` di `profile.js`
+    mengirim `msg: e.message`. Pesan driver DB dapat berisi connection
+    string, nama tabel, nomor baris. Kini pesan generik.
+  - Perubahan: `profile.js` memakai `validateOr400()` (nama 2–120, telepon
+    ≤30); `_validate.js` menolak objek/array untuk tipe
+    `str`/`email`/`date` (sebelumnya `String({})` = `"[object Object]"`
+    lolos karena panjangnya "valid").
+  - **Bukti defek (diukur)**: kode lama di-checkout dari HEAD → **MERAH
+    55/66**; kode baru → **HIJAU 66/66**. Tidak ada hijau kosong.
+  - Terbukti di produksi: tanpa sesi 401; nama 100.000 char → **400**
+    "Nama terlalu panjang (maksimal 120 karakter)"; `phone` objek → **400**
+    "Format Telepon tidak valid"; nama+telepon wajar → **200**;
+    `password_hash` tidak ikut terkirim; logout `Set-Cookie` HttpOnly;
+    Secure; SameSite=Lax; Max-Age=0.
+  - **Pelajaran (berlaku umum)**: uji "respons tidak mengembalikan kolom
+    rahasia" bisa HIJAU PALSU maupun MERAH PALSU, tergantung isi baris
+    tiruan. `verify_b13` kini memotong baris sesuai daftar kolom di SELECT
+    (`projectRow()`), sehingga uji mengukur handler, bukan tiruan.
 
 - **B12** — hari check-in di zona operasional (Asia/Jakarta), bukan UTC —
   `1c2af13`
