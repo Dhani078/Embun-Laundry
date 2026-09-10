@@ -126,8 +126,42 @@ export async function onRequest({ request, env }) {
         const address = d.customer_address;
         const serviceId = d.service_id;
         const kg = d.weight_kg;
-        const disc = d.discount;
-        let priceKg = d.price_per_kg;
+
+        // --- B19 — HARGA & DISKON BUKAN HAK PELANGGAN -----------------------
+        //
+        // Temuan tick 27, diukur oleh `tools/verify_b19.mjs` pada kode lama
+        // (MERAH 10/22): `price_per_kg` dan `discount` dipakai MENTAH dari
+        // body, tanpa memedulikan siapa pengirimnya. Batasnya memang ada
+        // sejak B2/B16 (0..10.000.000), tetapi batas itu hanya soal BENTUK,
+        // bukan soal HAK. Akibatnya akun Customer dapat menentukan harga
+        // pesanannya sendiri:
+        //
+        //   price_per_kg: 1        -> 3 kg laundry tercatat Rp 3.000
+        //                            (bukan Rp 60.000)
+        //   discount: 100000000    -> dipotong ke subtotal, total_amount = 0
+        //
+        // Ini bukan sekadar angka aneh: `total_amount` adalah dasar omzet di
+        // `/api/reports` dan `/api/dashboard`, dan piutang dihitung dari
+        // selisihnya dengan `paid_amount`. Satu permintaan cukup untuk
+        // mengotori agregat itu, atau untuk membuat pesanan tampak lunas.
+        //
+        // Kenapa dua field ini berbeda dari `status`: `status` sudah dijaga
+        // sejak lama (`isStaff ? d.status : 'baru'`), harga dan diskon tidak —
+        // padahal keduanya sama-sama menentukan nilai uang. Kini keduanya
+        // mengikuti pola yang sama.
+        //
+        // Yang TETAP diizinkan untuk pelanggan: diskon dari VOUCHER. Ia tidak
+        // datang dari body, melainkan dari baris `user_vouchers` yang
+        // diterbitkan sistem — jadi log di bawah masih mengisinya.
+        //
+        // Validasi di atas TETAP dijalankan untuk kedua field: nilai ngawur
+        // (mis. `discount: "abc"`) tetap 400 seperti sebelumnya, hanya
+        // nilainya yang tidak dipakai. Tidak ada satu pun antarmuka yang
+        // mengirim keduanya (`create_order` di `public/app.js` hanya mengirim
+        // nama, telepon, alamat, layanan, berat, dan kode voucher), jadi
+        // pengetatan ini tidak mengubah alur yang sah.
+        const disc = isStaff ? d.discount : 0;
+        let priceKg = isStaff ? d.price_per_kg : 0;
         const voucherCode = d.voucher_code.toUpperCase();
         const status = isStaff ? d.status : 'baru';
 
