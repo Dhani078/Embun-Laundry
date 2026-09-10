@@ -4,6 +4,30 @@ Terakhir update: 2026-09-10T17:20:00+08:00
 Tick ke: 18
 Model: cbai/hy4-preview (custom:9router)
 
+## Konfigurasi loop (update 2026-09-10)
+
+- Cron `6644cfdf9118` — **every 5m**, repeat 2000, `deliver=all`,
+  `continuity=true`, workdir `C:\xampp\htdocs\dhani-laundry`.
+- **EquipRent dibiarkan jalan berdampingan** (keputusan user 2026-09-09).
+  Jangan pause/remove `4af45b321a8c` — itu project user juga, dan ia
+  mengaktifkan dirinya sendiri bila dipause.
+- Scheduler hanya menjalankan **satu job per waktu** → penundaan fire 1–2 jam
+  itu wajar, bukan insiden. Watchdog `RIVAL_IDS=[]`, `STALE_HOURS=6`.
+- Gateway bisa mati diam-diam; bila semua cron berhenti, cek
+  `hermes gateway status` lalu `hermes gateway start`.
+- `hermes cron doctor` pernah melaporkan "no issues" padahal job gagal
+  berulang → pakai `hermes cron runs` sebagai sumber kebenaran.
+
+## Insiden tercatat
+
+- **Kebocoran secret ke working tree** (2026-09-09): sebuah tick menulis
+  `TIDB_DATABASE_URL` ke `.tmp/dburl.txt`. File sudah dihapus; `.tmp/` tidak
+  terlacak git (`.gitignore:9`). Dicegah oleh **Aturan Keras 13** di
+  AGENT24.md: secret dibaca dari `env`, tidak pernah ditulis ke disk.
+- **Tick menggantung** (2026-09-09): fire 19:02 dan 19:22 berjalan 20+ menit
+  tanpa commit, sehingga fire berikutnya dilewati. Dicegah oleh **Aturan
+  Keras 14**: bila >20 menit tanpa hasil, tulis ke log dan akhiri.
+
 ## Baseline terakhir
 
 | Path | Status | Catatan |

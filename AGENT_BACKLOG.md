@@ -213,3 +213,42 @@ butuh Cloudflare API token).
 
 > Setelah semua P0 selesai, lanjut ke P1 berurutan.
 > Jangan kerjakan P2/P3 sebelum P0/P1 tuntas.
+
+---
+
+## Catatan Operasional Loop (bukan task)
+
+Hal-hal di bawah ini **bukan pekerjaan**, melainkan aturan main agar loop
+tidak merusak dirinya sendiri. Baca sebelum menjalankan tick.
+
+### Aturan Keras 13 & 14 (baru, AGENT24.md Bagian 3)
+
+- **13 — Dilarang menulis secret ke working tree.** Pernah terjadi: tik
+  menyalin `TIDB_DATABASE_URL` ke `.tmp/dburl.txt`. Walau `.tmp/` sudah
+  di-`gitignore`, ini tetap dilarang. Secret dibaca langsung dari `env`.
+- **14 — Tick tidak boleh menggantung.** Pernah terjadi: fire 19:02 dan
+  19:22 berjalan 20+ menit tanpa commit, sehingga fire berikutnya dilewati
+  terus. Bila lebih dari ~20 menit tanpa hasil, tulis ke `AGENT_LOG.md`
+  lalu akhiri. Lebih baik lapor "tidak selesai" daripada mengunci lock.
+
+### Lingkungan multi-loop
+
+- Embun Laundry dan **EquipRent berjalan berdampingan** (keputusan user
+  2026-09-09). Jangan pause/remove cron EquipRent `4af45b321a8c` — itu
+  project user juga, dan ia mengaktifkan dirinya sendiri bila dipause.
+- Scheduler hanya menjalankan **satu job per waktu** → fire bisa tertunda
+  1–2 jam. Itu wajar, **bukan** insiden.
+- Gateway bisa mati diam-diam dan menghentikan **semua** cron. Gejalanya:
+  tidak ada commit baru berjam-jam padahal repeat masih sisa. Cek
+  `hermes gateway status`, pulihkan dengan `hermes gateway start`.
+- `hermes cron doctor` **pernah melaporkan "no issues" padahal job gagal
+  berulang**. Jangan jadikan satu-satunya sumber; pakai `hermes cron runs`.
+
+### Hal yang sudah selesai — JANGAN dikerjakan ulang
+
+- **B4 header aset statis** → `public/_headers`. Dua pendekatan pernah gagal
+  dan terbukti merugikan: `run_worker_first=true` (membuat `/` dan
+  `/dashboard` **404**) dan rebuild `Response` di JS (no-op).
+- **B1 rate limit** → `POST /api/auth/login` memang mengembalikan **429**
+  bila dipanggil berulang dari IP yang sama. Itu perilaku benar, bukan bug.
+  Batasi 1–2 percobaan login per verifikasi.
