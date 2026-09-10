@@ -129,6 +129,63 @@ export async function onRequest({ request, env }) {
         return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
       }
 
+      // --- B20 — JUMLAH BAYAR DIBATASI OLEH SISA TAGIHAN -------------------
+      //
+      // Temuan tick 28, diukur oleh `tools/verify_b20.mjs` pada kode lama
+      // (MERAH 17/37): `amount` hanya dibatasi BENTUKNYA sejak B14
+      // (`int`, 1..100.000.000) dan SESInya sejak B17. Yang tidak pernah
+      // ditanyakan ialah batas yang sesungguhnya, yaitu sisa tagihan pesanan
+      // ini. Akibatnya:
+      //
+      //   1. Satu pesanan Rp 60.000 bisa dibayar Rp 100.000.000 dalam satu
+      //      permintaan — `payments` menjumlah 100 juta untuk tagihan 60 ribu.
+      //   2. Permintaan yang sama bisa DIULANG tanpa henti. Tidak ada batas
+      //      per pesanan, jadi 1000 x Rp 100.000.000 = Rp 100 miliar pada
+      //      satu pesanan.
+      //
+      // Ini bukan sekadar angka aneh: `payments` adalah catatan uang masuk
+      // yang dipakai kasir untuk rekonsiliasi, dan `paid_amount`/
+      // `payment_status` di layar pelanggan (`/pay`, `/track`) serta laporan
+      // piutang (`/api/reports`) dihitung darinya.
+      //
+      // Yang TIDAK diklaim: bukan pencurian uang sungguhan (metode 'manual',
+      // status 'pending', tanpa gateway). Yang diklaim: catatan pembayaran
+      // bisa diisi tanpa batas oleh siapa pun yang punya sesi.
+      //
+      // Sisa dihitung dari TIGA sumber, bukan satu:
+      //   - `orders.total_amount`  = tagihan
+      //   - `orders.paid_amount`   = yang sudah dicatat lunas
+      //   - jumlah payments 'pending' = yang diajukan tapi belum selesai
+      // Mengabaikan yang ketiga membuat "bayar pas dua kali" tetap lolos,
+      // karena `paid_amount` belum pernah ditulis siapa pun.
+      //
+      // Gagal tertutup: bila riwayat pembayaran tidak bisa dibaca, sisa tidak
+      // diketahui — jadi jangan menulis. Ini sejalan dengan B17 (lebih baik
+      // menolak daripada menulis angka yang salah).
+      let outstanding = 0;
+      try {
+        const hist = await db.query(
+          `SELECT COALESCE(SUM(amount), 0) AS outstanding
+           FROM payments
+           WHERE order_id = ? AND status IN ('pending', 'paid')`,
+          [order.id]
+        );
+        outstanding = Number(hist[0]?.outstanding) || 0;
+      } catch (e) {
+        return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
+      }
+
+      const remaining = Math.max(0, (Number(order.total_amount) || 0)
+        - (Number(order.paid_amount) || 0)
+        - outstanding);
+
+      if (amount > remaining) {
+        return jsonResponse({
+          ok: false,
+          msg: `Validasi gagal: Jumlah bayar melebihi sisa tagihan (sisa Rp ${remaining.toLocaleString('id-ID')})`
+        }, 400);
+      }
+
       const qrPayload = `DHLDR|${order.order_code}|${amount}|${Date.now()}`;
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
