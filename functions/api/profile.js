@@ -4,6 +4,11 @@ import { getDb, jsonResponse, getUserFromSession, hashPassword, readJson, corsOp
 // Dulu baris ini cuma `hash === oldPass || sha256(oldPass + salt) === hash`,
 // jadi setiap format baru harus disalin ke sini — sumber dua algoritma.
 import { verifyPassword } from '../_password.js';
+// B13 — validasi & sanitasi. Sebelum tick ini, `update_profile` hanya memeriksa
+// `if (!name)`, sehingga: nama 100.000 karakter diteruskan mentah ke TiDB, dan
+// `phone` yang bukan string (`(body.phone || '').trim()`) melempar TypeError
+// → 500. Modul `_validate.js` sudah ada sejak B2, hanya belum dipakai di sini.
+import { validateOr400 } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -20,7 +25,10 @@ export async function onRequest({ request, env }) {
       if (rows.length === 0) return jsonResponse({ ok: false, msg: 'User not found' }, 404);
       return jsonResponse({ ok: true, user: rows[0] });
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      // B13 — dulu `msg: e.message`. Pesan dari driver DB dapat berisi
+      // connection string, nama tabel, dan nomor baris. Kontrak A4: klien
+      // cukup tahu bahwa permintaan gagal.
+      return jsonResponse({ ok: false, msg: 'Gagal memuat profil' }, 500);
     }
   }
 
@@ -32,9 +40,16 @@ export async function onRequest({ request, env }) {
       const act = body.action || '';
 
       if (act === 'update_profile') {
-        const name = (body.full_name || '').trim();
-        const phone = (body.phone || '').trim();
-        if (!name) return jsonResponse({ ok: false, msg: 'Nama wajib diisi' }, 400);
+        // B13 — batas panjang & pembersihan karakter kontrol. Dulu hanya
+        // `if (!name)`, jadi string 100.000 karakter dikirim mentah ke TiDB
+        // (kolom VARCHAR(120) → 500 dari DB, bukan 400 dari kita), dan
+        // `phone` non-string membuat `.trim()` melempar → 500.
+        const v = validateOr400(body, {
+          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          phone: { type: 'str', max: 30, label: 'Telepon' }
+        });
+        if (!v.ok) return v.response;
+        const { full_name: name, phone } = v.data;
 
         await db.execute('UPDATE users SET full_name = ?, phone = ? WHERE id = ?', [name, phone, user.id]);
         return jsonResponse({ ok: true, user_name: name, phone });
@@ -73,7 +88,9 @@ export async function onRequest({ request, env }) {
 
       return jsonResponse({ ok: false, msg: 'Unknown action' }, 400);
     } catch (e) {
-      return jsonResponse({ ok: false, msg: e.message }, 500);
+      // B13 — lihat alasan di jalur GET: jangan pernah mengirim `e.message`
+      // ke klien. Detailnya cukup di log server.
+      return jsonResponse({ ok: false, msg: 'Gagal menyimpan profil' }, 500);
     }
   }
 

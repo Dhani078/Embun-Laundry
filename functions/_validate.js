@@ -73,6 +73,14 @@ function checkField(name, spec, raw) {
   }
 
   if (type === 'str' || type === 'email' || type === 'date') {
+    // B13 — objek dan array DITOLAK, bukan diubah jadi string. Tanpa
+    // penjaga ini `{ "phone": { "n": 1 } }` lolos karena `String({})` adalah
+    // "[object Object]" — sebuah string, jadi panjangnya "valid" — dan
+    // sampah itu tersimpan di kolom VARCHAR. Angka/boolean masih diterima
+    // (koersi wajar untuk klien yang mengirim `phone: 81234567890`).
+    if (raw !== null && raw !== undefined && typeof raw === 'object') {
+      fail(`Format ${label} tidak valid`);
+    }
     const text = cleanStr(raw);
     if (!text) {
       if (spec.required) fail(`${label} wajib diisi`);
