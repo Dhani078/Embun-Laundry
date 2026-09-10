@@ -965,3 +965,34 @@ jalur serve aset statis di `src/index.js`.
   - A6 + B3 tetap terblokir (butuh Cloudflare API token).
   - Backlog: FASE B kini tinggal A6/B3 (terblokir). FASE C (C1–C10) belum
     tersentuh; prioritas berikutnya P2 = C1/C2/C3/C6/C7/C8.
+
+---
+
+## Tick 19 — 2026-09-10T17:50:00+08:00 (housekeeping MD + aturan keras baru)
+
+Bukan task fitur — sesi ini menata ulang dokumen loop dan menambal dua
+celah operasional yang ditemukan saat memantau loop.
+
+- Perubahan:
+  - `AGENT24.md` — **Aturan Keras 13 & 14** (Bagian 3):
+    - 13: dilarang menulis secret/kredensial ke file di working tree.
+    - 14: tick tidak boleh menggantung >~20 menit tanpa hasil.
+  - `AGENT_STATE.md` — bagian baru "Konfigurasi loop" + "Insiden tercatat".
+  - `AGENT_BACKLOG.md` — bagian baru "Catatan Operasional Loop (bukan task)".
+  - `AGENT_LOG.md` — entri ini.
+- Insiden yang mendasari aturan baru:
+  - **Kebocoran secret**: sebuah tick menulis `TIDB_DATABASE_URL` ke
+    `.tmp/dburl.txt`. File dihapus; terverifikasi `.tmp/` tidak terlacak git
+    (`git ls-files .tmp/` kosong, `git check-ignore` → `.gitignore:9`).
+    Tidak pernah masuk riwayat git.
+  - **Tick menggantung**: fire 19:02 dan 19:22 (2026-09-09) berjalan 20+
+    menit tanpa commit, sehingga fire berikutnya dilewati terus.
+- Verifikasi:
+  - `git ls-files .tmp/` → kosong (aman)
+  - `git check-ignore -v .tmp/dburl.txt` → `.gitignore:9:.tmp/`
+  - Loop tetap aktif; commit terakhir sebelum sesi ini `58fb1b5` (tick 18).
+- Catatan lingkungan:
+  - EquipRent dibiarkan jalan berdampingan (keputusan user). Scheduler satu
+    job per waktu → penundaan 1–2 jam wajar, bukan insiden.
+  - Watchdog disesuaikan: `RIVAL_IDS=[]`, `STALE_HOURS` 3 → 6 jam.
+- Status: **DONE** (housekeeping)
