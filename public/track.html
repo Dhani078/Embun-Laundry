@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<!--
+  C2 — Lacak Pesanan (publik, tanpa login).
+
+  Halaman ini sengaja MINIMAL: satu input kode, satu hasil. Alasannya bukan
+  malas, melainkan karena permukaannya adalah publik — setiap elemen
+  tambahan adalah permukaan serangan tambahan yang tidak memberi nilai bagi
+  pelanggan yang hanya ingin tahu "cucian saya sudah selesai atau belum".
+
+  Semua warna dari `design-tokens.css` (Aturan: tidak ada hardcoded color).
+-->
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lacak Pesanan — Embun Laundry</title>
+  <meta name="description" content="Lacak status pesanan laundry Anda hanya dengan kode pesanan. Tanpa login, cepat, dan aman.">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="/img/Logo.png" type="image/png">
+  <link rel="canonical" href="https://embun-laundry.dhanisepeda.workers.dev/track.html">
+  <link rel="stylesheet" href="/assets/design-tokens.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      font-size: var(--text-body);
+      color: var(--color-text-primary);
+      background: var(--color-bg-primary);
+      line-height: var(--leading-normal);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fokus harus SELALU terlihat (Gate 6 — aksesibilitas dasar). */
+    :focus-visible {
+      outline: 2px solid var(--color-border-focus);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-5) var(--space-16);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand img { width: 36px; height: 36px; border-radius: var(--radius-md); }
+    .brand span { font-weight: var(--weight-semibold); font-size: var(--text-body-lg); }
+
+    h1 {
+      font-size: var(--text-heading-lg);
+      font-weight: var(--weight-bold);
+      letter-spacing: var(--tracking-tight);
+      margin: 0 0 var(--space-2);
+    }
+    .sub {
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-7);
+      font-size: var(--text-body-sm);
+    }
+
+    .card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+    }
+
+    label {
+      display: block;
+      font-size: var(--text-body-sm);
+      font-weight: var(--weight-medium);
+      margin-bottom: var(--space-2);
+    }
+
+    .field-row { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+    .field-row input { flex: 1 1 220px; }
+
+    input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-body);
+      color: var(--color-text-primary);
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-md);
+      text-transform: uppercase;
+    }
+    input::placeholder { color: var(--color-text-tertiary); text-transform: none; }
+
+    button {
+      padding: var(--space-3) var(--space-6);
+      font-family: inherit;
+      font-size: var(--text-body);
+      font-weight: var(--weight-semibold);
+      color: var(--color-text-on-inverse);
+      background: var(--color-brand-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    button:hover { background: var(--color-brand-primary-hover); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .msg {
+      margin-top: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-body-sm);
+      display: none;
+    }
+    .msg.show { display: block; }
+    .msg.error {
+      color: var(--color-error);
+      background: var(--color-error-light);
+      border: 1px solid var(--color-error);
+    }
+    .msg.info {
+      color: var(--color-text-secondary);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    /* --- hasil -------------------------------------------------------- */
+    #result { margin-top: var(--space-6); display: none; }
+    #result.show { display: block; }
+
+    .status-pill {
+      display: inline-block;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full, 999px);
+      font-size: var(--text-caption);
+      font-weight: var(--weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-wide);
+    }
+    .status-baru    { color: var(--color-info);    background: var(--color-info-light); }
+    .status-proses  { color: var(--color-warning); background: var(--color-warning-light); }
+    .status-selesai { color: var(--color-success); background: var(--color-success-light); }
+    .status-batal   { color: var(--color-error);   background: var(--color-error-light); }
+
+    dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-3) var(--space-5);
+      margin: var(--space-5) 0 0;
+      font-size: var(--text-body-sm);
+    }
+    dt { color: var(--color-text-secondary); }
+    dd { margin: 0; font-weight: var(--weight-medium); text-align: right; }
+
+    .steps {
+      display: flex;
+      gap: var(--space-2);
+      margin: var(--space-6) 0 var(--space-2);
+    }
+    .step {
+      flex: 1;
+      height: 4px;
+      border-radius: var(--radius-full, 999px);
+      background: var(--color-border-subtle);
+    }
+    .step.done { background: var(--color-brand-primary); }
+    .steps-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-micro);
+      color: var(--color-text-tertiary);
+    }
+
+    .note {
+      margin-top: var(--space-8);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-border-subtle);
+      font-size: var(--text-caption);
+      color: var(--color-text-tertiary);
+    }
+    .note a { color: var(--color-text-link); }
+    .note a:hover { color: var(--color-text-link-hover); }
+
+    .spinner {
+      display: inline-block;
+      width: 1em; height: 1em;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: -2px;
+      margin-right: var(--space-2);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
+      button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <a class="brand" href="/">
+      <img src="/img/Logo.png" alt="Logo Embun Laundry">
+      <span>Embun Laundry</span>
+    </a>
+
+    <h1>Lacak Pesanan</h1>
+    <p class="sub">
+      Masukkan kode pesanan Anda untuk melihat status terbaru. Tidak perlu login.
+    </p>
+
+    <div class="card">
+      <form id="trackForm" novalidate>
+        <label for="code">Kode pesanan</label>
+        <div class="field-row">
+          <input
+            id="code"
+            name="code"
+            type="text"
+            maxlength="20"
+            placeholder="Contoh: ORD-ABC123"
+            autocomplete="off"
+            spellcheck="false"
+            required
+            aria-describedby="hint">
+          <button type="submit" id="btn">Lacak</button>
+        </div>
+        <p id="hint" class="note" style="margin-top:var(--space-3);border:0;padding:0">
+          Kode pesanan tercetak pada struk Anda.
+        </p>
+      </form>
+
+      <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    </div>
+
+    <section id="result" class="card" aria-live="polite">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);flex-wrap:wrap">
+        <div>
+          <div style="font-size:var(--text-caption);color:var(--color-text-secondary)">Kode pesanan</div>
+          <div id="r-code" style="font-family:var(--font-mono);font-weight:var(--weight-semibold)"></div>
+        </div>
+        <span id="r-status" class="status-pill"></span>
+      </div>
+
+      <div class="steps" aria-hidden="true">
+        <div class="step" id="s1"></div>
+        <div class="step" id="s2"></div>
+        <div class="step" id="s3"></div>
+      </div>
+      <div class="steps-label" aria-hidden="true">
+        <span>Diterima</span><span>Dicuci</span><span>Selesai</span>
+      </div>
+
+      <dl>
+        <dt>Pelanggan</dt>          <dd id="r-name"></dd>
+        <dt>Layanan</dt>            <dd id="r-service"></dd>
+        <dt>Berat</dt>              <dd id="r-weight"></dd>
+        <dt>Total</dt>              <dd id="r-total"></dd>
+        <dt>Dibayar</dt>            <dd id="r-paid"></dd>
+        <dt>Status pembayaran</dt>  <dd id="r-pay"></dd>
+        <dt>Dibuat</dt>             <dd id="r-created"></dd>
+      </dl>
+    </section>
+
+    <p class="note">
+      Butuh bantuan? Hubungi kami atau
+      <a href="/auth/login.html">masuk ke akun Anda</a> untuk riwayat lengkap.
+    </p>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var form = document.getElementById('trackForm');
+    var input = document.getElementById('code');
+    var btn = document.getElementById('btn');
+    var msg = document.getElementById('msg');
+    var result = document.getElementById('result');
+
+    var STATUSES = ['baru', 'proses', 'selesai'];
+
+    function showMsg(text, kind) {
+      msg.textContent = text;
+      msg.className = 'msg show ' + (kind || 'info');
+    }
+    function hideMsg() { msg.className = 'msg'; }
+
+    function rupiah(n) {
+      return 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+    }
+
+    function setText(id, val) {
+      document.getElementById(id).textContent = val;
+    }
+
+    function render(o) {
+      setText('r-code', o.order_code);
+      setText('r-name', o.customer_name_masked || o.customer_name || '-');
+      setText('r-service', o.service_name || '-');
+      setText('r-weight', (o.weight_kg || 0) + ' kg');
+      setText('r-total', rupiah(o.total_amount));
+      setText('r-paid', rupiah(o.paid_amount));
+
+      var payMap = {
+        unpaid: 'Belum dibayar', partial: 'Sebagian',
+        paid: 'Lunas', refunded: 'Dikembalikan'
+      };
+      setText('r-pay', payMap[o.payment_status] || o.payment_status || '-');
+      setText('r-created', o.created_at || '-');
+
+      var st = document.getElementById('r-status');
+      st.textContent = o.status || '-';
+      st.className = 'status-pill status-' + (o.status || '');
+
+      // Progress bar tiga langkah; status 'batal' tidak mengisi apa pun.
+      var idx = o.status === 'batal' ? -1 : STATUSES.indexOf(o.status);
+      for (var i = 1; i <= 3; i++) {
+        document.getElementById('s' + i).className = 'step' + (idx >= i - 1 ? ' done' : '');
+      }
+      result.className = 'card show';
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var code = (input.value || '').trim();
+      if (!code) { showMsg('Kode pesanan wajib diisi.', 'error'); input.focus(); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Mencari…';
+      result.className = 'card';
+      hideMsg();
+
+      try {
+        // URL relatif → same-origin, jadi daftar izin CORS (B5) berlaku.
+        var res = await fetch('/api/track?code=' + encodeURIComponent(code), {
+          headers: { 'Accept': 'application/json' }
+        });
+        var data = await res.json().catch(function () { return null; });
+
+        if (res.status === 429) {
+          showMsg('Terlalu banyak percobaan. Coba lagi beberapa menit lagi.', 'error');
+        } else if (!data || !data.ok) {
+          showMsg((data && data.msg) || 'Pesanan tidak ditemukan.', 'error');
+        } else {
+          render(data.order);
+          hideMsg();
+        }
+      } catch (err) {
+        showMsg('Tidak dapat menghubungi server. Periksa koneksi Anda.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lacak';
+      }
+    });
+
+    // Dukung deep-link: /track.html?code=ORD-ABC123 langsung melacak.
+    var pre = new URLSearchParams(location.search).get('code');
+    if (pre) {
+      input.value = pre;
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));
+    }
+  })();
+  </script>
+</body>
+</html>

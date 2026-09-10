@@ -69,23 +69,44 @@ export function maskName(value) {
  * Daftar ini adalah allowlist — kalau tabel bertambah kolom, kolom itu
  * otomatis tidak ikut terkirim.
  */
-function publicView(row) {
+function publicView(row, delivery = null) {
   const masked = maskName(row.customer_name);
   return {
     order_code: row.order_code,
+    // `customer_name` DIKIRIM DALAM BENTUK SAMARAN. Landing page
+    // (`renderTrackResult` di index.html) membaca field ini untuk ditampilkan,
+    // jadi mengosongkannya akan mematikan baris "Pelanggan" — tetapi teks
+    // aslinya tidak pernah keluar.
     customer_name: masked,
     customer_name_masked: masked,
     service_name: row.service_name,
     status: row.status,
+    // Kontrak yang sudah dipakai `renderTrackResult`:
+    //   0: Baru, 1: Proses, 2: Selesai, -1: Batal
+    progress_step: progressStep(row.status),
     weight_kg: row.weight_kg,
+    unit: row.unit || 'kg',
     price_per_kg: row.price_per_kg,
     discount: row.discount,
     total_amount: row.total_amount,
     paid_amount: row.paid_amount,
     payment_status: row.payment_status,
     created_at: row.created_at,
-    finished_at: row.finished_at
+    finished_at: row.finished_at,
+    // Hanya tipe & status pengantaran — TANPA alamat dan telepon.
+    delivery: delivery
   };
+}
+
+/** Petakan status pesanan ke indeks langkah yang dipakai UI pelacakan. */
+function progressStep(status) {
+  switch (String(status || '')) {
+    case 'baru': return 0;
+    case 'proses': return 1;
+    case 'selesai': return 2;
+    case 'batal': return -1;
+    default: return -1;
+  }
 }
 
 function withRateHeaders(res, remaining, retryAfter) {
@@ -142,7 +163,7 @@ export async function onRequestGet({ request, env }) {
       `SELECT o.order_code, o.customer_name, o.status, o.weight_kg,
               o.price_per_kg, o.discount, o.total_amount, o.paid_amount,
               o.payment_status, o.created_at, o.finished_at,
-              s.name AS service_name
+              s.name AS service_name, s.unit AS unit
        FROM orders o
        JOIN services s ON s.id = o.service_id
        WHERE o.order_code = ?
@@ -155,7 +176,26 @@ export async function onRequestGet({ request, env }) {
       return reply(key, { ok: false, msg: 'Pesanan tidak ditemukan' }, 404);
     }
 
-    return reply(key, { ok: true, order: publicView(rows[0]) }, 200);
+    // Status pengantaran: UI pelacakan menampilkan `delivery.type` dan
+    // `delivery.status`. Tabel pickup_delivery juga memuat alamat & telepon,
+    // jadi kolomnya dipilih satu per satu — proyeksi izin, bukan `SELECT *`.
+    let delivery = null;
+    try {
+      const pd = await db.query(
+        `SELECT type, status
+         FROM pickup_delivery
+         WHERE order_code = ?
+         ORDER BY id DESC
+         LIMIT 1`,
+        [code]
+      );
+      if (pd.length > 0) delivery = { type: pd[0].type, status: pd[0].status };
+    } catch {
+      // Tabel pengantaran kosong/gagal → jangan gagalkan seluruh pelacakan.
+      delivery = null;
+    }
+
+    return reply(key, { ok: true, order: publicView(rows[0], delivery) }, 200);
   } catch (e) {
     // B14 — pesan generik. `e.message` dari driver bisa memuat connection
     // string, nama tabel, dan nomor baris.
