@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T18:58:00+08:00
-Tick ke: 23
+Terakhir update: 2026-09-10T21:32:00+08:00
+Tick ke: 25
 Model: cbai/hy4-preview (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -623,3 +623,37 @@ Model: cbai/hy4-preview (custom:9router)
 - Endpoint non-auth tetap normal: `/api/services` → 200, `/` → 200.
 - Saat memverifikasi login di tick berikutnya, **batasi percobaan** agar tidak
   memicu rate limit sendiri. Cukup 1–2 percobaan per tick.
+
+## Ringkas tick 25 (B17) + penuntasan buku tick 24 (B16)
+
+- **B16** `502d56a` (tick 24, crash sebelum merapikan dokumen) — batas
+  validasi selaras lebar kolom TiDB. Diverifikasi ulang 156/156 dan
+  terbukti di produksi. **SELESAI, jangan dikerjakan ulang.**
+- **B17** `a8ca085` (tick 25) — `POST /api/pay` kini wajib sesi.
+  **SELESAI, jangan dikerjakan ulang.** Periksa ulang dengan
+  `node tools/verify_b17_run.mjs` (HASIL: HIJAU 19/19).
+- `GET /api/pay` **TETAP publik dan sengaja demikian** — halaman
+  pembayaran dibuka lewat tautan berkode dan B10 sudah menyensor
+  telepon/alamat. Jangan "diperbaiki" menjadi 401.
+
+### Pelajaran tick 25 (berlaku umum)
+
+- **Uji keamanan yang hanya menyentuh GET buta terhadap celah TULIS.**
+  `verify_b10` mengimpor `pay.js` tetapi hanya menguji GET — celah POST
+  lolos bertahun-tahun. Bila sebuah modul punya dua kata kerja, uji keduanya.
+- **401 yang dikembalikan SETELAH `db.execute()` tetap meninggalkan baris.**
+  Maka `verify_b17` mengukur INSERT yang terkirim, bukan status; mutasi
+  "guard dipindah setelah INSERT" terbukti MERAH. Wajib ada untuk setiap
+  perbaikan autentikasi.
+- **Bentuk objek `createSessionToken()`: `{role, full_name}`**, bukan
+  `{user_role, user_name}` (yang terakhir adalah bentuk JWT hasilnya).
+  Salah bentuk membuat staf menjadi "Customer" → uji MERAH karena
+  kesalahan harness, atau HIJAU PALSU bila semua peran menjadi sama.
+- **Kontrak field yang sering salah saat probing produksi:**
+  login = `identity` (bukan `email`); `customers` POST = `full_name`
+  (bukan `name`); `orders` list = GET tanpa `action`; metode bayar
+  huruf KAPITAL (`CASH`, bukan `cash`).
+- **Deploy kali ini butuh ~200 detik** (bukan ~90). Bila post-verify masih
+  menunjukkan perilaku lama, ulangi sekali sebelum menyimpulkan gagal.
+- `/tmp` TIDAK bisa ditulis di lingkungan ini — pakai `.tmp/` di project
+  untuk menyimpan cookie/respons curl.
