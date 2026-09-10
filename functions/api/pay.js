@@ -99,9 +99,35 @@ export async function onRequest({ request, env }) {
 
       if (!code) return jsonResponse({ ok: false, msg: 'Invalid params' }, 400);
 
+      // --- B17 — POST /api/pay MENULIS, jadi wajib punya sesi -------------
+      //
+      // Temuan tick 25, diukur di produksi: `POST /api/pay` membuat baris
+      // `payments` TANPA pemeriksaan sesi apa pun. Siapa pun bisa menulis
+      // pembayaran atas pesanan siapa pun hanya dengan menebak/mengetahui
+      // kode pesanan — padahal kode itu juga beredar di struk.
+      //
+      // Mengapa GET tetap publik sedangkan POST tidak: halaman pembayaran
+      // (`public/pay.html`) dibuka lewat tautan berisi kode, dan ia hanya
+      // MEMBACA — itu sengaja, dan B10 sudah menyensor telepon/alamat.
+      // POST sebaliknya: MENULIS, dan tidak ada satu pun halaman yang
+      // memanggilnya. Jadi menutupnya tidak merusak UI mana pun.
+      //
+      // Penolakan diletakkan SEBELUM `db.query()`, bukan sesudahnya: jujur
+      // dalam arti tidak menyentuh database untuk permintaan yang pasti
+      // ditolak (pola sama dengan B10 di orders.js).
+      if (!user) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+
       const orders = await db.query('SELECT * FROM orders WHERE order_code = ? LIMIT 1', [code]);
       if (orders.length === 0) return jsonResponse({ ok: false, msg: 'Pesanan tidak ditemukan' }, 404);
       const order = orders[0];
+
+      // Pemilik boleh membayar pesanannya sendiri; staf (kasir) boleh untuk
+      // semua pesanan. Pelanggan asing DITOLAK — sebelum B17 ia diterima.
+      const payIsStaff = ['Admin', 'Owner', 'Staff'].includes(user.user_role);
+      const payIsOwner = !!user.user_name && order.customer_name === user.user_name;
+      if (!payIsStaff && !payIsOwner) {
+        return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+      }
 
       const qrPayload = `DHLDR|${order.order_code}|${amount}|${Date.now()}`;
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
