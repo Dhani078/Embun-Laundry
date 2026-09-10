@@ -15,7 +15,13 @@ export function connect(config) {
       // supaya harness bisa menguji jalur SUKSES (misal login berhasil),
       // bukan cuma jalur kosong. Kalau tidak diset, [] seperti driver asli
       // ketika tidak ada baris cocok.
-      return Array.isArray(globalThis.__MOCK_ROWS) ? globalThis.__MOCK_ROWS : [];
+      // `__MOCK_ROWS` boleh berupa ARRAY (baris yang sama untuk semua query,
+      // dipakai harness lama) ATAU FUNGSI `(sql, params) => rows` bila sebuah
+      // harness perlu membedakan jawaban per query — mis. check-in, yang
+      // menjalankan SELECT "sudah ada?" lalu SELECT COUNT(*).
+      const injected = globalThis.__MOCK_ROWS;
+      if (typeof injected === 'function') return injected(String(sql), params) || [];
+      return Array.isArray(injected) ? injected : [];
     }
   };
 }
