@@ -33,8 +33,14 @@ export async function onRequest({ request, env }) {
         sql += ` AND category = ?`;
         params.push(cat);
       }
-      if (status === 'aktif') sql += ` AND is_active = 1`;
-      if (status === 'nonaktif') sql += ` AND is_active = 0`;
+      if (status === 'aktif') {
+        sql += ` AND is_active = 1`;
+      } else if (status === 'nonaktif' && isStaff) {
+        sql += ` AND is_active = 0`;
+      } else if (!isStaff) {
+        // Publik secara default hanya melihat layanan yang aktif
+        sql += ` AND is_active = 1`;
+      }
 
       sql += ` ORDER BY is_active DESC, id ASC LIMIT 300`;
 

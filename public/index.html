@@ -777,6 +777,30 @@ a { text-decoration: none; }
   color: var(--color-error);
 }
 
+/* Category filter pills (C1) */
+.cat-pill {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.cat-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cat-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--color-neutral-0);
+  box-shadow: var(--shadow-sm);
+}
+
 /* Reveal utility */
 .reveal {
   opacity: 0;
@@ -962,6 +986,13 @@ body.no-scroll { overflow: hidden; }
       <h2>Harga Layanan</h2>
       <p class="sub">Pilih layanan yang sesuai dengan kebutuhan Anda</p>
     </div>
+
+    <!-- C1: Search bar & Category filter pills -->
+    <div style="margin: 0 auto 20px; max-width: 480px;">
+      <input class="input" type="text" id="serviceSearchInput" placeholder="🔍 Cari layanan (mis. Kiloan, Jas, Selimut)..." style="width:100%; border-radius:var(--radius-md);" aria-label="Cari layanan" />
+    </div>
+
+    <div class="category-pills" id="categoryPills" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px;" role="tablist" aria-label="Kategori Layanan"></div>
 
     <div class="prices" id="pricesGrid">
       <!-- Generated via JS from API -->
@@ -1152,42 +1183,125 @@ async function checkAuth() {
 }
 checkAuth();
 
-// Load services dynamically into prices grid
+// C1: Reactive Services Filter & Search
+let allServices = [];
+let activeCategory = 'Semua';
+let searchQuery = '';
+
+function renderCategoryPills(categories) {
+  const container = document.getElementById('categoryPills');
+  if (!container) return;
+  container.innerHTML = categories.map(cat => `
+    <button
+      class="cat-pill ${cat === activeCategory ? 'active' : ''}"
+      type="button"
+      data-cat="${esc(cat)}"
+      role="tab"
+      aria-selected="${cat === activeCategory ? 'true' : 'false'}"
+    >${esc(cat)}</button>
+  `).join('');
+}
+
+function renderServicesGrid() {
+  const grid = document.getElementById('pricesGrid');
+  if (!grid) return;
+
+  const filtered = allServices.filter(s => {
+    const matchCat = activeCategory === 'Semua' || s.category === activeCategory;
+    const q = searchQuery.toLowerCase();
+    const matchQuery = !q || (s.name && s.name.toLowerCase().includes(q)) ||
+                              (s.description && s.description.toLowerCase().includes(q)) ||
+                              (s.code && s.code.toLowerCase().includes(q));
+    return matchCat && matchQuery;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 48px 20px;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🧺</div>
+        <h4 style="font-size: 1.1rem; color: var(--text-main); margin: 0 0 6px;">Tidak ada layanan yang cocok</h4>
+        <p class="small" style="margin-bottom: 16px;">Coba ubah kata kunci pencarian atau pilih kategori lain.</p>
+        <button class="btn btn-outline" id="btnResetFilter" type="button">Tampilkan Semua Layanan</button>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((s, idx) => {
+    const isPop = s.is_popular || idx === 0;
+    const catBadge = s.category ? `<span class="badge-soft" style="font-size: 0.72rem; padding: 2px 8px; margin-bottom: 8px;">${esc(s.category)}</span>` : '';
+    return `
+      <div class="card ${isPop ? 'popular' : ''}">
+        ${isPop ? '<div class="badge">Paling Populer</div>' : ''}
+        ${catBadge}
+        <h3 style="margin-top: 4px;">${esc(s.name)}</h3>
+        <div class="price">${rupiah(s.price)}<span class="small" style="font-weight: 500; font-size: 0.85rem;"> /${esc(s.unit || 'kg')}</span></div>
+        <div class="meta">⏱️ Estimasi ${esc(s.duration_hours || 24)} jam</div>
+        ${s.description ? `<p class="small" style="margin-top: 6px; line-height: 1.4; color: var(--text-muted);">${esc(s.description)}</p>` : ''}
+        <button
+          class="btn ${isPop ? 'btn-primary' : 'btn-outline'} js-order"
+          data-id="${esc(s.id)}"
+          data-name="${esc(s.name)}"
+          data-price="${esc(s.price)}"
+          type="button"
+          aria-label="Pesan ${esc(s.name)}"
+        >Pesan</button>
+      </div>
+    `;
+  }).join('');
+}
+
 async function loadServices() {
+  const grid = document.getElementById('pricesGrid');
   try {
     const res = await fetch('/api/services');
     const data = await res.json();
-    const grid = document.getElementById('pricesGrid');
     if (!data.ok || !data.services || data.services.length === 0) {
-      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Belum ada layanan tersedia.</div>';
+      if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Belum ada layanan tersedia.</div>';
       return;
     }
 
-    grid.innerHTML = data.services.map((s, idx) => {
-      const isPop = s.is_popular || idx === 0;
-      return `
-        <div class="card ${isPop ? 'popular' : ''}">
-          ${isPop ? '<div class="badge">Paling Populer</div>' : ''}
-          <h3>${esc(s.name)}</h3>
-          <div class="price">${rupiah(s.price)}</div>
-          <div class="meta">⏱️ Estimasi ${esc(s.duration_hours || 24)} jam</div>
-          <button
-            class="btn ${isPop ? 'btn-primary' : 'btn-outline'} js-order"
-            data-id="${esc(s.id)}"
-            data-name="${esc(s.name)}"
-            data-price="${esc(s.price)}"
-          >Pesan</button>
-        </div>
-      `;
-    }).join('');
-
-    // Attach event delegation for the dynamically injected order buttons
-    // Only bind once to the document body to avoid duplicates
+    allServices = data.services;
+    const rawCategories = allServices.map(s => s.category).filter(Boolean);
+    const categories = ['Semua', ...Array.from(new Set(rawCategories))];
+    renderCategoryPills(categories);
+    renderServicesGrid();
   } catch(e) {
-    document.getElementById('pricesGrid').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--color-error-500);">Gagal memuat harga layanan</div>';
+    if (grid) grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--color-error-500);">Gagal memuat harga layanan</div>';
   }
 }
 loadServices();
+
+// Event listeners for service search and category pills
+document.getElementById('serviceSearchInput')?.addEventListener('input', (e) => {
+  searchQuery = (e.target.value || '').trim();
+  renderServicesGrid();
+});
+
+document.addEventListener('click', (e) => {
+  const pill = e.target.closest('.cat-pill');
+  if (pill) {
+    activeCategory = pill.dataset.cat || 'Semua';
+    document.querySelectorAll('.cat-pill').forEach(p => {
+      const isActive = p.dataset.cat === activeCategory;
+      p.classList.toggle('active', isActive);
+      p.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    renderServicesGrid();
+  }
+  if (e.target.closest('#btnResetFilter')) {
+    activeCategory = 'Semua';
+    searchQuery = '';
+    const searchInput = document.getElementById('serviceSearchInput');
+    if (searchInput) searchInput.value = '';
+    document.querySelectorAll('.cat-pill').forEach(p => {
+      const isActive = p.dataset.cat === 'Semua';
+      p.classList.toggle('active', isActive);
+      p.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    renderServicesGrid();
+  }
+});
 
 // Delegation for dynamic JS Order Buttons
 document.addEventListener('click', (e) => {
