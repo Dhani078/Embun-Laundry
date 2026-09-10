@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T21:32:00+08:00
-Tick ke: 25
+Terakhir update: 2026-09-11T02:30:00+08:00
+Tick ke: 27
 Model: cbai/hy4-preview (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -50,6 +50,44 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **B19** — harga & diskon bukan hak pelanggan pada `create_order` (P1) —
+  `3709f0f` (tick 27)
+  - **Celah otorisasi nilai uang.** `price_per_kg` dan `discount` di
+    `POST /api/orders` dipakai MENTAH dari body. Batasnya ada sejak B2/B16,
+    tetapi batas itu hanya soal BENTUK, bukan HAK — tidak ada satu pun baris
+    yang bertanya siapa pengirimnya.
+  - **Terbukti di produksi** dengan akun Customer baru: `price_per_kg: 1` →
+    3 kg tercatat Rp 3.000 (bukan 60.000); `discount: 100000000` →
+    `total_amount` = 0. `total_amount` adalah dasar omzet di `/api/reports`
+    dan `/api/dashboard`, dan piutang dihitung dari selisihnya dengan
+    `paid_amount` — jadi dampaknya melampaui satu baris.
+  - Perbaikan menyamakan keduanya dengan pola `status` yang sudah lama benar:
+    `isStaff ? nilai : bawaan`. **Diskon voucher TETAP hidup** untuk pelanggan
+    (ia datang dari `user_vouchers`, bukan dari body).
+  - Periksa ulang dengan `node tools/verify_b19_run.mjs` — **HIJAU 24/24**
+    (kode lama MERAH 10/22). Terdaftar di `run_all_verifiers.sh`, kini 18
+    verifier. **SELESAI, jangan dikerjakan ulang.**
+  - Uji mutasi 4x: harga dibuka MERAH 18/24, diskon dibuka MERAH 19/24,
+    **staf pun tak bisa set harga MERAH 22/24**, **voucher ikut mati MERAH
+    22/24**. Dua mutasi terakhir membuktikan harness menangkap FITUR YANG
+    MATI, bukan cuma celah keamanan.
+
+### Pelajaran tick 27 (berlaku umum)
+
+- **Validasi bentuk yang rapi bisa menyembunyikan celah hak.** `create_order`
+  sudah lolos B2, B16, dan B18 — tetapi tidak ada satu pun yang bertanya
+  "bolehkah peran INI mengisi field INI". Pola pemeriksaannya: **cari field
+  yang nilainya menentukan UANG atau HAK, lalu cek apakah ia dijaga oleh PERAN
+  atau hanya oleh TIPE.** `status` terjaga, `price_per_kg`/`discount` tidak —
+  padahal ketiganya satu baris bersebelahan.
+- **Uji mutasi "pengetatan berlebihan" sama pentingnya dengan "celah dibuka".**
+  Mutasi 3 dan 4 membuktikan harness juga menangkap fitur yang mati. Tanpa
+  keduanya, "perbaikan" yang berlebihan akan tetap HIJAU.
+- Kandidat berikutnya yang sejenis (field bernilai uang/hak yang hanya dijaga
+  oleh tipe): `delivery.js` (`courier_id`, `status`) dan `promos.js` (`value`,
+  `max_discount`) — keduanya `isStaff`-only di tingkat aksi, jadi kemungkinan
+  besar bersih, tetapi belum pernah DIUKUR.
 
 - **B15** — validasi input `/api/delivery` + jadwal bawaan Asia/Jakarta (P1,
   melengkapi B2) — `abc9922` (tick 23)

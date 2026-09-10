@@ -1328,3 +1328,90 @@ periksa apakah modul yang dimutasi punya penjaga lapis lain.
 - Pola audit berikutnya yang belum dilakukan: **harness untuk modul yang
   masih belum punya** — `dashboard.js` dan `reports.js` (keduanya GET dan
   sudah berpenjaga `!user`, jadi kemungkinan besar bersih).
+
+
+## Tick 27 — B19: harga & diskon bukan hak pelanggan (`3709f0f`)
+
+- Task: **B19** (P1, baru — lahir dari temuan tick ini)
+- Perubahan: `functions/api/orders.js` (aksi `create_order`), plus harness baru
+  `tools/verify_b19.mjs` + `tools/verify_b19_run.mjs` dan entri di
+  `tools/run_all_verifiers.sh`.
+
+### Kenapa layak dicurigai
+
+`create_order` sudah lolos B2 (validasi), B16 (batas selaras lebar kolom), dan
+B18 (semua kata kerja tulis berpenjaga). Tidak ada satu pun dari ketiganya yang
+bertanya **siapa** yang boleh mengisi field-nya. Polanya: cari field yang
+nilainya menentukan UANG atau HAK, lalu cek apakah ia dijaga oleh PERAN atau
+hanya oleh TIPE.
+
+Di sinilah ketiganya satu baris bersebelahan:
+
+```js
+const status   = isStaff ? d.status      : 'baru';   // dijaga
+const disc     = d.discount;                          // TIDAK dijaga
+let   priceKg  = d.price_per_kg;                      // TIDAK dijaga
+```
+
+### Defek (diukur di produksi dengan akun Customer baru `ujib19@gmail.com`)
+
+| Kiriman pelanggan | Yang tersimpan | Seharusnya |
+|---|---|---|
+| `price_per_kg: 1`, 3 kg | Rp 3.000 | Rp 60.000 |
+| `discount: 100000000` | `total_amount` = 0 | Rp 60.000 |
+
+Dampaknya melampaui satu baris: `total_amount` adalah dasar omzet di
+`/api/reports` dan `/api/dashboard`, dan piutang dihitung dari selisihnya
+dengan `paid_amount`. Satu permintaan cukup untuk mengotori agregat itu.
+
+### Perbaikan
+
+```js
+const disc    = isStaff ? d.discount    : 0;
+let   priceKg = isStaff ? d.price_per_kg : 0;   // 0 -> diambil dari services
+```
+
+Validasi bentuk TETAP dijalankan untuk kedua field (nilai ngawur tetap 400);
+yang berubah hanya nilai yang dipakai. **Diskon voucher tetap hidup** untuk
+pelanggan — ia datang dari baris `user_vouchers`, bukan dari body.
+
+### Bukti
+
+- `node tools/verify_b19_run.mjs`: kode lama **MERAH 10/22**, kode baru
+  **HIJAU 24/24**. Yang diukur ialah parameter INSERT yang benar-benar
+  terkirim, bukan status (pelajaran B17).
+- Uji mutasi 4x, kode dipulihkan setelah masing-masing:
+
+| # | Mutasi | Hasil |
+|---|--------|-------|
+| 1 | harga pelanggan dibuka (B19 dibalik) | MERAH 18/24 |
+| 2 | diskon pelanggan dibuka | MERAH 19/24 |
+| 3 | staf pun tak bisa set harga (fitur mati) | MERAH 22/24 |
+| 4 | diskon voucher ikut dimatikan (regresi hak sah) | MERAH 22/24 |
+
+Mutasi 3 dan 4 penting: tanpa keduanya, "perbaikan" yang BERLEBIHAN akan tetap
+HIJAU. Harness harus punya gigi dua arah.
+
+### Regresi & verifikasi
+
+- `run_all_verifiers.sh` **18/18 HIJAU** (B19 24/24 masuk daftar).
+- `audit_sql_injection.py` exit 0; `audit_xss.py` HIJAU; `audit_throw_sites.py`
+  exit 0; `node --check` bersih di seluruh `functions/`, `src/`, `tools/`.
+- **Terbukti di produksi** (4 permintaan, akun Customer + Admin):
+  - pelanggan `price_per_kg: 1` → tersimpan `20000`, total 60000;
+  - pelanggan `discount: 100000000` → diskon `0`, total 60000;
+  - staf `price_per_kg: 15000, discount: 5000` → tersimpan 15000/5000,
+    total 40000 (**fitur kasir tidak mati**);
+  - pelanggan tanpa harga → 60000 (alur normal tidak berubah).
+- Keempat order uji (id 90001–90004) sudah dihapus; file cookie di `.tmp/`
+  dibersihkan.
+
+### Catatan untuk tick berikutnya
+
+- Pola B19 belum diperiksa pada `update_order` — tetapi ia sudah
+  `isStaff`-only, jadi tertutup. `pay.js` menerima `amount` bebas, tetapi
+  terikat pesanan dan sudah berpenjaga pemilik sejak B17.
+- Kandidat berikutnya yang sejenis (field bernilai uang/hak yang hanya dijaga
+  oleh tipe): `delivery.js` (`courier_id`, `status`) dan `promos.js`
+  (`value`, `max_discount`) — keduanya `isStaff`-only di tingkat aksi, jadi
+  kemungkinan bersih, tetapi belum pernah DIUKUR.

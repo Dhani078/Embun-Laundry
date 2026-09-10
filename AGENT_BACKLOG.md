@@ -45,6 +45,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B16 | Batas validasi selaras lebar kolom TiDB | P1 | [x] | `502d56a` |
 | B17 | Wajib sesi pada `POST /api/pay` (penulisan terbuka) | **P0** | [x] | `a8ca085` |
 | B18 | Audit kata kerja TULIS semua modul (jaring regresi B17) | P1 | [x] | `ab7026e` |
+| B19 | Harga & diskon bukan hak pelanggan (`create_order`) | P1 | [x] | `3709f0f` |
 
 ---
 
@@ -199,6 +200,35 @@ File ini adalah **working copy** yang diupdate setiap tick.
   `track.js`, 10 uji jalur sukses staf, 3 uji GET publik tak ikut tertutup.
   **Registrasi diuji dengan asersi TERBALIK** — mendaftar adalah satu-satunya
   penulisan yang memang harus bisa tanpa sesi; jangan "diperbaiki" jadi 401.
+- **B19 — harga & diskon bukan hak pelanggan pada `create_order` (P1) —
+  SELESAI `3709f0f`** (tick 27). **Celah otorisasi nilai uang**: `price_per_kg`
+  dan `discount` di `POST /api/orders` dipakai MENTAH dari body. Batasnya ada
+  sejak B2/B16 (0..10.000.000), tetapi batas itu hanya soal **BENTUK, bukan
+  HAK** — tidak ada satu pun baris yang bertanya siapa pengirimnya. Terbukti di
+  produksi (akun Customer baru): kirim `price_per_kg: 1` → 3 kg tercatat
+  Rp 3.000, bukan Rp 60.000; kirim `discount: 100000000` → `total_amount` = 0.
+  Dampaknya melampaui satu baris: `total_amount` adalah dasar omzet di
+  `/api/reports` dan `/api/dashboard`, dan piutang dihitung dari selisihnya
+  dengan `paid_amount`. Perbaikan menyamakan keduanya dengan pola `status` yang
+  sudah lama benar (`isStaff ? nilai : bawaan`). **Diskon VOUCHER tetap hidup
+  untuk pelanggan** — ia datang dari `user_vouchers`, bukan dari body.
+  Periksa ulang dengan `node tools/verify_b19_run.mjs` (HASIL: HIJAU 24/24;
+  kode lama MERAH 10/22). Jangan dikerjakan ulang.
+- **Pelajaran tick 27 — validasi bentuk yang rapi bisa menyembunyikan celah
+  hak.** `create_order` sudah lolos B2 (validasi), B16 (batas selaras kolom),
+  dan B18 (kata kerja tulis berpenjaga) — tetapi tidak ada satu pun dari
+  ketiganya yang bertanya "bolehkah peran INI mengisi field INI". Pola
+  pemeriksaannya: **cari field yang nilainya menentukan UANG atau HAK, lalu
+  cek apakah ia dijaga oleh peran atau hanya oleh tipe.** `status` terjaga,
+  `price_per_kg`/`discount` tidak — padahal ketiganya satu baris bersebelahan.
+  Catatan penyeimbang yang sama berlaku untuk `update_order` (sudah
+  `isStaff`-only) dan `pay.js` (`amount` bebas, tetapi terikat pesanan dan
+  sudah berpenjaga pemilik sejak B17).
+- **Pelajaran tick 27 — uji mutasi "pengetatan berlebihan" sama pentingnya
+  dengan uji "celah dibuka".** Mutasi 3 (staf pun tak bisa menentukan harga)
+  dan 4 (diskon voucher ikut mati) membuktikan harness juga menangkap FITUR
+  YANG MATI, bukan cuma celah keamanan. Tanpa keduanya, "perbaikan" yang
+  berlebihan akan tetap HIJAU.
 - **Pelajaran tick 26 — uji mutasi yang HIJAU belum tentu kegagalan harness.**
   Mutasi "penjaga dipindah SETELAH penulisan" pada `delivery.js` tetap HIJAU
   76/76, dan itu BENAR: `delivery.js` punya penjaga `!user` di tingkat atas,
