@@ -1103,3 +1103,83 @@ Bukan fitur baru: memperkuat harness C2 yang sudah ter-commit (`1551773`).
     kemungkinan per milidetik, jadi yang boleh bocor hanyalah status dan
     nominal. Jangan pernah menambah field ke `publicView()` tanpa uji
     "TIDAK bocor" yang baru.
+
+
+---
+
+## Tick 23 — 2026-09-10T18:35:00+08:00 (B15 — validasi `/api/delivery` + jadwal Asia/Jakarta)
+
+Latar belakang: `delivery.js` adalah satu-satunya modul yang TIDAK ikut
+dipasangi `validateOr400()` pada B2 (tick 11). Tujuh modul lain sudah;
+delivery tertinggal. Celah ini dicatat sendiri di `_today.js` sejak B12:
+"pola `toISOString().split('T')[0]` masih ada di `functions/api/delivery.js`
+untuk `schedule_date`". Jadi satu tick menutup dua hal: input tanpa
+validasi, dan tanggal yang salah zona.
+
+- Diukur DULU dengan probe sementara (13 kasus) sebelum mengubah apa pun.
+  Kode lama menerima SEMUANYA dengan 200:
+  - `customer_name` 5.000 char -> masuk ke `VARCHAR(80)` -> 500 dari TiDB
+  - `phone` objek `{n:1}`      -> `[object Object]` tersimpan di VARCHAR(30)
+  - `address` array `['a','b']`-> `"a,b"` (koersi JS) tersimpan di TEXT alamat
+  - `order_code` 9.000 char    -> melampaui VARCHAR(40)
+  - `notes` 20.000 char, `schedule_date:'besok-saja'`, `start_time:'pagi sekali'`
+  - `id: [5,9]` pada update_status -> `parseInt([5,9])` = 5, elemen pertama
+    dipakai, sisanya dibuang tanpa keluhan; `id: -3` juga lolos
+  - `courier_id: -7` pada assign_courier -> diterima mentah
+  Kolom yang dipertaruhkan: **alamat dan telepon pelanggan**.
+- Perubahan produksi (2 berkas):
+  - `functions/api/delivery.js`: seluruh field `create_task` lewat
+    `validateOr400()`; batas mengikuti `DATABASE_SCHEMA.md` (nama 80, telepon
+    30, kode pesanan 40, alamat/catatan 2000). Tiga aksi lain
+    (`update_status`, `assign_courier`, `delete_task`) ikut divalidasi.
+    Parameter GET (`status`, `date`) dibersihkan + divalidasi.
+    Jadwal bawaan `toISOString().split('T')[0]` -> `todayIn()` (`_today.js`).
+  - `functions/_validate.js`: TIPE BARU `time` (`HH:MM`/`HH:MM:SS`, untuk
+    kolom MySQL `TIME`) + `isTime()`. `type:'int'` kini MENOLAK objek/array —
+    sebelumnya `{id:[3]}` lolos karena `Number([3])` = 3.
+- BARU `tools/verify_b15.mjs` + `verify_b15_run.mjs` — 93 uji. Uji mengukur
+  SQL/params yang BENAR-BENAR terkirim, bukan teks sumber.
+- **Tiga hijau palsu yang ditemukan pada harness SENDIRI (penting):**
+  1. `if (patch.type === undefined) delete body.type;` — karena hampir semua
+     patch tidak punya kunci `type`, SETIAP kasus kehilangan `type` dan
+     menjadi 400 karena "Tipe wajib diisi", BUKAN karena field yang diuji.
+     Uji mutasi (batas nama dibuka jadi 100.000) tetap HIJAU 91/91 padahal
+     kode sudah rusak. Diperbaiki dengan `'type' in patch &&`.
+  2. Uji zona waktu tidak bisa HIJAU MERAH bila WIB dan UTC sedang hari yang
+     sama — terbukti: mutasi "jadwal balik ke UTC" HIJAU 91/91. Ditambah uji
+     dengan JAM DIBEKUKAN ke `2026-09-10T23:00:00Z` (= 06:00 WIB hari
+     berikutnya), sehingga kedua zona pasti beda hari.
+  3. Karena pembekuan `Date` menyentuh scope global, ditambah uji bahwa jam
+     pulih sesudahnya (selisih < 60 dtk) agar kebocoran tidak merusak uji lain.
+- **Uji mutasi (7x sengaja merusak kode) — semua terbukti MERAH:**
+  | 1 batas nama -> 100.000        | MERAH 90/93 |
+  | 2 `date` -> str bebas          | MERAH 87/93 |
+  | 3 `time` -> str bebas          | MERAH 90/93 |
+  | 4 jadwal balik ke UTC          | MERAH 92/93 |
+  | 5 Customer boleh pilih kurir   | MERAH 91/93 |
+  | 6 validasi create_task dilewati| MERAH 60/93 |
+  | 7 filter GET status dimatikan  | MERAH 92/93 |
+  Dipulihkan: HIJAU 93/93.
+- Regresi: `tools/run_all_verifiers.sh` **14/14 HIJAU** (B15 93/93 masuk
+  daftar). `node --check` semua fungsi + src + tools bersih.
+  `audit_sql_injection.py` 0 temuan, `audit_xss.py` HIJAU.
+- **Terbukti di produksi** (setelah deploy ~100 dtk, `abc9922`):
+  - 10 input ngawur -> **400** dengan pesan spesifik ("Nama pelanggan
+    terlalu panjang (maksimal 80 karakter)", "Format Jam mulai tidak valid
+    (HH:MM)", "Format ID tidak valid", "Kurir di luar rentang...").
+  - Jalur SUKSES tidak mati: `create_task` wajar -> **200**, baris tersimpan
+    `schedule_date: "2026-12-24"`, `start_time: "09:30:00"`.
+  - B10 utuh: tanpa sesi -> **401** (POST dan GET).
+  - B4 utuh: nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy.
+  - B5 utuh: origin `evil.example.com` -> tanpa ACAO, `Vary: Origin`.
+  - OPTIONS preflight -> 204.
+- Commit: `abc9922`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - Tipe `time` di `_validate.js` hanya dipakai delivery. Bila modul lain
+    (mis. jam operasional toko di settings) butuh kolom TIME, pakai tipe ini.
+  - `_validate.js` kini menolak objek/array untuk `int` juga. Bila ada klien
+    sah yang mengirim id berupa array, itu bug klien — jangan dilonggarkan.
+  - Modul yang BELUM punya harness khusus validasi: `customers.js` POST
+    (sudah lewat B2, belum punya harness sendiri), `services.js` idem.
+    Kandidat B16 bila backlog fitur sedang kosong.
