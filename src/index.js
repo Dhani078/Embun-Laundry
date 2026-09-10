@@ -13,6 +13,7 @@ import * as reportsHandler from '../functions/api/reports.js';
 import * as profileHandler from '../functions/api/profile.js';
 import * as checkinHandler from '../functions/api/checkin.js';
 import * as payHandler from '../functions/api/pay.js';
+import * as trackHandler from '../functions/api/track.js';
 import * as dashboardHandler from '../functions/api/dashboard.js';
 import * as healthHandler from '../functions/api/health.js';
 import { withSecurityHeaders, SECURITY_HEADERS } from '../functions/_db.js';
@@ -93,6 +94,7 @@ export default {
       else if (path === '/api/profile') resp = profileHandler.onRequest(context);
       else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
       else if (path === '/api/pay') resp = payHandler.onRequest(context);
+      else if (path === '/api/track') resp = trackHandler.onRequest(context);
 
       // B5: satu titik pemasangan header CORS untuk SELURUH /api/*,
       // termasuk jalur 404 di bawah. Tanpa ini, respons yang dibuat
