@@ -38,6 +38,19 @@ export function isDate(value) {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
 
+/**
+ * Waktu `HH:MM` atau `HH:MM:SS` — cocok dengan kolom MySQL `TIME`.
+ *
+ * B15 — `pickup_delivery.start_time`/`end_time` bertipe TIME. Klien yang
+ * mengirim `"pagi sekali"` atau `"99:99"` hanya akan berujung pada 500 dari
+ * TiDB, bukan 400 dari kita. Detik bersifat opsional karena klien wajar
+ * mengirim `"09:00"`.
+ */
+export function isTime(value) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)) return false;
+  return true;
+}
+
 /** Angka bulat 32-bit positif yang aman untuk kolom id. */
 export function isId(value) {
   return Number.isInteger(value) && value > 0 && value <= 2147483647;
@@ -95,6 +108,15 @@ function checkField(name, spec, raw) {
   }
 
   if (type === 'int') {
+    // B15 — objek dan array DITOLAK untuk angka juga, bukan di-`Number()`.
+    // Tanpa penjaga ini `{ "id": [3] }` lolos karena `Number([3])` adalah 3:
+    // array berelemen satu menjadi id yang sah, tanpa ada yang memperingatkan.
+    // Terbukti pada `assign_courier` dan `delete_task` — keduanya menerima
+    // `id: [3]` dan mengubah baris ke-3. (Penjaga serupa untuk `str`/`email`/
+    // `date` ditambahkan lebih dulu pada B13.)
+    if (raw !== null && raw !== undefined && typeof raw === 'object') {
+      fail(`Format ${label} tidak valid`);
+    }
     const num = raw === '' || raw === null || raw === undefined ? NaN : Number(raw);
     if (!Number.isFinite(num)) {
       if (spec.required) fail(`${label} wajib diisi`);
@@ -105,6 +127,21 @@ function checkField(name, spec, raw) {
     const max = spec.max !== undefined ? spec.max : 2147483647;
     if (num < min || num > max) fail(`${label} di luar rentang yang diizinkan (${min}–${max})`);
     return num;
+  }
+
+  // 'time' = `HH:MM` / `HH:MM:SS` untuk kolom MySQL TIME. Diperkenalkan B15
+  // untuk `pickup_delivery.start_time`/`end_time`.
+  if (type === 'time') {
+    if (raw !== null && raw !== undefined && typeof raw === 'object') {
+      fail(`Format ${label} tidak valid`);
+    }
+    const text = cleanStr(raw);
+    if (!text) {
+      if (spec.required) fail(`${label} wajib diisi`);
+      return spec.default !== undefined ? spec.default : '';
+    }
+    if (!isTime(text)) fail(`Format ${label} tidak valid (HH:MM)`);
+    return text;
   }
 
   if (type === 'enum') {
