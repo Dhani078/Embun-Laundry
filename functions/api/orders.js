@@ -1,6 +1,6 @@
 // functions/api/orders.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
-import { validateOr400, cleanStr, STATUS_ORDER } from '../_validate.js';
+import { validateOr400, cleanStr, STATUS_ORDER, COL_SPEC } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -100,10 +100,17 @@ export async function onRequest({ request, env }) {
         // B2 — berat 1..1000 kg, harga & diskon non-negatif, teks dibatasi.
         // Sebelumnya `Math.max(1, parseInt(...)||1)` mengizinkan 100000 kg dan
         // `body.customer_*` dikirim apa adanya tanpa batas panjang.
+        //
+        // B16 — batas teks mengikuti lebar kolom TiDB (diukur di produksi:
+        // nilai N -> 200, N+1 -> 500):
+        //   `customer_name`     120 -> 100  (VARCHAR(100))
+        //   `customer_address`  500 -> 255  (VARCHAR(255))
+        //   `customer_phone`     30 ->  32  (VARCHAR(32)) — batas lama
+        //     TERLALU KETAT terhadap kolomnya.
         const v = validateOr400(body, {
-          customer_name: { type: 'str', max: 120, label: 'Nama pelanggan' },
-          customer_phone: { type: 'str', max: 30, label: 'Telepon pelanggan' },
-          customer_address: { type: 'str', max: 500, label: 'Alamat pelanggan' },
+          customer_name: COL_SPEC.orderCustomerName,
+          customer_phone: COL_SPEC.orderCustomerPhone,
+          customer_address: COL_SPEC.orderCustomerAddress,
           service_id: { type: 'int', required: true, min: 1, label: 'Layanan' },
           weight_kg: { type: 'int', min: 1, max: 1000, default: 1, label: 'Berat (kg)' },
           price_per_kg: { type: 'int', min: 0, max: 10000000, default: 0, label: 'Harga per kg' },
@@ -210,11 +217,12 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'update_order' && isStaff) {
+        // B16 — batas mengikuti lebar kolom (lihat `create_order`).
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
-          customer_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama pelanggan' },
-          customer_phone: { type: 'str', max: 30, label: 'Telepon pelanggan' },
-          customer_address: { type: 'str', max: 500, label: 'Alamat pelanggan' },
+          customer_name: { ...COL_SPEC.orderCustomerName, required: true, min: 2 },
+          customer_phone: COL_SPEC.orderCustomerPhone,
+          customer_address: COL_SPEC.orderCustomerAddress,
           service_id: { type: 'int', required: true, min: 1, label: 'Layanan' },
           weight_kg: { type: 'int', min: 1, max: 1000, default: 1, label: 'Berat (kg)' },
           price_per_kg: { type: 'int', min: 0, max: 10000000, default: 0, label: 'Harga per kg' },

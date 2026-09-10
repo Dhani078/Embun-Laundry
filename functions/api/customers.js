@@ -1,6 +1,6 @@
 // functions/api/customers.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
-import { validateOr400, cleanStr } from '../_validate.js';
+import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -95,10 +95,17 @@ export async function onRequest({ request, env }) {
 
       if (act === 'create_customer') {
         // B2 — validasi & sanitasi sebelum menyentuh database.
+        //
+        // B16 — batas mengikuti lebar kolom TiDB, dua arah sekaligus:
+        //   `address`  500 -> 255  (VARCHAR(255); 300 char -> 500 di produksi)
+        //   `phone`     30 ->  32  (VARCHAR(32)). Ini arah SEBALIKNYA: batas
+        //     lama TERLALU KETAT, jadi nomor 31–32 digit yang sah ditolak
+        //     padahal kolomnya muat. Terbukti: 32 char -> 400 "maksimal 30".
+        // `full_name` tetap 120 — persis VARCHAR(120), sudah tepat.
         const v = validateOr400(body, {
-          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
-          phone: { type: 'str', max: 30, label: 'Telepon' },
-          address: { type: 'str', max: 500, label: 'Alamat' }
+          full_name: COL_SPEC.customerName,
+          phone: COL_SPEC.customerPhone,
+          address: COL_SPEC.customerAddress
         });
         if (!v.ok) return v.response;
         const { full_name: name, phone, address } = v.data;
@@ -123,11 +130,12 @@ export async function onRequest({ request, env }) {
       }
 
       if (act === 'update_customer') {
+        // B16 — batas mengikuti lebar kolom (lihat `create_customer`).
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
-          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
-          phone: { type: 'str', max: 30, label: 'Telepon' },
-          address: { type: 'str', max: 500, label: 'Alamat' }
+          full_name: COL_SPEC.customerName,
+          phone: COL_SPEC.customerPhone,
+          address: COL_SPEC.customerAddress
         });
         if (!v.ok) return v.response;
         const { id, full_name: name, phone, address } = v.data;

@@ -1,6 +1,6 @@
 // functions/api/promos.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
-import { validateOr400, cleanStr } from '../_validate.js';
+import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -51,14 +51,21 @@ export async function onRequest({ request, env }) {
       if (act === 'create_promo') {
         // B2 — tipe promo wajib salah satu dari enum; nilai nominal tak boleh
         // negatif; `expires_at` harus berformat tanggal/waktu jika diberikan.
+        //
+        // B16 — `code` 40 -> 32 (VARCHAR(32); terbukti 32 -> 200, 33 -> 500).
         const v = validateOr400(body, {
-          code: { type: 'str', max: 40, label: 'Kode' },
-          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          code: COL_SPEC.promoCode,
+          name: COL_SPEC.promoName,
           type: { type: 'enum', values: ['percent', 'nominal'], default: 'percent', label: 'Tipe' },
           value: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Nilai' },
           min_spend: { type: 'int', min: 0, max: 1000000000, default: 0, label: 'Minimal belanja' },
           max_discount: { type: 'int', min: 0, max: 1000000000, default: 0, label: 'Maksimal diskon' },
-          expires_at: { type: 'str', max: 32, label: 'Tanggal kedaluwarsa' },
+          // B16 — `expires_at` dulu `type:'str', max:32`. Padahal kolomnya
+          // DATETIME, jadi **format**-nya yang menentukan, bukan panjangnya.
+          // Terbukti di produksi: `expires_at: "besok-saja"` (10 karakter,
+          // jadi jelas "lolos" batas 32) diteruskan ke TiDB -> **500**.
+          // Kini `type:'datetime'` (tipe baru, lihat `_validate.js`).
+          expires_at: { type: 'datetime', label: 'Tanggal kedaluwarsa' },
           is_active: { type: 'bool', default: 1, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;
@@ -85,13 +92,14 @@ export async function onRequest({ request, env }) {
       if (act === 'update_promo') {
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
-          code: { type: 'str', required: true, max: 40, label: 'Kode' },
-          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          // B16 — batas mengikuti lebar kolom (lihat `create_promo`).
+          code: { ...COL_SPEC.promoCode, required: true },
+          name: COL_SPEC.promoName,
           type: { type: 'enum', values: ['percent', 'nominal'], default: 'percent', label: 'Tipe' },
           value: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Nilai' },
           min_spend: { type: 'int', min: 0, max: 1000000000, default: 0, label: 'Minimal belanja' },
           max_discount: { type: 'int', min: 0, max: 1000000000, default: 0, label: 'Maksimal diskon' },
-          expires_at: { type: 'str', max: 32, label: 'Tanggal kedaluwarsa' },
+          expires_at: { type: 'datetime', label: 'Tanggal kedaluwarsa' },
           is_active: { type: 'bool', default: 1, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;

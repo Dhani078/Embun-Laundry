@@ -39,6 +39,37 @@ export function isDate(value) {
 }
 
 /**
+ * Waktu `YYYY-MM-DD HH:MM:SS` (detik dan menit boleh dihilangkan) — cocok
+ * dengan kolom MySQL `DATETIME`.
+ *
+ * B16 — `promos.expires_at` bertipe DATETIME dan dulu divalidasi sebagai
+ * `type:'str'` dengan `max: 32`. Terbukti di produksi: `expires_at:
+ * "besok-saja"` (10 karakter, jadi "lolos" pembatasan panjang) diteruskan ke
+ * TiDB dan berujung **500**, bukan 400. Panjang tidak pernah bisa
+ * menggantikan pemeriksaan format.
+ *
+ * Detik dan menit sengaja opsional: klien wajar mengirim `"2026-12-31"` atau
+ * `"2026-12-31 23:00"` untuk tenggat promo, dan MySQL mengisinya sendiri
+ * dengan `00:00:00`.
+ */
+export function isDateTime(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value);
+  if (!m) return false;
+  const y = m[1];
+  const mo = m[2];
+  const d = m[3];
+  const h = m[4] || '00';
+  const mi = m[5] || '00';
+  const s = m[6] || '00';
+  if (Number(h) > 23 || Number(mi) > 59 || Number(s) > 59) return false;
+  // Tanggal harus benar-benar ada di kalender: 2026-02-31 bukan tanggal.
+  const probe = new Date(`${y}-${mo}-${d}T00:00:00Z`);
+  if (Number.isNaN(probe.getTime())) return false;
+  const ymd = `${y}-${mo}-${d}`;
+  return probe.toISOString().slice(0, 10) === ymd;
+}
+
+/**
  * Waktu `HH:MM` atau `HH:MM:SS` — cocok dengan kolom MySQL `TIME`.
  *
  * B15 — `pickup_delivery.start_time`/`end_time` bertipe TIME. Klien yang
@@ -85,7 +116,7 @@ function checkField(name, spec, raw) {
     return text;
   }
 
-  if (type === 'str' || type === 'email' || type === 'date') {
+  if (type === 'str' || type === 'email' || type === 'date' || type === 'datetime') {
     // B13 — objek dan array DITOLAK, bukan diubah jadi string. Tanpa
     // penjaga ini `{ "phone": { "n": 1 } }` lolos karena `String({})` adalah
     // "[object Object]" — sebuah string, jadi panjangnya "valid" — dan
@@ -104,6 +135,9 @@ function checkField(name, spec, raw) {
     if (spec.min && text.length < spec.min) fail(`${label} terlalu pendek (minimal ${spec.min} karakter)`);
     if (type === 'email' && !isEmail(text)) fail(`Format ${label} tidak valid`);
     if (type === 'date' && !isDate(text)) fail(`Format ${label} tidak valid (YYYY-MM-DD)`);
+    if (type === 'datetime' && !isDateTime(text)) {
+      fail(`Format ${label} tidak valid (YYYY-MM-DD HH:MM:SS)`);
+    }
     return text;
   }
 
@@ -204,3 +238,37 @@ export const SPEC = {
   address: { type: 'str', max: 500, label: 'Alamat' },
   id: { type: 'int', required: true, min: 1, label: 'ID' }
 };
+
+// B16 — spesifikasi yang panjangnya mengikuti LEBAR KOLOM TiDB
+// (`functions/_schema.js`), bukan angka yang dikira-kira.
+//
+// Sengaja BERDIRI SENDIRI, bukan menggantikan `SPEC`: batas di `SPEC` dipakai
+// handler yang menulis ke banyak tabel sekaligus atau yang batasnya memang
+// bukan lebar kolom; mengubahnya akan menggeser perilaku yang sudah
+// diverifikasi B2.
+import { col } from './_schema.js';
+
+export const COL_SPEC = Object.freeze({
+  userName: col('users.full_name', 'Nama lengkap', { required: true, min: 2 }),
+  userPhone: col('users.phone', 'Telepon'),
+  userEmail: col('users.email', 'Email'),
+
+  serviceCode: col('services.code', 'Kode'),
+  serviceName: col('services.name', 'Nama', { required: true, min: 2 }),
+  serviceCategory: col('services.category', 'Kategori'),
+  serviceBadge: col('services.badge', 'Badge'),
+
+  customerName: col('customers.full_name', 'Nama', { required: true, min: 2 }),
+  customerPhone: col('customers.phone', 'Telepon'),
+  customerAddress: col('customers.address', 'Alamat'),
+
+  // `customer_name` pada `create_order` TIDAK wajib — staf boleh membiarkannya
+  // kosong dan nama diambil dari sesi. Karena itu `required` tidak ditaruh di
+  // sini; `update_order` menambahkannya sendiri lewat spread.
+  orderCustomerName: col('orders.customer_name', 'Nama pelanggan'),
+  orderCustomerPhone: col('orders.customer_phone', 'Telepon pelanggan'),
+  orderCustomerAddress: col('orders.customer_address', 'Alamat pelanggan'),
+
+  promoCode: col('promos.code', 'Kode'),
+  promoName: col('promos.name', 'Nama', { required: true, min: 2 })
+});
