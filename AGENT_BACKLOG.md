@@ -40,6 +40,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B11 | Hak akses laporan + validasi rentang tanggal | **P0** | [x] | `5534bc3` |
 | B12 | Hari check-in di zona `Asia/Jakarta`, bukan UTC | P1 | [x] | `1c2af13` |
 | B13 | Validasi input `/api/profile` + pesan error generik | P1 | [x] | `3145171` |
+| B14 | Pesan error generik 20 titik (11 modul) + validasi `/api/pay` | P1 | [x] | `58fb1b5` |
 
 ---
 
@@ -154,13 +155,22 @@ File ini adalah **working copy** yang diupdate setiap tick.
     mengirim `msg: e.message` → connection string bisa bocor. Periksa ulang
     dengan `node tools/verify_b13_run.mjs` (HASIL: HIJAU 66/66). Jangan
     dikerjakan ulang.
-12. **SISA PEKERJAAN YANG NYATA — pola `msg: e.message` ada di 18 titik
-    lain**: `checkin.js` (2), `customers.js` (2), `dashboard.js`,
-    `delivery.js` (2), `orders.js` (2), `pay.js` (2), `promos.js` (2),
-    `profile.js` (sudah beres), `reports.js`, `services.js` (2),
-    `vouchers.js` (2), `login.js`, `register.js`. Setiap modul punya
-    kontraknya sendiri — kerjakan per modul beserta harness-nya. Jangan
-    sapu semua sekaligus tanpa uji.
+11. **B14 — pesan error generik di 20 titik + validasi `/api/pay` (P1) —
+    SELESAI `58fb1b5`** (tick 18). Ini ADALAH entri 12 yang dulu berbunyi
+    "sisa pekerjaan yang nyata"; kini selesai, jangan dikerjakan ulang.
+    Periksa ulang dengan `node tools/verify_b14_run.mjs` (HASIL: HIJAU
+    76/76). Bukti: kode lama MERAH 46/76, kode baru HIJAU 76/76.
+12. **Pelajaran tick 18 — `verify_b8` punya uji WAKTU (timing), bukan hanya
+    uji benar/salah.** Satu uji berbunyi "2 hash (ganti sandi) < 10 ms" dan
+    bisa MERAH murni karena mesin sedang sibuk (pernah 13,65 ms saat
+    `run_all_verifiers.sh` menjalankan 11 verifier berurutan). Ulangi
+    sebelum menyimpulkan regresi — jangan "memperbaiki" `_password.js`
+    gara-gara satu angka. `_password.js` tidak disentuh commit ini.
+13. **Pelajaran tick 18 — audit statik wajib membersihkan komentar dulu.**
+    Pemeriksaan `msg: ... e.message` mula-mula MERAH pada `profile.js`,
+    padahal file itu sudah benar sejak B13 — yang cocok adalah kalimat
+    komentar "dulu `msg: e.message`". Tanpa pembersihan komentar, audit
+    menghasilkan MERAH PALSU pada file yang justru sudah beres.
 13. **Pelajaran dari tick 17 — uji "kolom rahasia tidak bocor" mudah
     HIJAU PALSU.** Kalau baris tiruan tidak punya `password_hash`, uji itu
     lolos sekalipun handler memakai `SELECT *`; kalau tiruan mengembalikan
