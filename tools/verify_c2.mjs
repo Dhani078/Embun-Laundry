@@ -92,9 +92,13 @@ async function call(method, path, rowsFor) {
   return { status, json, text, headers, calls: __calls.slice() };
 }
 
-/** Baris penuh untuk kode yang sah, kosong untuk selainnya. */
-const rowsOk = (sql, params) =>
-  (Array.isArray(params) && params[0] === 'ORD-ABC123') ? [FULL_ORDER] : [];
+// Baris penuh untuk kode yang sah, kosong untuk selainnya.
+// Query ke-2 adalah pickup_delivery → kembalikan status pengantaran.
+const rowsOk = (sql, params) => {
+  if (!Array.isArray(params) || params[0] !== 'ORD-ABC123') return [];
+  if (/pickup_delivery/i.test(String(sql))) return [{ type: 'delivery', status: 'onroute' }];
+  return [FULL_ORDER];
+};
 
 // ---------------------------------------------------------------------------
 // 1. Jalur sukses — tanpa sesi, tanpa cookie
@@ -108,6 +112,40 @@ resetAll();
   check('status pesanan dikembalikan', r.json?.order?.status === 'proses', r.text);
   check('nama layanan ikut (JOIN services)', r.json?.order?.service_name === 'Cuci Kering Reguler', r.text);
   check('total_amount dikembalikan', r.json?.order?.total_amount === 35000, r.text);
+}
+
+// ---------------------------------------------------------------------------
+// 1b. Kontrak UI yang SUDAH ADA di index.html (renderTrackResult)
+//     Landing page memanggil ?order_code= dan memakai progress_step, unit,
+//     dan delivery. Sebelum endpoint ini ada, fitur itu 404 (mati).
+// ---------------------------------------------------------------------------
+{
+  // Nama parameter lama yang dipakai landing page HARUS tetap berfungsi.
+  const r = await call('GET', '/api/track?order_code=ORD-ABC123', rowsOk);
+  check('?order_code= (kontrak landing page) → 200', r.status === 200, `status=${r.status} ${r.text}`);
+  check('?order_code= mengembalikan order', r.json?.order?.order_code === 'ORD-ABC123', r.text);
+
+  const g = await call('GET', '/api/track?code=ORD-ABC123', rowsOk);
+  check('progress_step sesuai status "proses" → 1', g.json?.order?.progress_step === 1, g.text);
+  check('unit layanan ikut', g.json?.order?.unit === 'kg', g.text);
+  check('delivery.type ikut', g.json?.order?.delivery?.type === 'delivery', g.text);
+  check('delivery.status ikut', g.json?.order?.delivery?.status === 'onroute', g.text);
+  check('delivery TIDAK bawa alamat/telepon',
+    !JSON.stringify(g.json?.order?.delivery ?? {}).match(/Jl\.|0812|address|phone/i),
+    JSON.stringify(g.json?.order?.delivery));
+}
+
+// progress_step untuk keempat status (0/1/2/-1).
+{
+  const stepFor = async (status) => {
+    const rows = (sql) => /pickup_delivery/i.test(String(sql)) ? [] : [{ ...FULL_ORDER, status }];
+    const r = await call('GET', '/api/track?code=ORD-ABC123', rows);
+    return r.json?.order?.progress_step;
+  };
+  check('progress_step baru = 0', await stepFor('baru') === 0, String(await stepFor('baru')));
+  check('progress_step proses = 1', await stepFor('proses') === 1, String(await stepFor('proses')));
+  check('progress_step selesai = 2', await stepFor('selesai') === 2, String(await stepFor('selesai')));
+  check('progress_step batal = -1', await stepFor('batal') === -1, String(await stepFor('batal')));
 }
 
 // ---------------------------------------------------------------------------
