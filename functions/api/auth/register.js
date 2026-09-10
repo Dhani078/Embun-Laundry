@@ -1,6 +1,6 @@
 // functions/api/auth/register.js
 import { getDb, hashPassword, jsonResponse, createSessionToken, readJson, SERVER_ERROR } from '../../_db.js';
-import { validateOr400 } from '../../_validate.js';
+import { validateOr400, COL_SPEC } from '../../_validate.js';
 
 export async function onRequestPost({ request, env }) {
   const db = await getDb(env);
@@ -16,10 +16,13 @@ export async function onRequestPost({ request, env }) {
     // B2 — validasi & sanitasi. Sebelumnya hanya `!full_name || !email ||
     // !password` dengan regex email longgar; nama/telepon tak dibatasi
     // panjangnya dan kata sandi tak punya batas minimal sama sekali.
+    //
+    // B16 — `full_name` 120 -> 100 (VARCHAR(100) di TiDB; nama 101 char
+    // berujung 500 saat INSERT). `phone` 30 -> 32 (VARCHAR(32)).
     const v = validateOr400(body, {
-      full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama lengkap' },
+      full_name: COL_SPEC.userName,
       email: { type: 'email', required: true, label: 'Email' },
-      phone: { type: 'str', max: 30, label: 'Telepon' },
+      phone: COL_SPEC.userPhone,
       // 'raw': sandi TIDAK dibersihkan — hanya panjangnya yang dibatasi.
       password: { type: 'raw', required: true, min: 6, max: 128, label: 'Kata sandi' },
       confirm: { type: 'raw', max: 128, label: 'Konfirmasi sandi' }

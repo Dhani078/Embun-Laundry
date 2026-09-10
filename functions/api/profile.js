@@ -8,7 +8,7 @@ import { verifyPassword } from '../_password.js';
 // `if (!name)`, sehingga: nama 100.000 karakter diteruskan mentah ke TiDB, dan
 // `phone` yang bukan string (`(body.phone || '').trim()`) melempar TypeError
 // → 500. Modul `_validate.js` sudah ada sejak B2, hanya belum dipakai di sini.
-import { validateOr400 } from '../_validate.js';
+import { validateOr400, COL_SPEC } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -44,9 +44,17 @@ export async function onRequest({ request, env }) {
         // `if (!name)`, jadi string 100.000 karakter dikirim mentah ke TiDB
         // (kolom VARCHAR(120) → 500 dari DB, bukan 400 dari kita), dan
         // `phone` non-string membuat `.trim()` melempar → 500.
+        //
+        // B16 — `full_name` 120 -> 100. Terbukti di produksi: 100 char ->
+        // 200, **101 char -> 500**. (Komentar di atas menyebut VARCHAR(120)
+        // karena itu yang tertulis di skema lama; yang menentukan adalah
+        // hasil ukur terhadap TiDB.)
         const v = validateOr400(body, {
-          full_name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
-          phone: { type: 'str', max: 30, label: 'Telepon' }
+          // Label "Nama", bukan "Nama lengkap": di halaman profil kolomnya
+          // memang hanya bertuliskan "Nama". (COL_SPEC.userName dipakai
+          // register.js, yang formulirnya bertuliskan "Nama lengkap".)
+          full_name: { ...COL_SPEC.userName, label: 'Nama' },
+          phone: COL_SPEC.userPhone
         });
         if (!v.ok) return v.response;
         const { full_name: name, phone } = v.data;

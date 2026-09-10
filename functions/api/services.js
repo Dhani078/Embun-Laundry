@@ -1,6 +1,6 @@
 // functions/api/services.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
-import { validateOr400, cleanStr } from '../_validate.js';
+import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -74,15 +74,26 @@ export async function onRequest({ request, env }) {
       if (act === 'create_service') {
         // B2 — nama wajib; harga dan durasi dijaga tidak negatif;
         // panjang semua teks dibatasi supaya tidak ada baris raksasa di TiDB.
+        //
+        // B16 — batas teks kini mengikuti LEBAR KOLOM TiDB (`_schema.js`),
+        // bukan angka yang dikira-kira. Empat di antaranya terbukti terlalu
+        // longgar sehingga klien menerima 500, bukan 400 (diukur di
+        // produksi: nilai N -> 200, N+1 -> 500):
+        //   `name`      120 -> 80   (VARCHAR(80))
+        //   `code`       40 -> 20   (VARCHAR(20))
+        //   `category`   60 -> 20   (VARCHAR(20))
+        //   `badge`      40 -> 30   (VARCHAR(30))
+        // `description` sengaja TETAP 1000: kolomnya TEXT, jadi tidak pernah
+        // menghasilkan 500, dan memotongnya justru merusak deskripsi sah.
         const v = validateOr400(body, {
-          code: { type: 'str', max: 40, label: 'Kode' },
-          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          code: COL_SPEC.serviceCode,
+          name: COL_SPEC.serviceName,
           description: { type: 'str', max: 1000, label: 'Deskripsi' },
           unit: { type: 'enum', values: ['kg', 'pcs', 'item', 'meter', 'set'], default: 'kg', label: 'Satuan' },
           price: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Harga' },
           est_hours: { type: 'int', min: 0, max: 720, default: 0, label: 'Estimasi jam' },
-          category: { type: 'str', max: 60, default: 'Reguler', label: 'Kategori' },
-          badge: { type: 'str', max: 40, label: 'Badge' },
+          category: { ...COL_SPEC.serviceCategory, default: 'Reguler' },
+          badge: COL_SPEC.serviceBadge,
           is_active: { type: 'bool', default: 1, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;
@@ -103,14 +114,15 @@ export async function onRequest({ request, env }) {
       if (act === 'update_service') {
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
-          code: { type: 'str', required: true, max: 40, label: 'Kode' },
-          name: { type: 'str', required: true, min: 2, max: 120, label: 'Nama' },
+          // B16 — batas mengikuti lebar kolom (lihat `create_service`).
+          code: { ...COL_SPEC.serviceCode, required: true },
+          name: COL_SPEC.serviceName,
           description: { type: 'str', max: 1000, label: 'Deskripsi' },
           unit: { type: 'enum', values: ['kg', 'pcs', 'item', 'meter', 'set'], default: 'kg', label: 'Satuan' },
           price: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Harga' },
           est_hours: { type: 'int', min: 0, max: 720, default: 0, label: 'Estimasi jam' },
-          category: { type: 'str', max: 60, default: 'Reguler', label: 'Kategori' },
-          badge: { type: 'str', max: 40, label: 'Badge' },
+          category: { ...COL_SPEC.serviceCategory, default: 'Reguler' },
+          badge: COL_SPEC.serviceBadge,
           is_active: { type: 'bool', default: 1, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;
