@@ -64,6 +64,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C8 | Laporan bulanan + chart | P2 | [ ] | — |
 | C9 | Service worker (offline dasar) | P3 | [ ] | — |
 | C10 | Multi-bahasa ID/EN | P4 | [ ] | — |
+| C11 | Sinkronisasi `paid_amount` & `payment_status` orders via `POST /api/pay` | P1 | [x] | `ecfe4b9` |
 
 ---
 
