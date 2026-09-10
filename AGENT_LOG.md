@@ -856,3 +856,56 @@ jalur serve aset statis di `src/index.js`.
     klien tak mengirim tanggal, jadi tidak ada penjaga "sudah ada" yang
     bergantung padanya — prioritas rendah. A6 + B3 tetap terblokir
     (butuh Cloudflare API token).
+
+## Tick 17 — 2026-09-10T16:55:00+08:00 (B13 — validasi /api/profile + pesan error generik)
+
+- Task: B13 — harness untuk tiga endpoint yang tercatat belum punya harness
+  (`me.js`, `logout.js`, `profile.js`) sekaligus menutup celah yang
+  ditemukannya.
+- Temuan (diukur, kode lama MERAH 55/66 -> baru HIJAU 66/66):
+  - `update_profile` hanya memeriksa `if (!name)`. Nama 100.000 karakter
+    diteruskan mentah ke TiDB -> 200. `_validate.js` sudah ada sejak B2,
+    hanya belum dipakai di `profile.js`.
+  - `phone` bukan string -> `(body.phone || '').trim()` melempar TypeError ->
+    **500** dengan pesan `(body.phone || "").trim is not a function`.
+    Bila `phone` objek, `[object Object]` tersimpan di kolom VARCHAR.
+  - Kedua `catch` di `profile.js` mengirim `msg: e.message` -> connection
+    string / nama tabel / nomor baris bisa ikut ke klien (kontrak A4).
+- Perubahan:
+  - `functions/api/profile.js`: `update_profile` memakai `validateOr400()`
+    (nama 2-120, telepon <=30); kedua pesan 500 digenerik.
+  - `functions/_validate.js`: field `str`/`email`/`date` menolak objek &
+    array (sebelumnya `String({})` = `[object Object]` lolos karena
+    panjangnya "valid").
+  - BARU `tools/verify_b13.mjs` + `verify_b13_run.mjs` — 66 uji untuk
+    `/api/me`, `/api/auth/logout`, `/api/profile`.
+  - BARU `tools/run_all_verifiers.sh` (semua verifier sekaligus) dan
+    `tools/baseline.sh` (cek produksi cepat).
+- Verifikasi (lokal, nol regresi): B13 66/66; B1 HIJAU, B2 47/47, B5 HIJAU,
+  B7 HIJAU (0 temuan interpolasi), B8 HIJAU, B9 HIJAU, B10 29/29, B11 41/41,
+  B12 33/33, A3b HIJAU, audit_xss HIJAU, `node --check` 0 error.
+- Verifikasi (produksi, setelah deploy ~100 s) — `bash tools/probe_b13_live.sh`:
+  - `/` 200, `/dashboard` 200, `/api/health` 200, `/api/services` 200.
+  - Tanpa sesi: `/api/me` 401, `/api/profile` GET+POST 401.
+  - Login admin (field `identity`), lalu:
+    GET `/api/profile` 200, `password_hash` **tidak** ikut terkirim;
+    nama 100.000 char -> **400** "Validasi gagal: Nama terlalu panjang
+    (maksimal 120 karakter)";
+    `phone` objek -> **400** "Validasi gagal: Format Telepon tidak valid";
+    nama 1 char -> **400** "Nama terlalu pendek (minimal 2 karakter)";
+    nama+telepon wajar -> **200** (fitur tidak mati);
+    logout 200 + `Set-Cookie: session_token=; HttpOnly; Secure;
+    SameSite=Lax; Path=/; Max-Age=0`.
+  - Header B4 tetap ada di `/api/me`: nosniff, X-Frame-Options: DENY,
+    Referrer-Policy.
+- Commit: `3145171`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - Pola `msg: e.message` MASIH ADA di 18 titik lain (checkin, customers,
+    dashboard, delivery, orders, pay, promos, reports, services, vouchers,
+    login, register). B13 baru membersihkan `profile.js`. Kalau mau
+    dilanjutkan, kerjakan per modul dengan harness-nya sendiri — jangan
+    sapu semua sekaligus tanpa uji.
+  - Endpoint yang tercatat "belum punya harness" (tick 15/16) kini semuanya
+    terukur: `me`, `logout`, `profile`, `checkin`, `vouchers`.
+  - A6 + B3 tetap terblokir (butuh Cloudflare API token).
