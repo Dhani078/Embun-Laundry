@@ -1415,3 +1415,109 @@ HIJAU. Harness harus punya gigi dua arah.
   oleh tipe): `delivery.js` (`courier_id`, `status`) dan `promos.js`
   (`value`, `max_discount`) — keduanya `isStaff`-only di tingkat aksi, jadi
   kemungkinan bersih, tetapi belum pernah DIUKUR.
+
+
+## Tick 28 — B20: jumlah bayar dibatasi sisa tagihan (`858262a`)
+
+- Task: **B20** (P1, baru) — lahir dari "catatan untuk tick berikutnya" tick 27,
+  yang menyebut `pay.js` menerima `amount` bebas.
+- Perubahan: `functions/api/pay.js` (aksi POST), plus harness
+  `tools/verify_b20.mjs` + `tools/verify_b20_run.mjs` + `tools/mutate_b20.sh`,
+  dan entri ke-19 di `tools/run_all_verifiers.sh`.
+
+### Kenapa layak dicurigai
+
+Pola yang sama dengan B19: cari field yang nilainya menentukan UANG, lalu cek
+apakah ia dijaga oleh **batas yang benar** atau hanya oleh **tipe**.
+
+`amount` di `POST /api/pay` sejak B14 dibatasi `int, 1..100.000.000`. Angka itu
+bukan batas bisnis — ia batas supaya kolom INT tidak meluap. Batas yang
+sesungguhnya ada di baris pesanannya sendiri: `total_amount`. Tidak pernah
+dipakai.
+
+| Pengujian | Sebelum | Sesudah |
+|---|---|---|
+| tagihan 60.000, bayar 100.000.000 | 200, baris tersimpan | 400, nol baris |
+| tagihan 60.000, bayar 60.001 | 200 | 400 |
+| bayar pas dua kali berturut | 2 x 200 → 120.000 | 200 lalu 400 |
+| 3 x 30.000 (tagihan 60.000) | 3 x 200 → 90.000 | 2 x 200, lalu 400 |
+
+Tanpa batas per pesanan, permintaan itu dapat DIULANG tanpa henti — 1000 x
+100 juta = Rp 100 miliar pada satu pesanan.
+
+### Yang TIDAK diklaim
+
+Bukan pencurian uang sungguhan: metodenya `manual`, status baris `pending`,
+tanpa gateway apa pun. Yang diklaim: **catatan pembayaran bisa diisi tanpa
+batas oleh siapa pun yang punya sesi**, dan itu cukup untuk merusak
+rekonsiliasi — `payments` adalah catatan uang masuk, dan `paid_amount` /
+`payment_status` di `/pay` dan `/track` serta piutang di `/api/reports`
+dihitung darinya.
+
+### Perbaikan
+
+Sisa dihitung dari TIGA sumber, bukan satu:
+
+```js
+sisa = total_amount - paid_amount - SUM(payments WHERE status IN ('pending','paid'))
+```
+
+Mengabaikan yang ketiga membuat "bayar pas dua kali" tetap lolos, karena
+`paid_amount` belum pernah ditulis siapa pun (barisnya `pending`).
+
+Gagal tertutup: bila riwayat tidak bisa dibaca, sisa tidak diketahui → 500,
+bukan menulis angka yang belum tentu benar.
+
+Cicilan tetap sah (20.000 dari 60.000 → 200) dan kasir staf tetap bisa
+mencatat pembayaran.
+
+### Bukti
+
+- `node tools/verify_b20_run.mjs`: kode lama **MERAH 17/37**, kode baru
+  **HIJAU 37/37**. Yang diukur ialah parameter INSERT yang benar-benar
+  terkirim, bukan status (pelajaran B17).
+- Uji mutasi 5x (`tools/mutate_b20.sh`), kode dipulihkan tiap kali:
+
+| # | Mutasi | Hasil |
+|---|--------|-------|
+| 1 | penolakan dihapus (B20 dibalik) | MERAH 22/37 |
+| 2 | `paid_amount` tidak dihitung | MERAH 33/37 |
+| 3 | baris `pending` tidak dihitung | MERAH 32/37 |
+| 4 | gagal baca riwayat → gagal terbuka | MERAH 35/37 |
+| 5 | hanya boleh bayar lunas sekaligus | MERAH 30/37 |
+
+Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
+
+- `run_all_verifiers.sh` **19/19 HIJAU** (B20 37/37 masuk daftar), nol regresi.
+- `audit_sql_injection.py` exit 0; `audit_throw_sites.py` exit 0;
+  `audit_xss.py` HIJAU; `node --check` bersih di `functions/`, `src/`, `tools/`.
+- **Terbukti di produksi** (akun Customer baru, pesanan 60.000):
+  100.000.000 → 400; 60.001 → 400; 20.000 → 200; 40.000 → 200;
+  1 lagi → 400 "sisa Rp 0". `GET /api/pay` publik tetap 200, `POST` tanpa
+  sesi tetap 401 (B17), `/` dan `/dashboard` tetap 200.
+- Pesanan + akun uji dihapus; berkas `.tmp/` dibersihkan.
+
+### Dua jebakan yang nyaris membuat klaim ini bohong
+
+1. **Harness lebih dulu salah sebelum kode.** `colOf()` memetakan `params[i]`
+   ke kolom[i], padahal INSERT `payments` menyisipkan literal (`'manual'`,
+   `'pending'`) di tengah daftar — jadi saat diminta `amount`, harness
+   mengembalikan `qr_payload`. MERAH pertama (17/37) sebagian adalah
+   kesalahan harness. Diperbaiki dengan menghitung placeholder di klausa
+   VALUES. **Sebelum menyalahkan kode produksi, buktikan alat ukurnya benar.**
+2. **`git checkout` menghapus perbaikan yang belum di-commit.** Skrip mutasi
+   memulihkan dengan `git checkout`, padahal B20 belum pernah di-commit —
+   maka mutasi 2–5 mengukur keadaan SEBELUM B20 dan menghasilkan angka MERAH
+   yang identik (20/37). Tanda bahayanya: **angka yang sama persis untuk
+   mutasi yang berbeda**. Pemulihan kini dari cadangan `.tmp/`.
+
+### Catatan untuk tick berikutnya
+
+- `pay.js` tidak pernah menulis `orders.paid_amount` / `payment_status` —
+  baris `payments` berstatus `pending` selamanya. Jadi "lunas" di layar
+  pelanggan sebenarnya tidak pernah berubah. Itu celah FUNGSIONAL, bukan
+  keamanan; layak jadi task sendiri (C-x), bukan diam-diam disatukan ke B20.
+- Pola "field uang yang hanya dijaga tipe" kini sudah diperiksa di
+  `orders.js` (B19) dan `pay.js` (B20). Yang belum DIUKUR: `delivery.js`
+  (`courier_id`, `status`) dan `promos.js` (`value`, `max_discount`) —
+  keduanya `isStaff`-only di tingkat aksi.
