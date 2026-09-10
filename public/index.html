@@ -668,6 +668,115 @@ a { text-decoration: none; }
   border: 1px solid var(--border-light);
 }
 
+/* Tracking Stepper & Card Styles (C2) */
+.track-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0 20px;
+  position: relative;
+}
+.track-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+.track-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-neutral-0);
+  border: 2px solid var(--border-light);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.track-step.active .track-dot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--color-neutral-0);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.track-step.completed .track-dot {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-neutral-0);
+}
+.track-step.cancelled .track-dot {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: var(--color-neutral-0);
+}
+.track-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+.track-step.active .track-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+.track-step.completed .track-label {
+  color: var(--color-success);
+  font-weight: 700;
+}
+.track-line {
+  position: absolute;
+  top: 19px;
+  left: 15%;
+  right: 15%;
+  height: 2px;
+  background: var(--border-light);
+  z-index: 1;
+}
+.track-card {
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-top: 16px;
+}
+.track-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+}
+.track-row:last-child {
+  border-bottom: none;
+}
+.badge-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-status-paid {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+.badge-status-unpaid {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+.badge-status-batal {
+  background: var(--color-error-light);
+  color: var(--color-error);
+}
+
 /* Reveal utility */
 .reveal {
   opacity: 0;
@@ -800,6 +909,7 @@ body.no-scroll { overflow: hidden; }
       <div class="brand-text">Embun Laundry</div>
     </div>
     <nav class="nav-actions">
+      <button class="btn btn-ghost" id="btnOpenTrack" type="button" aria-label="Lacak Pesanan">🔍 Lacak Pesanan</button>
       <a class="btn btn-ghost" href="/auth/login.html">Masuk</a>
       <a class="btn btn-primary" href="/auth/register.html">Buat Akun</a>
     </nav>
@@ -821,6 +931,7 @@ body.no-scroll { overflow: hidden; }
       <div class="cta-row">
         <a class="btn btn-primary js-scroll" href="#harga">Pesan Sekarang</a>
         <a class="btn btn-outline js-scroll" href="#harga">Lihat Harga</a>
+        <button class="btn btn-outline" id="btnHeroTrack" type="button" aria-label="Lacak Pesanan">🔍 Lacak Pesanan</button>
       </div>
     </div>
 
@@ -957,6 +1068,31 @@ body.no-scroll { overflow: hidden; }
     <div class="actions">
       <button class="btn btn-outline" id="btnClose">Batal</button>
       <button class="btn btn-primary" id="btnGo">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LACAK PESANAN (C2) -->
+<div class="modal" id="trackModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="trackTitle">
+  <div class="sheet" style="max-width: 520px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="badge-soft">Tracking Real-Time</div>
+      <button type="button" id="btnTrackCloseIcon" aria-label="Tutup modal tracking" style="background:none; border:none; font-size:1.6rem; cursor:pointer; color:var(--text-muted); line-height:1; padding:4px;">&times;</button>
+    </div>
+    <h3 id="trackTitle" style="margin-top:0;">Lacak Pesanan</h3>
+    <p class="small" style="margin-top:-12px; margin-bottom:18px;">Cek progres cucian Anda secara real-time tanpa perlu login akun.</p>
+
+    <form id="trackForm" onsubmit="return false;" style="display:flex; gap:8px; margin-bottom:16px;">
+      <input class="input" type="text" id="trackCodeInput" placeholder="Kode Pesanan (e.g. ORD-123)" style="text-transform:uppercase; font-weight:700; letter-spacing:0.05em;" required autocomplete="off" aria-label="Kode Pesanan" />
+      <button class="btn btn-primary" id="btnDoTrack" type="submit" style="white-space:nowrap;">Cek Status</button>
+    </form>
+
+    <div id="trackError" style="display:none; padding:12px 14px; border-radius:var(--radius-md); background:var(--color-error-light); color:var(--color-error); font-size:0.9rem; font-weight:600; margin-bottom:14px;"></div>
+
+    <div id="trackResult" style="display:none;"></div>
+
+    <div class="actions" style="margin-top:16px;">
+      <button class="btn btn-outline" id="btnTrackClose" type="button" style="grid-column:1/-1;">Tutup</button>
     </div>
   </div>
 </div>
@@ -1133,8 +1269,188 @@ orderModal.addEventListener('click', (e)=>{ if(e.target===orderModal) closeOrder
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape') {
     if (orderModal.classList.contains('show')) closeOrderModal();
+    if (trackModal && trackModal.classList.contains('show')) closeTrackModal();
   }
 });
+
+// C2: Public Order Tracking (tanpa login)
+const trackModal = document.getElementById('trackModal');
+const trackCodeInput = document.getElementById('trackCodeInput');
+const trackResult = document.getElementById('trackResult');
+const trackError = document.getElementById('trackError');
+const btnDoTrack = document.getElementById('btnDoTrack');
+
+function openTrackModal(prefillCode = '') {
+  if (!trackModal) return;
+  if (trackError) {
+    trackError.style.display = 'none';
+    trackError.textContent = '';
+  }
+  if (prefillCode && trackCodeInput) {
+    trackCodeInput.value = prefillCode;
+    fetchTrackOrder(prefillCode);
+  } else if (trackResult) {
+    trackResult.style.display = 'none';
+    trackResult.innerHTML = '';
+  }
+  trackModal.classList.add('show');
+  trackModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
+  setTimeout(() => trackCodeInput?.focus(), 150);
+}
+
+function closeTrackModal() {
+  if (!trackModal) return;
+  trackModal.classList.remove('show');
+  trackModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('no-scroll');
+}
+
+async function fetchTrackOrder(code) {
+  const cleanCode = (code || '').trim().toUpperCase();
+  if (!cleanCode) {
+    if (trackError) {
+      trackError.textContent = 'Masukkan kode pesanan terlebih dahulu.';
+      trackError.style.display = 'block';
+    }
+    return;
+  }
+
+  if (btnDoTrack) {
+    btnDoTrack.disabled = true;
+    btnDoTrack.textContent = 'Memuat...';
+  }
+  if (trackError) trackError.style.display = 'none';
+  if (trackResult) trackResult.style.display = 'none';
+
+  try {
+    const res = await fetch(`/api/track?order_code=${encodeURIComponent(cleanCode)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.ok || !data.order) {
+      if (trackError) {
+        trackError.textContent = data.msg || 'Pesanan tidak ditemukan. Pastikan kode pesanan sudah benar.';
+        trackError.style.display = 'block';
+      }
+      return;
+    }
+
+    renderTrackResult(data.order);
+  } catch (err) {
+    if (trackError) {
+      trackError.textContent = 'Gagal menghubungi server. Silakan periksa koneksi Anda.';
+      trackError.style.display = 'block';
+    }
+  } finally {
+    if (btnDoTrack) {
+      btnDoTrack.disabled = false;
+      btnDoTrack.textContent = 'Cek Status';
+    }
+  }
+}
+
+function renderTrackResult(order) {
+  if (!trackResult) return;
+  const isPaid = order.payment_status === 'paid';
+  const isCancelled = String(order.status).toLowerCase() === 'batal';
+  const step = order.progress_step; // 0: Baru, 1: Proses, 2: Selesai, -1: Batal
+
+  let stepperHtml = '';
+  if (isCancelled) {
+    stepperHtml = `
+      <div class="track-stepper">
+        <div class="track-step cancelled" style="flex:1;">
+          <div class="track-dot">✕</div>
+          <div class="track-label" style="color:var(--color-error);">Pesanan Dibatalkan</div>
+        </div>
+      </div>
+    `;
+  } else {
+    stepperHtml = `
+      <div class="track-stepper">
+        <div class="track-line"></div>
+        <div class="track-step ${step >= 0 ? (step === 0 ? 'active' : 'completed') : ''}">
+          <div class="track-dot">${step > 0 ? '✓' : '1'}</div>
+          <div class="track-label">Diterima</div>
+        </div>
+        <div class="track-step ${step >= 1 ? (step === 1 ? 'active' : 'completed') : ''}">
+          <div class="track-dot">${step > 1 ? '✓' : '2'}</div>
+          <div class="track-label">Diproses</div>
+        </div>
+        <div class="track-step ${step >= 2 ? 'completed active' : ''}">
+          <div class="track-dot">${step >= 2 ? '✓' : '3'}</div>
+          <div class="track-label">Selesai</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const payBadgeClass = isPaid ? 'badge-status-paid' : 'badge-status-unpaid';
+  const payBadgeText = isPaid ? 'Lunas' : 'Belum Lunas';
+  const remaining = Math.max(0, order.total_amount - (order.paid_amount || 0));
+  const payActionHtml = !isPaid ? `
+    <div style="margin-top:14px; text-align:center;">
+      <a class="btn btn-primary" href="/pay.html?order_code=${encodeURIComponent(order.order_code)}" style="width:100%;">
+        💳 Bayar Sekarang (${rupiah(remaining)})
+      </a>
+    </div>
+  ` : '';
+
+  trackResult.innerHTML = `
+    ${stepperHtml}
+    <div class="track-card">
+      <div class="track-row">
+        <span class="small">Kode Pesanan</span>
+        <strong style="font-family:monospace; font-size:1rem; color:var(--accent);">${esc(order.order_code)}</strong>
+      </div>
+      <div class="track-row">
+        <span class="small">Pelanggan</span>
+        <strong>${esc(order.customer_name)}</strong>
+      </div>
+      <div class="track-row">
+        <span class="small">Layanan</span>
+        <strong>${esc(order.service_name)} (${esc(order.weight_kg)} ${esc(order.unit || 'kg')})</strong>
+      </div>
+      <div class="track-row">
+        <span class="small">Status Pembayaran</span>
+        <span class="badge-status ${payBadgeClass}">${payBadgeText}</span>
+      </div>
+      <div class="track-row">
+        <span class="small">Total Tagihan</span>
+        <strong>${rupiah(order.total_amount)}</strong>
+      </div>
+      ${order.delivery ? `
+        <div class="track-row">
+          <span class="small">Pengantaran</span>
+          <span class="badge-soft">${esc(order.delivery.type)} · ${esc(order.delivery.status)}</span>
+        </div>
+      ` : ''}
+    </div>
+    ${payActionHtml}
+  `;
+  trackResult.style.display = 'block';
+}
+
+// Event delegation untuk tombol open/close tracking
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#btnOpenTrack') || e.target.closest('#btnHeroTrack')) {
+    openTrackModal();
+  }
+  if (e.target.closest('#btnTrackClose') || e.target.closest('#btnTrackCloseIcon') || e.target === trackModal) {
+    closeTrackModal();
+  }
+});
+
+document.getElementById('trackForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  fetchTrackOrder(trackCodeInput?.value);
+});
+
+// Auto-buka tracking jika ada parameter URL (?track=ORD-XXX atau ?order_code=ORD-XXX)
+const trackParam = new URLSearchParams(window.location.search).get('track') || new URLSearchParams(window.location.search).get('order_code');
+if (trackParam) {
+  openTrackModal(trackParam);
+}
 
 // Scroll progress bar
 const bar = document.createElement('div');
