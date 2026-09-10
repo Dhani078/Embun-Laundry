@@ -1521,3 +1521,25 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
   `orders.js` (B19) dan `pay.js` (B20). Yang belum DIUKUR: `delivery.js`
   (`courier_id`, `status`) dan `promos.js` (`value`, `max_discount`) —
   keduanya `isStaff`-only di tingkat aksi.
+
+---
+
+## Tick 29 — C11: Sinkronisasi paid_amount & payment_status ke orders (`ecfe4b9`)
+
+- **Task**: C11 — Sinkronisasi `paid_amount` & `payment_status` orders via `POST /api/pay` (P1)
+- **Masalah**: `POST /api/pay` hanya memasukkan baris `payments` dengan `status = 'pending'`, tanpa pernah memperbarui kolom `paid_amount` atau `payment_status` pada tabel `orders`. Akibatnya pesanan selamanya berstatus `unpaid`, tidak pernah lunas di `/pay` maupun `/track`.
+- **Perubahan**:
+  - `functions/api/pay.js`:
+    - Status pembayaran di-insert sebagai `'paid'` dengan field `paid_at`.
+    - Menghitung `newPaid = Number(order.paid_amount || 0) + amount`.
+    - Menentukan `paymentStatus = newPaid >= Number(order.total_amount) ? 'paid' : 'partial'`.
+    - Menjalankan `UPDATE orders SET paid_amount = ?, payment_status = ? WHERE id = ?`.
+    - Query `outstanding` hanya menghitung baris `pending` untuk menghindari double-subtraction.
+  - `tools/verify_c_pay_sync.mjs` + `tools/verify_c_pay_sync_run.mjs`:
+    - Uji alur bertahap (partial -> paid) dan asersi SQL UPDATE yang dikirim ke TiDB.
+- **Verifikasi**:
+  - `node tools/verify_c_pay_sync_run.mjs` → **HIJAU 13/13**.
+  - `bash tools/run_all_verifiers.sh` → **21/21 verifier HIJAU**, nol regresi.
+  - Audit SQL injection, throw sites, dan XSS bersih.
+- **Commit**: `ecfe4b9`
+

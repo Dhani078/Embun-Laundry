@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-11T02:30:00+08:00
-Tick ke: 27
-Model: cbai/hy4-preview (custom:9router)
+Terakhir update: 2026-09-11T05:00:00+08:00
+Tick ke: 29
+Model: combomaut (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -50,6 +50,26 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **C11** — sinkronisasi `paid_amount` & `payment_status` orders via `POST /api/pay` (P1) —
+  `ecfe4b9` (tick 29)
+  - **Menutup celah fungsional yang dicatat di tick 28**: `pay.js` sebelumnya
+    hanya memasukkan baris `payments` dengan status `pending`, dan tidak pernah
+    memperbarui `orders.paid_amount` maupun `orders.payment_status`. Akibatnya,
+    status pembayaran pesanan di `/pay` dan `/track` selamanya "unpaid",
+    dan laporan omzet/piutang tidak pernah sinkron.
+  - Perubahan:
+    - Status pembayaran langsung diset `paid` dengan timestamp `paid_at`.
+    - Menghitung akumulasi `paid_amount` baru dan menentukan `payment_status`
+      (`paid` jika >= total_amount, selain itu `partial`).
+    - Query sisa tagihan (`outstanding`) disesuaikan agar hanya menghitung
+      baris `pending` yang belum diproses sehingga tidak terjadi double-counting.
+    - Menjalankan `UPDATE orders SET paid_amount = ?, payment_status = ? WHERE id = ?`.
+  - Verifikasi:
+    - BARU `tools/verify_c_pay_sync.mjs` + `verify_c_pay_sync_run.mjs` —
+      13/13 HIJAU. Menguji pembayaran bertahap (partial -> paid) dan penolakan
+      saat sudah lunas.
+    - Terdaftar di `tools/run_all_verifiers.sh`, kini 21 verifier (semua HIJAU).
 
 - **B19** — harga & diskon bukan hak pelanggan pada `create_order` (P1) —
   `3709f0f` (tick 27)
