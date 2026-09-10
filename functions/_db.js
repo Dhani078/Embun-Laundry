@@ -129,16 +129,51 @@ export function parseCookies(cookieHeader) {
   return list;
 }
 
+// ---------------------------------------------------------------------------
+// B3 — Rahasia sesi WAJIB datang dari lingkungan
+// ---------------------------------------------------------------------------
+//
+// SEBELUM perbaikan ini, kedua fungsi di bawah menulis:
+//
+//     const secret = env.JWT_SECRET || '<literal-yang-ikut-ter-commit>';
+//
+// Fallback itu bukan sekadar "nilai bawaan". Karena `wrangler.toml` ikut
+// ter-commit, literal itu **dipublikasikan**: siapa pun yang punya salinan
+// repository bisa menghitung tanda tangan HMAC yang sah untuk payload mana
+// pun — termasuk `user_role: 'Admin'` — tanpa perlu punya akun. Itu bukan
+// celah teori: kodenya ada di repositori publik.
+//
+// Yang membuatnya lebih berbahaya daripada kelihatannya: fallback itu
+// bekerja **diam-diam**. Ia hanya aktif tepat pada saat yang paling
+// tidak terduga (secret belum terpasang di lingkungan), dan saat itu
+// sistem justru tampak sehat — login berhasil, sesi diterima — hanya saja
+// kunci gerbangnya sedang dipajang di etalase.
+//
+// Karena itu aturannya dibalik: **tanpa secret, tidak ada sesi.**
+// Konfigurasi yang hilang harus berbunyi keras (tidak ada yang bisa masuk),
+// bukan gagal-terbuka ke kunci yang sudah bocor.
+function getJwtSecret(env) {
+  const secret = env?.JWT_SECRET;
+  // Tolak juga nilai kosong/whitespace: `JWT_SECRET=""` di dasbor terlihat
+  // seperti "sudah diisi", padahal nilainya sama-sama tidak bisa dipakai.
+  if (typeof secret !== 'string' || secret.trim() === '') return null;
+  return secret;
+}
+
 export async function getUserFromSession(request, env) {
   const cookies = parseCookies(request.headers.get('Cookie'));
   const sessionToken = cookies['session_token'] || request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!sessionToken) return null;
 
+  // Gagal-tertutup: tanpa secret, TIDAK ADA token yang dianggap sah —
+  // termasuk token yang sebelumnya pernah diterbitkan.
+  const secret = getJwtSecret(env);
+  if (!secret) return null;
+
   try {
     const [payloadBase64, signature] = sessionToken.split('.');
     if (!payloadBase64 || !signature) return null;
     
-    const secret = env.JWT_SECRET || 'dhani-laundry-secure-jwt-secret-key-2026';
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       'raw',
@@ -164,7 +199,16 @@ export async function getUserFromSession(request, env) {
 }
 
 export async function createSessionToken(user, env) {
-  const secret = env.JWT_SECRET || 'dhani-laundry-secure-jwt-secret-key-2026';
+  // Gagal-tertutup. Melempar di sini sengaja: kalau secret tidak ada,
+  // login TIDAK BOLEH mengembalikan token yang tampak sah. Melempar
+  // membuatnya 500 generik (lihat `catch` di auth/login.js) — keras dan
+  // terlihat. Mengembalikan `null` justru berbahaya: pemanggil akan tetap
+  // menyetel `session_token=null` pada cookie, yang tampak seperti
+  // "login berhasil, sesi kosong" dan jauh lebih sulit dilacak.
+  const secret = getJwtSecret(env);
+  if (!secret) {
+    throw new Error('JWT_SECRET tidak dikonfigurasi');
+  }
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',

@@ -2,7 +2,7 @@
 # Jalankan semua verifier yang sudah ada dan ringkas hasilnya.
 # Dipakai setiap tick untuk membuktikan tidak ada regresi.
 cd "$(dirname "$0")/.." || exit 1
-for f in tools/verify_b1.mjs tools/verify_b2_run.mjs tools/verify_b5_run.mjs \
+for f in tools/verify_b1.mjs tools/verify_b2_run.mjs tools/verify_b3_run.mjs tools/verify_b5_run.mjs \
          tools/verify_b7_run.mjs tools/verify_b8_run.mjs tools/verify_b9.mjs \
          tools/verify_b10_run.mjs tools/verify_b11_run.mjs tools/verify_b12_run.mjs \
          tools/verify_b13_run.mjs tools/verify_b14_run.mjs tools/verify_b15_run.mjs \
