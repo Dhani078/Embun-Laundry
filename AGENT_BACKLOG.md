@@ -42,6 +42,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B13 | Validasi input `/api/profile` + pesan error generik | P1 | [x] | `3145171` |
 | B14 | Pesan error generik 20 titik (11 modul) + validasi `/api/pay` | P1 | [x] | `58fb1b5` |
 | B15 | Validasi input `/api/delivery` + jadwal bawaan `Asia/Jakarta` | P1 | [x] | `abc9922` |
+| B16 | Batas validasi selaras lebar kolom TiDB | P1 | [x] | `502d56a` |
+| B17 | Wajib sesi pada `POST /api/pay` (penulisan terbuka) | **P0** | [x] | `a8ca085` |
 
 ---
 
@@ -167,6 +169,40 @@ File ini adalah **working copy** yang diupdate setiap tick.
   `type:'int'` kini menolak objek/array. Periksa ulang dengan
   `node tools/verify_b15_run.mjs` (HASIL: HIJAU 93/93). Jangan dikerjakan
   ulang.
+- **B16 — batas validasi selaras lebar kolom TiDB (P1) — SELESAI `502d56a`**
+  (tick 24). Batas panjang sejak B2 ditulis sebaris (120/30/500) dan tidak
+  pernah dibandingkan dengan lebar kolom tujuannya. Akibatnya klien menerima
+  **500** untuk input yang seharusnya **400** (batas terlalu longgar), atau
+  data sah ditolak (terlalu ketat). Periksa ulang dengan
+  `node tools/verify_b16_run.mjs` (HASIL: HIJAU 156/156). Jangan dikerjakan
+  ulang.
+- **B17 — wajib sesi pada `POST /api/pay` (P0) — SELESAI `a8ca085`**
+  (tick 25). **Celah tulis terbuka**: `POST /api/pay` membuat baris
+  `payments` tanpa pemeriksaan sesi apa pun. Terbukti di produksi: tanpa
+  cookie → 200 + `qr_payload`, baris tersimpan atas pesanan orang lain.
+  Kode pesanan beredar di struk, jadi ini bisa dipakai siapa pun.
+  `GET /api/pay` **TETAP publik dan sengaja demikian** (`public/pay.html`
+  hanya GET; B10 sudah menyensor telepon & alamat) — jangan "diperbaiki".
+  Periksa ulang dengan `node tools/verify_b17_run.mjs` (HASIL: HIJAU 19/19).
+  Jangan dikerjakan ulang.
+- **Pelajaran tick 25 — mengukur batas B16 di produksi secara tak sengaja
+  menemukan B17.** Pencarian kode pesanan nyata untuk uji batas memicu
+  `POST /api/pay` tanpa cookie: 200, bukan 401. Dua pelajaran:
+  1. **Uji keamanan yang hanya menyentuh GET bisa buta terhadap celah
+     TULIS.** `verify_b10` mengimpor `pay.js` tetapi hanya menguji GET
+     (karena GET-lah yang publik) — jadi celah POST lolos bertahun-tahun.
+     Bila sebuah modul punya dua kata kerja, uji keduanya.
+  2. **Status 401 yang dikembalikan SETELAH `db.execute()` tetap
+     meninggalkan baris.** Karena itu `verify_b17` mengukur INSERT yang
+     terkirim, bukan status; mutasi "guard dipindah setelah INSERT"
+     terbukti MERAH (18/19). Contoh uji mutasi yang WAJIB ada untuk setiap
+     perbaikan autentikasi.
+- **Pelajaran tick 25 — bentuk objek untuk `createSessionToken()` mudah
+  keliru.** Token uji dibuat dari `{role, full_name}`, BUKAN dari
+  `{user_role, user_name}` (bentuk JWT hasilnya). Salah membentuknya
+  menghasilkan token "Customer" untuk maksud staf → uji MERAH karena
+  kesalahan harness, atau lebih buruk: HIJAU karena semua peran menjadi
+  sama. Sudah diberi komentar di `verify_b17.mjs`.
 - **Pelajaran tick 23 — tiga hijau palsu ditemukan pada harness SENDIRI.**
   Hijau tidak berarti harness punya gigi; hanya uji mutasi yang membuktikannya.
   1. `if (patch.type === undefined) delete body.type;` pada tabel patch:

@@ -1183,3 +1183,73 @@ validasi, dan tanggal yang salah zona.
   - Modul yang BELUM punya harness khusus validasi: `customers.js` POST
     (sudah lewat B2, belum punya harness sendiri), `services.js` idem.
     Kandidat B16 bila backlog fitur sedang kosong.
+
+## Tick 25 — B17: wajib sesi pada POST /api/pay (P0)
+
+- Commit: `a8ca085`
+- Status: **SUKSES**
+
+- Awal tick: `.agent-lock` berusia **109,98 menit** (dari 19:26) → lock basi
+  karena tick 24 crash SEBELUM sempat merapikan dokumen. Lock dihapus, lalu
+  dibuat ulang. Karena itu tick ini juga menyelesaikan **pekerjaan buku
+  tick 24 (B16)** yang tertinggal: B16 sudah ter-commit `502d56a` (20:06)
+  dan terbukti di produksi, tetapi belum tercatat di backlog/log/state.
+
+- **B16 (tick 24) — diverifikasi ulang, bukan dikerjakan ulang.**
+  `node tools/verify_b16_run.mjs` → **HIJAU 156/156**. Terbukti di produksi
+  dengan nilai batas (N → 200, N+1 → 400):
+  | orders.customer_name | 100 → 200, 101 → 400 "maksimal 100 karakter" |
+  | services.name        |  80 → 200,  81 → 400 "maksimal 80 karakter"  |
+  | customers.address    | 255 → 200, 256 → 400 "maksimal 255 karakter" |
+  | promos.expires_at    | 'besok-saja' → 400 (dulu 500)                |
+  Jalur sukses tidak mati: `create_customer` wajar → 200, baris tersimpan.
+
+- **B17 — celah baru, ditemukan saat mengukur B16 di produksi.**
+  Untuk menguji batas butuh kode pesanan nyata; saat mencoba `POST /api/pay`,
+  permintaan TANPA cookie mengembalikan **200 + `qr_payload`** dan baris
+  `payments` tersimpan atas `ORD-MTVK0BVGUA5`. `POST /api/pay` tidak punya
+  pemeriksaan sesi sama sekali; `public/pay.html` hanya memanggil GET, jadi
+  tidak ada klien sah yang memakai POST ini.
+  - **GET TETAP PUBLIK dan sengaja demikian** (halaman pembayaran dibuka
+    lewat tautan berkode; B10 menyensor telepon & alamat). Jangan "diperbaiki".
+- Perubahan (1 berkas): `functions/api/pay.js`
+  - `!user` → 401 diletakkan SEBELUM `db.query()`.
+  - Setelah pesanan ketemu: pemilik (`customer_name` cocok) atau staf
+    (Admin/Owner/Staff) boleh lanjut; pelanggan asing → 401.
+
+- BARU `tools/verify_b17.mjs` + `verify_b17_run.mjs` — **19 uji**. Yang
+  diukur adalah INSERT yang BENAR-BENAR terkirim, bukan status.
+- Sebelum diperbaiki: **MERAH 14/19** (harness punya gigi).
+- **Uji mutasi (5x) — semua MERAH:**
+  | 1 hapus guard !user (kode lama)    | MERAH 18/19 |
+  | 2 guard dipindah SETELAH INSERT    | MERAH 18/19 |
+  | 3 pelanggan asing selalu diizinkan | MERAH 17/19 |
+  | 4 staf ikut ditolak (fitur mati)   | MERAH 17/19 |
+  | 5 GET publik ikut ditutup          | MERAH 17/19 |
+  Dipulihkan: **HIJAU 19/19**.
+  Mutasi 2 yang terpenting: 401 yang dikembalikan SETELAH `db.execute()`
+  tetap meninggalkan baris — tanpa uji ini, "perbaikan" yang menolak
+  terlambat akan tampak benar.
+- Jebakan harness yang ditemui: token uji dibuat dari `{role, full_name}`,
+  bukan `{user_role, user_name}`. Salah bentuk → staf menjadi "Customer"
+  → uji MERAH karena kesalahan harness. Sudah diberi komentar di berkas.
+- Regresi: `run_all_verifiers.sh` **16/16 HIJAU** (B17 19/19 masuk daftar;
+  `run_all_verifiers.sh` ditambahi entri B17). `audit_sql_injection.py`
+  exit 0, `audit_xss.py` HIJAU, `node --check` bersih.
+- **Terbukti di produksi** (setelah deploy; butuh ~200 dtk, bukan ~90):
+  - POST tanpa sesi → **401 `{"ok":false,"msg":"Unauthorized"}`** (dulu 200).
+  - GET anonim → **200**, `customer_phone`/`customer_address` = null,
+    `total_amount` tetap terkirim → B10 & C2 utuh.
+  - POST staf bersesi → **200** + `qr_payload` → fitur kasir tidak mati.
+  - `/`, `/api/health`, `/api/services` → 200.
+
+- Catatan untuk tick berikutnya:
+  - **Pola audit yang belum dilakukan: "uji kata kerja TULIS pada setiap
+    modul yang GET-nya sengaja publik."** B17 lolos karena `verify_b10`
+    hanya menguji GET `pay.js`. Kandidat pemeriksaan serupa: `track.js`
+    (publik by design) — perlu dicek apakah ia punya jalur tulis.
+  - Deploy kali ini butuh ~200 detik; bila post-verify masih menunjukkan
+    perilaku lama, ulangi sekali sebelum menyimpulkan kegagalan.
+  - Field login adalah `identity` (bukan `email`/`username`); `customers`
+    POST memakai `full_name` (bukan `name`); `orders` list = GET tanpa
+    `action`. Salah field menghasilkan 400 yang tampak seperti bug.
