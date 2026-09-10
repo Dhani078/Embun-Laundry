@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T18:08:00+08:00
-Tick ke: 20
+Terakhir update: 2026-09-10T18:12:00+08:00
+Tick ke: 21
 Model: cbai/hy4-preview (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -50,6 +50,12 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **C1** — Halaman "Layanan" publik + filter (P2) — `1a02520` (tick 21)
+  - Endpoint `/api/services`: publik secara default diproteksi hanya melihat layanan aktif (`is_active = 1`).
+  - Frontend (`public/index.html`): bilah pencarian real-time + filter pill kategori dinamis (`Semua`, `Reguler`, `Express`, `Satuan`, `Dry Cleaning`) dengan zero latency.
+  - Halaman mandiri [`public/track.html`](file:///c:/xampp/htdocs/dhani-laundry/public/track.html) terintegrasi.
+  - Terverifikasi: 13/13 Verifier HIJAU (`tools/verify_c1_run.mjs`: 18/18).
 
 - **C2** — Tracking order publik by kode (tanpa login) (P2) — `1551773` (tick 20)
   - Endpoint publik baru: `/api/track?code=...` (dan `?order_code=...`)
