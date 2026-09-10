@@ -1055,3 +1055,51 @@ celah operasional yang ditemukan saat memantau loop.
 - Status: **SUKSES**
 - Catatan untuk tick berikutnya:
   - FASE C: C1 dan C2 selesai. Task P2 berikutnya: C3 (Notifikasi status polling) atau C6 (Riwayat order pelanggan).
+
+
+---
+
+## Tick 22 — 2026-09-10T18:20:00+08:00 (C2 — penguatan harness kontrak UI)
+
+Bukan fitur baru: memperkuat harness C2 yang sudah ter-commit (`1551773`).
+
+- Latar belakang: harness C2 hanya menguji kontrak BARU (`?code=`). Padahal
+  landing page (`fetchTrackOrder` di index.html) memanggil `?order_code=` dan
+  memakai `progress_step`, `unit`, serta `delivery` — sebelum endpoint ini
+  ada, fitur "Lacak Pesanan" di landing **404 (mati)**. Tanpa uji untuk
+  kontrak lama, perubahan pada parameter atau `progress_step` bisa mematikan
+  UI lagi tanpa satu pun verifier menjadi MERAH.
+- Perubahan: `tools/verify_c2.mjs` +41 baris (11 uji baru).
+  - `?order_code=` tetap berfungsi (kontrak lama yang dipakai index.html).
+  - `progress_step`: baru 0, proses 1, selesai 2, batal -1.
+  - `unit` layanan ikut terkirim.
+  - `delivery.type`/`status` ikut, dan terbukti TIDAK bawa alamat/telepon.
+- **Uji mutasi (bukan sekadar hijau)** — tiga kali sengaja merusak kode:
+  1. hapus dukungan `?order_code=`        -> MERAH 56/58
+  2. bocorkan `customer_phone`/`_address` -> MERAH 54/58
+  3. `progress_step` selesai 2 -> 1       -> MERAH 57/58
+  Setelah dipulihkan: HIJAU 58/58. Uji ini membuktikan harness punya gigi.
+- Kode produksi TIDAK diubah: `functions/api/track.js` identik dengan HEAD.
+- Verifikasi: 13 verifier HIJAU (C2 58/58); `node --check` 0 error.
+- Verifikasi produksi (setelah deploy ~95 s):
+  - `/api/track?order_code=ORD-ABC123` -> **404 JSON terstruktur**
+    `{"ok":false,"msg":"Pesanan tidak ditemukan"}` (sebelumnya 404 "Endpoint
+    not found" dari router = endpoint belum ada).
+  - `/track.html` -> 307 -> 200 di `/track`.
+  - OPTIONS `/api/track` -> 204 (preflight tidak menghabiskan jatah).
+  - Header B4 utuh: nosniff, X-Frame-Options: DENY, Referrer-Policy;
+    X-RateLimit-Limit: 20 ikut terkirim.
+  - **Dengan data nyata** `ORD-260906CCC` (tanpa cookie):
+    200, `progress_step: 2` (selesai), `unit: "kg"`, dan **nol field
+    telepon/alamat** — PII terbukti tidak bocor di produksi.
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - **Ada agent lain yang mengerjakan repo ini bersamaan.** Saat tick
+    berjalan, `run_all_verifiers.sh` dan `AGENT_LOG.md` diubah oleh sibling
+    subagent; C2 (`1551773`) dan C1 (`1a02520`) ter-commit di luar tick ini.
+    SELALU `git status` + `git diff HEAD` sebelum menyimpulkan bahwa
+    pekerjaanmu hilang — dan refresh `.agent-lock` bila tick panjang.
+  - Endpoint ini sengaja publik dan TANPA login. Kode pesanan hanya ~46 ribu
+    kemungkinan per milidetik, jadi yang boleh bocor hanyalah status dan
+    nominal. Jangan pernah menambah field ke `publicView()` tanpa uji
+    "TIDAK bocor" yang baru.
