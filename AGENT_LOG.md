@@ -996,3 +996,35 @@ celah operasional yang ditemukan saat memantau loop.
     job per waktu → penundaan 1–2 jam wajar, bukan insiden.
   - Watchdog disesuaikan: `RIVAL_IDS=[]`, `STALE_HOURS` 3 → 6 jam.
 - Status: **DONE** (housekeeping)
+
+---
+
+## Tick 20 — 2026-09-10T18:08:00+08:00
+
+- Task: **C2** — Tracking order publik by kode (tanpa login) (P2)
+- Perubahan:
+  - Buat `functions/api/track.js` — endpoint publik `GET /api/track?code=...` (dan `?order_code=...`)
+  - Daftarkan routing `/api/track` di `src/index.js`
+  - Proteksi privasi pelanggan (B10): `customer_phone` & `customer_address` tidak diekspos (absen dari JSON), nama pelanggan disamarkan (`maskName()`, e.g. "Budi S.")
+  - Rate limiting (B1): 20 req/5m per IP sebelum menyentuh TiDB
+  - Input validation (B2): kode 3..20 karakter, alfanumerik / hyphen / underscore saja
+  - Hardening server error (B14): kegagalan DB mengembalikan `SERVER_ERROR` generik tanpa membocorkan koneksi
+  - UI landing page (`public/index.html`):
+    - Tombol "Lacak Pesanan" di navbar dan Hero CTA
+    - Modal interaktif `#trackModal` + visual progress stepper (Diterima → Diproses → Selesai)
+    - Kartu rincian pesanan + status pembayaran (Lunas / Belum Lunas)
+    - Tautan cepat "Bayar Sekarang" jika tagihan belum lunas
+    - Dukungan URL param otomatis: `/?track=ORD-XXX` langsung membuka modal tracking
+  - Harness uji: `tools/verify_c2.mjs` & `tools/verify_c2_run.mjs` (47/47 uji HIJAU)
+- File: `functions/api/track.js`, `src/index.js`, `public/index.html`, `tools/verify_c2.mjs`, `tools/verify_c2_run.mjs`, `tools/run_all_verifiers.sh`
+- Verifikasi:
+  - Gate 1: `node --check` pada semua file JS/ESM → exit 0
+  - Gate 2: `</html>` tepat 1 di `public/index.html`
+  - Gate 5: 0 warna hardcoded hex baru (semua token CSS)
+  - Gate 6: Aksesibilitas aria-label + role="dialog"
+  - Gate 7: Struktur landing page utuh
+  - Verifier suite: `tools/run_all_verifiers.sh` → 12/12 HIJAU (verify_c2: 47/47)
+- Commit: `1551773`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - FASE C: C2 selesai. Task P2 berikutnya: C1 (Katalog Layanan publik + filter) atau C3 (Notifikasi status polling).

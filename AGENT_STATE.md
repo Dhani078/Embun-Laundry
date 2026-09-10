@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-10T17:20:00+08:00
-Tick ke: 18
+Terakhir update: 2026-09-10T18:08:00+08:00
+Tick ke: 20
 Model: cbai/hy4-preview (custom:9router)
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -50,6 +50,14 @@ Model: cbai/hy4-preview (custom:9router)
 - Mulai: —
 
 ## Task selesai
+
+- **C2** — Tracking order publik by kode (tanpa login) (P2) — `1551773` (tick 20)
+  - Endpoint publik baru: `/api/track?code=...` (dan `?order_code=...`)
+  - B10 Data Isolation: `customer_phone` & `customer_address` tidak diekspos (absen), nama disamarkan (`Budi S.`)
+  - Rate limiting (B1) aktif pada endpoint
+  - Hardening SQL (B7 parameterized) + server error generik (B14)
+  - UI landing page (`public/index.html`): modal tracking + visual progress stepper (Diterima -> Diproses -> Selesai) + auto URL parameter `?track=ORD-XXX`
+  - Terverifikasi: 12/12 Verifier HIJAU (`tools/verify_c2_run.mjs`: 47/47)
 
 - **B14** — pesan error generik di 20 titik (11 modul) + validasi `/api/pay`
   (P1) — `58fb1b5` (tick 18)
