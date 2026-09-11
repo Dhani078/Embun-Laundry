@@ -59,7 +59,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C3 | Notifikasi real-time status (polling) | P2 | [ ] | — |
 | C4 | Upload bukti pembayaran (R2 / base64 kecil) | P3 | [ ] | — |
 | C5 | Invoice PDF (client-side / print CSS) | P3 | [ ] | — |
-| C6 | Riwayat order pelanggan + filter tanggal | P2 | [ ] | — |
+| C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `pending-commit` | |
 | C7 | Manajemen voucher & promo (admin) | P2 | [ ] | — |
 | C8 | Laporan bulanan + chart | P2 | [ ] | — |
 | C9 | Service worker (offline dasar) | P3 | [ ] | — |

@@ -217,7 +217,7 @@ const App = window.App = {
               <span>🏠</span> <span>Dashboard</span>
             </a>
             <a href="#" class="nav-link ${this.currentPage === 'pesanan' ? 'active' : ''}" data-page="pesanan">
-              <span>🧺</span> <span>Pesanan</span>
+              <span>🧺</span> <span>${isStaff ? 'Pesanan' : 'Riwayat Pesanan'}</span>
             </a>
             ${isStaff ? `
               <a href="#" class="nav-link ${this.currentPage === 'pelanggan' ? 'active' : ''}" data-page="pelanggan">
@@ -296,6 +296,16 @@ const App = window.App = {
       }
       
       // Open New Order Modal
+      if (e.target.id === 'btnFilterOrders') {
+        const start = document.getElementById('filterStart')?.value || '';
+        const end = document.getElementById('filterEnd')?.value || '';
+        const status = document.getElementById('filterStatus')?.value || '';
+        const q = document.getElementById('ordSearch')?.value || '';
+        this.renderPesanan({ start, end, status, q });
+      }
+      if (e.target.id === 'btnResetFilterOrders') {
+        this.renderPesanan({});
+      }
       if (e.target.id === 'openNewOrderModal') {
         const modal = document.getElementById('orderModal');
         if (modal) modal.style.display = 'grid';
@@ -333,6 +343,13 @@ const App = window.App = {
       }
     });
     
+    // Global Keyup Delegation
+    document.addEventListener('keyup', (e) => {
+      if (e.target.id === 'ordSearch' && e.key === 'Enter') {
+        document.getElementById('btnFilterOrders')?.click();
+      }
+    });
+
     // Global Submit Delegation
     document.addEventListener('submit', async (e) => {
       if (e.target.id === 'newOrderForm') {
@@ -495,14 +512,30 @@ const App = window.App = {
     }
   },
 
-  async renderPesanan() {
-    document.getElementById('pageTitle').textContent = 'Manajemen Pesanan';
+  async renderPesanan(params = {}) {
+    const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
+    document.getElementById('pageTitle').textContent = isStaff ? 'Manajemen Pesanan' : 'Riwayat Pesanan';
     const c = document.getElementById('mainContent');
     c.innerHTML = '<div style="padding: 20px;">Memuat data pesanan...</div>';
 
+    const start = params.start || '';
+    const end = params.end || '';
+    const q = params.q || '';
+    const status = params.status || '';
+
     try {
+      const sp = new URLSearchParams();
+      if (start && end) {
+        sp.set('start', start);
+        sp.set('end', end);
+      }
+      if (q) sp.set('q', q);
+      if (status) sp.set('status', status);
+
+      const qs = sp.toString() ? `?${sp.toString()}` : '';
+
       const [ordRes, svcRes] = await Promise.all([
-        fetch('/api/orders'),
+        fetch(`/api/orders${qs}`),
         fetch('/api/services')
       ]);
       const ordData = await ordRes.json();
@@ -513,10 +546,26 @@ const App = window.App = {
       const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
 
       c.innerHTML = `
-        <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="ordSearch" placeholder="Cari kode/pelanggan/layanan..." 
-            style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; min-width: 200px;">
-          <button class="btn btn-primary" id="openNewOrderModal">+ Pesanan Baru</button>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+          <input type="date" id="filterStart" value="${esc(start)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+          <span style="color: #64748b; font-size: 13px;">s/d</span>
+          <input type="date" id="filterEnd" value="${esc(end)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+          
+          <select id="filterStatus" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+            <option value="">Semua Status</option>
+            <option value="baru" ${status === 'baru' ? 'selected' : ''}>Baru</option>
+            <option value="proses" ${status === 'proses' ? 'selected' : ''}>Proses</option>
+            <option value="selesai" ${status === 'selesai' ? 'selected' : ''}>Selesai</option>
+            <option value="batal" ${status === 'batal' ? 'selected' : ''}>Batal</option>
+          </select>
+
+          <input type="text" id="ordSearch" value="${esc(q)}" placeholder="Cari kode/pelanggan..." 
+            style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; min-width: 150px;">
+          
+          <button class="btn" id="btnFilterOrders" style="padding: 8px 16px; font-size: 13px; background: #e2e8f0;">Filter</button>
+          ${(start || end || q || status) ? `<button class="btn" id="btnResetFilterOrders" style="padding: 8px 16px; font-size: 13px; background: transparent; border: 1px solid #cbd5e1;">Reset</button>` : ''}
+          
+          <button class="btn btn-primary" id="openNewOrderModal" style="${!isStaff ? 'display: none;' : ''}">+ Pesanan Baru</button>
         </div>
 
         <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
