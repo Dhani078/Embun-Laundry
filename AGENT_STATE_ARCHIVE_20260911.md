@@ -650,3 +650,120 @@ Model: combomaut (custom:9router)
 - Jangan ubah `name = "embun-laundry"` di `wrangler.toml`.
 - Jangan sentuh `auth/login.html` dan `auth/register.html` (inline CSS stabil).
 
+## Checklist tick terakhir (tick 4 — A2)
+
+```
+[x] Baca AGENT24.md + AGENT_STATE.md
+[x] git pull --rebase origin main
+[x] Baseline verifikasi hijau?
+[x] Task terpilih dari backlog (A1)
+[x] Rencana ≤10 baris
+[x] Implementasi
+[x] node --check semua JS → 0 error
+[x] Struktur HTML valid
+[x] Smoke test login + services
+[x] Tidak ada hardcoded color BARU (40 hex = debt lama, tidak bertambah)
+[x] A11y dasar
+[x] Commit + bukti
+[x] Push
+[x] Post-verify produksi
+[x] Update AGENT_STATE.md + AGENT_LOG.md
+```
+
+## Catatan verifikasi manual (2026-09-09 11:15)
+
+- **B1 rate limit AKTIF dan bekerja benar.** Saat verifikasi manual, IP
+  penguji sudah melewati batas 10 percobaan / 5 menit, sehingga
+  `POST /api/auth/login` mengembalikan **429**
+  `{"ok":false,"msg":"Terlalu banyak percobaan login. Coba lagi nanti."}`.
+- **Ini BUKAN bug.** Jangan "memperbaiki" endpoint login saat melihat 429.
+  Rate limit akan pulih sendiri setelah jendela 5 menit lewat.
+- Endpoint non-auth tetap normal: `/api/services` → 200, `/` → 200.
+- Saat memverifikasi login di tick berikutnya, **batasi percobaan** agar tidak
+  memicu rate limit sendiri. Cukup 1–2 percobaan per tick.
+
+## Ringkas tick 28 (B20) — batas uang yang benar, bukan batas tipe
+
+- **B20** `858262a` (tick 28) — `POST /api/pay` kini menolak `amount` yang
+  melebihi **sisa tagihan** pesanan. **SELESAI, jangan dikerjakan ulang.**
+  Periksa ulang dengan `node tools/verify_b20_run.mjs` (HASIL: HIJAU 37/37,
+  terdaftar di `run_all_verifiers.sh`, kini 19 verifier).
+- Sisa = `total_amount - paid_amount - SUM(payments 'pending'+'paid')`.
+  Mengabaikan yang ketiga membuat "bayar pas dua kali" tetap lolos.
+- **Yang belum selesai dan BUKAN bagian B20**: `pay.js` tidak pernah menulis
+  `orders.paid_amount` / `payment_status`. Baris `payments` berstatus
+  `pending` selamanya, jadi "lunas" di `/pay` dan `/track` tidak pernah
+  berubah. Itu celah FUNGSIONAL — task sendiri, jangan disatukan ke B20.
+- Dua jebakan yang nyaris membuat klaim tick ini bohong (rincian di
+  AGENT_LOG.md):
+  - **Buktikan alat ukur sebelum menyalahkan kode.** `colOf()` di harness
+    memetakan `params[i]` ke kolom[i], padahal INSERT `payments` menyisipkan
+    literal `'manual'`/`'pending'` di tengah — jadi ia mengembalikan
+    `qr_payload` saat diminta `amount`.
+  - **`git checkout` pada skrip mutasi menghapus perbaikan yang belum
+    di-commit.** Tandanya: angka MERAH **identik** untuk mutasi yang berbeda
+    (20/37). Pulihkan dari cadangan `.tmp/`, bukan dari git.
+
+## Ringkas tick 25 (B17) + penuntasan buku tick 24 (B16)
+
+- **B16** `502d56a` (tick 24, crash sebelum merapikan dokumen) — batas
+  validasi selaras lebar kolom TiDB. Diverifikasi ulang 156/156 dan
+  terbukti di produksi. **SELESAI, jangan dikerjakan ulang.**
+- **B17** `a8ca085` (tick 25) — `POST /api/pay` kini wajib sesi.
+  **SELESAI, jangan dikerjakan ulang.** Periksa ulang dengan
+  `node tools/verify_b17_run.mjs` (HASIL: HIJAU 19/19).
+- `GET /api/pay` **TETAP publik dan sengaja demikian** — halaman
+  pembayaran dibuka lewat tautan berkode dan B10 sudah menyensor
+  telepon/alamat. Jangan "diperbaiki" menjadi 401.
+
+## Ringkas tick 26 (B18) — jaring regresi untuk kelas defek B17
+
+- **B18** `ab7026e` (tick 26) — audit kata kerja TULIS pada SEMUA modul.
+  **Bukan perbaikan defek**: nol baris di `functions/` diubah. B17 lolos
+  bertahun-tahun karena `verify_b10` mengimpor `pay.js` tetapi hanya menguji
+  GET; B18 menutup polanya. **SELESAI, jangan dikerjakan ulang.**
+- Hasil: **HIJAU 76/76**, nol jalur tulis terbuka. Periksa ulang dengan
+  `node tools/verify_b18_run.mjs` (terdaftar di `run_all_verifiers.sh`,
+  kini 17 verifier).
+- Yang diukur adalah **SQL tulis yang benar-benar terkirim**, bukan status —
+  401 yang dikembalikan SETELAH `db.execute()` tetap meninggalkan baris.
+- **Registrasi diuji dengan asersi TERBALIK**: mendaftar adalah satu-satunya
+  penulisan yang memang harus bisa tanpa sesi. Jangan "diperbaiki" jadi 401.
+- Uji mutasi 5x: 1 MERAH 73/76, 2 HIJAU 76/76 (bukan celah — penjaga masih
+  mendahului tulis), 3 MERAH 72/76, 4 MERAH 74/76, 5 MERAH 74/76.
+
+### Pelajaran tick 26 (berlaku umum)
+
+- **Mutasi yang HIJAU belum tentu berarti harness lemah.** Mutasi "tulis
+  sebelum penjaga" pada `delivery.js` tetap HIJAU 76/76, dan itu BENAR:
+  `delivery.js` punya penjaga `!user` di tingkat atas sehingga mutasi
+  setempat tak bisa menghasilkan penulisan. Baru di `services.js` (GET
+  publik, tanpa penjaga atas) pola B17 terbukti MERAH 72/76. **Sebelum
+  menyimpulkan harness tak punya gigi, cek penjaga lapis lain di modul.**
+- `audit_api_guard.py` mengembalikan exit 1 dengan 10 handler tanpa
+  try/catch — **keadaan lama, bukan regresi**. Semuanya dispatcher
+  (`onRequest`) / `health` / `me.js` yang tidak menyentuh DB, dan
+  `audit_throw_sites.py` (exit 0) membuktikan nol throw site. Jangan
+  "diperbaiki" tanpa bukti defek nyata.
+
+### Pelajaran tick 25 (berlaku umum)
+
+- **Uji keamanan yang hanya menyentuh GET buta terhadap celah TULIS.**
+  `verify_b10` mengimpor `pay.js` tetapi hanya menguji GET — celah POST
+  lolos bertahun-tahun. Bila sebuah modul punya dua kata kerja, uji keduanya.
+- **401 yang dikembalikan SETELAH `db.execute()` tetap meninggalkan baris.**
+  Maka `verify_b17` mengukur INSERT yang terkirim, bukan status; mutasi
+  "guard dipindah setelah INSERT" terbukti MERAH. Wajib ada untuk setiap
+  perbaikan autentikasi.
+- **Bentuk objek `createSessionToken()`: `{role, full_name}`**, bukan
+  `{user_role, user_name}` (yang terakhir adalah bentuk JWT hasilnya).
+  Salah bentuk membuat staf menjadi "Customer" → uji MERAH karena
+  kesalahan harness, atau HIJAU PALSU bila semua peran menjadi sama.
+- **Kontrak field yang sering salah saat probing produksi:**
+  login = `identity` (bukan `email`); `customers` POST = `full_name`
+  (bukan `name`); `orders` list = GET tanpa `action`; metode bayar
+  huruf KAPITAL (`CASH`, bukan `cash`).
+- **Deploy kali ini butuh ~200 detik** (bukan ~90). Bila post-verify masih
+  menunjukkan perilaku lama, ulangi sekali sebelum menyimpulkan gagal.
+- `/tmp` TIDAK bisa ditulis di lingkungan ini — pakai `.tmp/` di project
+  untuk menyimpan cookie/respons curl.
