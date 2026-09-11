@@ -385,3 +385,23 @@ tidak merusak dirinya sendiri. Baca sebelum menjalankan tick.
   `cron/output/<job_id>/`.
 - `hermes cron doctor` melaporkan sehat walau tick gagal berulang. Percaya
   `hermes cron runs` + kolom `error` di `executions.db`.
+
+### Status penyedia model (update 2026-09-11 18:15)
+
+Temuan probe langsung ke 9Router (`/v1/models`, 597 model terdaftar):
+
+| Model | Status | Latency (ctx 111KB) | Catatan |
+|---|---|---|---|
+| `kr/auto` | **HIDUP** | **3.2s** | tool-call OK, 0.023 kiro-credit |
+| `combomaut` | hidup, lambat | 262s | Nvidia overload parah |
+| `deepseek-v4.1-flash` | hidup | — | context 32K, TIDAK muat state |
+| `cbai/*` | MATI | — | 429 code 14018 credits exhausted |
+| `Token Harbor/*` | MATI | — | 402 balance $0 |
+| `kc/*`, `gemini/*`, `kimi/*` | MATI | — | 402/401/403 |
+
+**Keputusan: cron pakai `kr/auto`.** Latency 3.2s vs 262s (80x lebih cepat),
+muat context 111KB, tool-calling terverifikasi.
+
+**Jangan kembalikan ke combomaut** kecuali `kr/auto` mati. Combomaut
+menyebabkan compression stall saat latency naik ke 262s:
+`Recorded stall-interrupted compression backoff`.
