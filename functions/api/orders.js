@@ -77,6 +77,12 @@ export async function onRequest({ request, env }) {
       if (start && end) {
         sql += ' AND o.created_at BETWEEN ? AND ?';
         params.push(start + ' 00:00:00', end + ' 23:59:59');
+      } else if (start) {
+        sql += ' AND o.created_at >= ?';
+        params.push(start + ' 00:00:00');
+      } else if (end) {
+        sql += ' AND o.created_at <= ?';
+        params.push(end + ' 23:59:59');
       }
 
       sql += ' ORDER BY o.created_at DESC LIMIT 300';

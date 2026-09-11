@@ -8,7 +8,8 @@ for f in tools/verify_b1.mjs tools/verify_b2_run.mjs tools/verify_b3_run.mjs too
          tools/verify_b13_run.mjs tools/verify_b14_run.mjs tools/verify_b15_run.mjs \
          tools/verify_b16_run.mjs tools/verify_b17_run.mjs \
          tools/verify_b18_run.mjs tools/verify_b19_run.mjs tools/verify_b20_run.mjs \
-         tools/verify_c1_run.mjs tools/verify_c2_run.mjs tools/verify_c_pay_sync_run.mjs; do
+         tools/verify_c1_run.mjs tools/verify_c2_run.mjs tools/verify_c_pay_sync_run.mjs \
+         tools/verify_c6.mjs; do
   out=$(node "$f" 2>&1); rc=$?
   last=$(printf '%s' "$out" | grep -oE '[0-9]+/[0-9]+' | tail -1)
   if [ $rc -eq 0 ]; then
