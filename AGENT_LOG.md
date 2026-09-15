@@ -605,6 +605,35 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
     - Mutasi 1: Menyisipkan `JWT_SECRET` ke `wrangler.toml` → tertangkap **MERAH** (15/16, exit 1).
     - Mutasi 2: Menghapus `.dev.vars` dari `.gitignore` → tertangkap **MERAH** (14/16, exit 1).
     - Dipulihkan kembali → kembali **HIJAU 16/16**.
-- **Commit**: `f51efc0`
+- **Commit**: `be2d2f2`
 - **Status**: **DONE**
+
+---
+
+## Tick 31 — 2026-09-15T14:22:00+08:00 (Fase 0.2: Sanitasi Kredensial Default & Skrip Pembersihan Debug)
+
+- **Task**: 0.2 (Fase 0.2) — Hapus kredensial default dari `README.md` & `TIDB_SETUP.md`, siapkan skrip migrasi pembersihan baris debug (K2)
+- **Temuan sebelum perubahan**:
+  - `README.md` baris 16-25 mempublikasikan tabel kredensial default aktif:
+    `admin@gmail.com` / `admin123`, `staff@gmail.com` / `staff123`, `user@gmail.com` / `user123`.
+  - `TIDB_SETUP.md` baris 181-187 memuat seed SQL dengan password plaintext yang sama.
+  - Terdapat baris debug dengan hash `'testhash'` di basis data produksi.
+- **Perubahan**:
+  - `README.md`: Hapus tabel kredensial default bawaan. Ganti dengan panduan tata kelola RBAC dan pendaftaran tertutup.
+  - `TIDB_SETUP.md`: Bersihkan password plaintext dari seed SQL contoh, ganti dengan template hash PBKDF2.
+  - `db/migrations/0001_cleanup_debug_accounts.sql`: Buat skrip migrasi forward-only untuk menghapus baris debug `testhash`, akun probe/test, serta panduan rotasi password via hash PBKDF2.
+  - `tools/verify_fase0_2.mjs` + `tools/verify_fase0_2_run.mjs`: Harness verifikasi baru (11/11 HIJAU).
+  - `tools/run_all_verifiers.sh`: Daftarkan `tools/verify_fase0_2_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tambahkan tabel FASE 0 dan tandai task 0.2 selesai.
+  - `AGENT_STATE.md`: Catat status tick 31.
+- **Verifikasi**:
+  - `node tools/verify_fase0_2_run.mjs` → **HIJAU 11/11**.
+  - Rangkaian seluruh verifier (24/24) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Mutasi 1: Menyisipkan kembali `admin123` ke `README.md` → tertangkap **MERAH** (10/11, exit 1).
+    - Mutasi 2: Menyisipkan kembali `staff123` ke `TIDB_SETUP.md` → tertangkap **MERAH** (10/11, exit 1).
+    - Dipulihkan → kembali **HIJAU 11/11**.
+- **Commit**: `e141854`
+- **Status**: **DONE**
+
 

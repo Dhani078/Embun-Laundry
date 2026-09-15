@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-15T14:20:00+08:00
-Tick ke: 30
+Terakhir update: 2026-09-15T14:22:00+08:00
+Tick ke: 31
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -40,19 +40,32 @@ Model: gemini-flash
 | `/api/services` | 200 | 4 layanan |
 | `/assets/design-tokens.css` | **200** | DULU 404 — sudah fix di tick 3 |
 | `/assets/hero-canvas.js` | **200** | DULU 404 — sudah fix di tick 3 |
-| login admin | OK | `admin@gmail.com` / `admin123` |
+| login admin | OK | Sesi tertutup (kredensial default dicabut dari dokumentasi) |
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 30 selesai)
+- ID: — (tidak ada; tick 31 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.2** (Fase 0.2) — Pembersihan Kredensial Default dari Dokumentasi & Skrip Pembersihan Debug (P0) —
+  `e141854` (tick 31)
+  - **Menutup celah publikasi akun default**: `README.md` dan `TIDB_SETUP.md` sebelumnya
+    mempublikasikan pasangan email dan password plaintext aktif (`admin@gmail.com/admin123`,
+    `staff@gmail.com/staff123`, `user@gmail.com/user123`).
+  - Perubahan:
+    - `README.md`: Menghapus tabel kredensial default bawaan. Menggantinya dengan dokumentasi tata kelola RBAC & pendaftaran tertutup.
+    - `TIDB_SETUP.md`: Menghapus insert password plaintext dan menggantinya dengan template hash PBKDF2.
+    - `db/migrations/0001_cleanup_debug_accounts.sql`: Menyiapkan skrip SQL untuk membersihkan baris debug `testhash` dan akun probe/test dari database produksi.
+    - `tools/verify_fase0_2.mjs` + `tools/verify_fase0_2_run.mjs`: Harness pengujian baru (11/11 HIJAU).
+    - Uji mutasi ganda: Mengembalikan sandi default ke `README.md` dan `TIDB_SETUP.md` terbukti ditangkap MERAH (10/11, exit 1).
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 23 verifier (semua HIJAU).
+
 - **A6 & B3** (Fase 0.1) — Pencabutan Secret dari `wrangler.toml` dan Persiapan Rotasi (P0) —
-  `f51efc0` (tick 30)
+  `be2d2f2` (tick 30)
   - **Menutup celah kritis kebocoran kredensial produksi**: `wrangler.toml` sebelumnya
     memuat `TIDB_DATABASE_URL` lengkap (user root & password TiDB) serta `JWT_SECRET` plaintext.
   - Perubahan:

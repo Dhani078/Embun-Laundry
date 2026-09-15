@@ -7,6 +7,22 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 ---
 
+## FASE 0 — Audit Darurat & Remediasi Keamanan
+
+| ID | Task | P | Status | Commit |
+|----|------|---|--------|--------|
+| 0.1 | Rotasi kredensial TiDB & JWT_SECRET + sanitasi `wrangler.toml` (K1, A6, B3) | **P0** | [x] | `be2d2f2` |
+| 0.2 | Hapus kredensial default dari `README.md` & `TIDB_SETUP.md`, migrasi bersihkan debug (K2) | **P0** | [x] | `e141854` |
+| 0.3 | Keluarkan `db/*.sql` data pribadi dari git & repo (K10) | **P0** | [ ] | — |
+| 0.4 | Hapus sandi dari `tools/probe_*.sh` dan `.tmp/`, ganti env var (K12) | **P0** | [ ] | — |
+| 0.5 | Perbaiki / nonaktifkan `/api/notifications` rusak (K3) | **P0** | [ ] | — |
+| 0.6 | Ganti dasar kepemilikan dari nama jadi `user_id` di orders/pay (K4) | **P0** | [ ] | — |
+| 0.7 | Race-safe `POST /api/pay` + `idempotency_key` (K5) | **P0** | [ ] | — |
+| 0.8 | Cabut fallback plaintext & sha256 tanpa salt di `_password.js` (K6) | **P0** | [ ] | — |
+| 0.9 | Pembatalan sesi: `users.session_version` & refresh token (K7) | **P0** | [ ] | — |
+
+---
+
 ## FASE A — Fondasi & Stabilitas
 
 | ID | Task | P | Status | Commit |
