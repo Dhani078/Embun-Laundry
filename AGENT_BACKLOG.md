@@ -17,7 +17,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | A3b | Token baru untuk 9 warna sisa (`#94a3b8` `#f8fafc` `#64748b` `#1e293b` `#090d16` `#f59e0b` `#ef4444`) | P2 | [x] | `f782d3d` |
 | A4 | Semua API `try/catch` → respons JSON `{ok}` konsisten | P1 | [x] | `c07ed88` |
 | A5 | Tambah endpoint `/api/health` (tanpa DB) | P1 | [x] | `d6cea6a` |
-| A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [ ] | — |
+| A6 | Pindahkan secret dari `wrangler.toml` ke `wrangler secret` | **P0** | [x] | `f51efc0` |
 | A7 | Verifikasi 14 endpoint terdaftar di `src/index.js` | P1 | [x] | (verifikasi) |
 | A8 | `robots.txt` + favicon + meta description/OG tags | P3 | [x] | `a502402` |
 
@@ -29,7 +29,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 |----|------|---|--------|--------|
 | B1 | Rate limit `/api/auth/login` (in-memory per-IP) | P1 | [x] | `9981427` `ea05b75` |
 | B2 | Validasi & sanitasi input server-side | P1 | [x] | `c9db43b` |
-| B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [ ] | — |
+| B3 | JWT secret dari `env.JWT_SECRET`, bukan hardcoded | **P0** | [x] | `f51efc0` |
 | B4 | Header: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` | P1 | [x] | `9632507` |
 | B5 | CORS ketat (hanya origin sendiri) | P1 | [x] | `d32c367` |
 | B6 | Cookie `HttpOnly; Secure; SameSite=Lax` | **P0** | [x] | (sudah benar) |
@@ -59,7 +59,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C3 | Notifikasi real-time status (polling) | P2 | [ ] | — |
 | C4 | Upload bukti pembayaran (R2 / base64 kecil) | P3 | [ ] | — |
 | C5 | Invoice PDF (client-side / print CSS) | P3 | [ ] | — |
-| C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `pending-commit` | |
+| C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `824df1d` |
 | C7 | Manajemen voucher & promo (admin) | P2 | [ ] | — |
 | C8 | Laporan bulanan + chart | P2 | [ ] | — |
 | C9 | Service worker (offline dasar) | P3 | [ ] | — |
@@ -110,8 +110,10 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 ## Prioritas Mutlak (kerjakan ini dulu)
 
-1. **A6** — Secret di `wrangler.toml` (P0, keamanan) — TERBLOKIR, butuh
-   Cloudflare API token
+1. **A6** — Secret di `wrangler.toml` (P0, keamanan) — **SELESAI** `f51efc0` (tick 30):
+   Secret `TIDB_DATABASE_URL` dan `JWT_SECRET` dicabut dari `wrangler.toml` [vars].
+   Dipindahkan ke `.dev.vars` (lokal) dan Cloudflare secret store (`wrangler secret put`).
+   `.gitignore` disesuaikan + `.dev.vars.example` disediakan. Verifier baru `tools/verify_a6_run.mjs` (16/16 HIJAU).
 2. **B7** — Audit SQL injection (P0) — **SELESAI** `ea05d42`: 67 SQL
    literal diaudit, 0 interpolasi nilai user, 2 modul di-hardening.
    Alat: `tools/audit_sql_injection.py` (statik) + `tools/verify_b7_run.mjs`
