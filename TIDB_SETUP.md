@@ -179,11 +179,11 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 -- 10. Data Awal (Seeds)
+-- Catatan: Ganti '<HASH_PBKDF2_PASSWORD>' dengan hash PBKDF2 yang dihasilkan via functions/_password.js
 INSERT INTO users (full_name, email, phone, role, password_hash)
 VALUES 
-('Admin Laundry', 'admin@gmail.com', '08123456789', 'Admin', 'admin123'),
-('Dhani Staff', 'staff@gmail.com', '082148564979', 'Staff', 'staff123'),
-('Pelanggan Setia', 'user@gmail.com', '085700001111', 'Customer', 'user123')
+('Admin Laundry', 'admin@embunlaundry.id', '08123456789', 'Admin', 'pbkdf2-sha256$10000$SEEDED_ADMIN_SALT$SEEDED_ADMIN_HASH'),
+('Dhani Staff', 'staff@embunlaundry.id', '082148564979', 'Staff', 'pbkdf2-sha256$10000$SEEDED_STAFF_SALT$SEEDED_STAFF_HASH')
 ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
 
 INSERT INTO services (name, unit, price, duration_hours, category, is_active)

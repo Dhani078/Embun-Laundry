@@ -13,16 +13,13 @@ Aplikasi Manajemen Laundry Modern yang dibangun menggunakan **Cloudflare Pages &
 
 ---
 
-## 👥 Akun Default untuk Login
-Aplikasi telah dilengkapi dengan akun bawaan untuk pengujian:
+## 👥 Manajemen Akun & Hak Akses
+Sistem mengimplementasikan Role-Based Access Control (RBAC) dengan tingkatan peran:
+- **Admin**: Akses penuh seluruh modul master data, laporan finansial, dan audit log.
+- **Staff**: Manajemen pesanan kasir, penjadwalan kurir, dan data pelanggan.
+- **Pelanggan**: Pelacakan status pesanan secara real-time dan klaim voucher.
 
-| Role | Email / Username | Kata Sandi | Hak Akses |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@gmail.com` | `admin123` | Akses penuh seluruh modul & laporan |
-| **Staff** | `staff@gmail.com` | `staff123` | Manajemen pesanan, kurir, & pelanggan |
-| **Pelanggan** | `user@gmail.com` | `user123` | Tracking status pesanan & voucher |
-
-*Anda juga dapat membuat akun pelanggan baru langsung dari tombol **Daftar Pelanggan**.*
+*Pengguna baru dapat mendaftar langsung melalui tombol **Daftar Pelanggan** pada antarmuka web. Akun administratif dikelola secara tertutup dan tidak dipublikasikan dengan kredensial default di repositori publik.*
 
 ---
 
