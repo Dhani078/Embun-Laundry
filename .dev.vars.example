@@ -1,0 +1,8 @@
+# Salin file ini menjadi .dev.vars untuk pengujian lokal (`npx wrangler dev`)
+# PERINGATAN: Jangan pernah meng-commit file .dev.vars ke repositori git!
+
+# URL koneksi ke TiDB Cloud Serverless (MySQL protocol dengan SSL)
+TIDB_DATABASE_URL="mysql://<USERNAME>:<PASSWORD>@<HOST>:4000/embun_laundry?ssl={\"rejectUnauthorized\":true}"
+
+# Kunci rahasia JWT untuk signing session token HMAC-SHA256 (minimal 32 karakter acak)
+JWT_SECRET="ganti-dengan-kunci-rahasia-acak-minimal-32-karakter-ke-atas"

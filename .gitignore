@@ -1,5 +1,8 @@
 node_modules/
-.env
+.env*
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
 .wrangler/
 .DS_Store
 Thumbs.db
@@ -7,3 +10,7 @@ Thumbs.db
 .agent-lock
 # Scratch space used by autonomous ticks
 .tmp/
+
+# Dump basis data produksi / data sensitif
+db/embun_laundry.sql
+db/dhani_laundry.sql

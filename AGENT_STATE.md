@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-11T05:00:00+08:00
-Tick ke: 29
-Model: combomaut (custom:9router)
+Terakhir update: 2026-09-15T14:20:00+08:00
+Tick ke: 30
+Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -44,12 +44,24 @@ Model: combomaut (custom:9router)
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 8 selesai)
+- ID: — (tidak ada; tick 30 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **A6 & B3** (Fase 0.1) — Pencabutan Secret dari `wrangler.toml` dan Persiapan Rotasi (P0) —
+  `f51efc0` (tick 30)
+  - **Menutup celah kritis kebocoran kredensial produksi**: `wrangler.toml` sebelumnya
+    memuat `TIDB_DATABASE_URL` lengkap (user root & password TiDB) serta `JWT_SECRET` plaintext.
+  - Perubahan:
+    - `wrangler.toml`: Baris `TIDB_DATABASE_URL` dan `JWT_SECRET` dicabut dari `[vars]`.
+    - `.gitignore`: Menambahkan `.dev.vars`, `.dev.vars.*`, `.env*`, dan dump database sensitif (`db/*.sql`).
+    - `.dev.vars.example`: Disediakan sebagai template pengembangan lokal aman tanpa secret riil.
+    - `tools/verify_a6.mjs` + `tools/verify_a6_run.mjs`: Harness uji 16/16 HIJAU.
+    - Uji mutasi: Memasukkan secret kembali ke `wrangler.toml` terbukti langsung ditangkap MERAH (15/16, exit 1).
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 22 verifier (semua HIJAU).
 
 - **C11** — sinkronisasi `paid_amount` & `payment_status` orders via `POST /api/pay` (P1) —
   `ecfe4b9` (tick 29)

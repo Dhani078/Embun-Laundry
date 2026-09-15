@@ -10,7 +10,8 @@ directory = "./public"
 # run_worker_first makes the Worker handle every request, including assets.
 run_worker_first = false
 
+# A6: Kredensial sensitif (TIDB_DATABASE_URL dan JWT_SECRET) TIDAK BOLEH ditaruh di sini.
+# Gunakan `wrangler secret put <NAMA>` untuk environment produksi/staging,
+# dan file `.dev.vars` untuk pengembangan lokal (`wrangler dev`).
 [vars]
 TIDB_DATABASE = "embun_laundry"
-JWT_SECRET = "dhani-laundry-secure-jwt-secret-key-2026"
-TIDB_DATABASE_URL = "mysql://nkLgGwz1mobWK3U.root:ugNFt1lVM749mRHd@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/embun_laundry?ssl={\"rejectUnauthorized\":true}"

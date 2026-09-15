@@ -579,3 +579,32 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
   - Audit SQL injection, throw sites, dan XSS bersih.
 - **Commit**: `ecfe4b9`
 
+---
+
+## Tick 30 — 2026-09-15T14:20:00+08:00 (Fase 0.1: A6 & B3 — Pencabutan Secret wrangler.toml & Persiapan Rotasi)
+
+- **Task**: A6 & B3 (Fase 0.1) — Pencabutan secret produksi dari `wrangler.toml` dan isolasi environment
+- **Temuan sebelum perubahan**:
+  - `wrangler.toml` baris 15-16 memuat `JWT_SECRET = "dhani-laundry-secure-jwt-secret-key-2026"` dan `TIDB_DATABASE_URL = "mysql://nkLgGwz1mobWK3U.root:ugNFt1lVM749mRHd@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/embun_laundry?ssl={\"rejectUnauthorized\":true}"` secara plaintext di repositori publik.
+  - `.gitignore` belum menyaring file `.dev.vars` (kunci lokal Workers).
+  - Belum ada `.dev.vars.example` untuk panduan dev lokal tanpa secret riil.
+- **Perubahan**:
+  - `wrangler.toml`: Hapus deklarasi `JWT_SECRET` dan `TIDB_DATABASE_URL` dari tabel `[vars]`. Tambahkan catatan pemakaian `wrangler secret put` dan `.dev.vars`.
+  - `.gitignore`: Tambahkan `.dev.vars`, `.dev.vars.*`, `.env*`, serta dump database riil (`db/*.sql`), dengan pengecualian `!.dev.vars.example`.
+  - `.dev.vars.example`: Dibuat dengan template variabel aman tanpa kredensial riil.
+  - `tools/verify_a6.mjs` + `tools/verify_a6_run.mjs`: Harness pengujian baru (16/16 HIJAU):
+    1. Audit `wrangler.toml` tidak memuat connection string MySQL atau secret token.
+    2. Audit `.gitignore` dan `.dev.vars.example`.
+    3. Verifikasi fail-closed jika secret tidak ada (`createSessionToken` melempar, `getUserFromSession` null).
+    4. Verifikasi rotasi kunci: token yang ditandatangani dengan secret lama yang bocor DITOLAK oleh server dan endpoint `/api/me` (401).
+  - `tools/run_all_verifiers.sh`: Ditambahkan `tools/verify_a6_run.mjs` ke daftar verifier utama.
+- **Verifikasi**:
+  - `node tools/verify_a6_run.mjs` → **HIJAU 16/16**.
+  - Seluruh verifier (22/22) **HIJAU**.
+  - Uji mutasi:
+    - Mutasi 1: Menyisipkan `JWT_SECRET` ke `wrangler.toml` → tertangkap **MERAH** (15/16, exit 1).
+    - Mutasi 2: Menghapus `.dev.vars` dari `.gitignore` → tertangkap **MERAH** (14/16, exit 1).
+    - Dipulihkan kembali → kembali **HIJAU 16/16**.
+- **Commit**: `f51efc0`
+- **Status**: **DONE**
+
