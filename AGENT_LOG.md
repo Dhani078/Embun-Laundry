@@ -689,6 +689,35 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `123ee5d`
 - **Status**: **DONE**
 
+---
 
+## Tick 34 — 2026-09-16T09:35:00+08:00 (Fase 0.5: Audit & Remediasi functions/api/notifications.js)
 
-
+- **Task**: 0.5 (Fase 0.5) — Perbaiki fungsi dan kontrak `/api/notifications` yang rusak (K3)
+- **Temuan sebelum perubahan**:
+  - `functions/api/notifications.js` mengimpor `getDB` (typo huruf kapital `DB`, modul mengekspor `getDb`).
+  - Mengimpor `rateLimit` dari `_ratelimit.js` yang tidak pernah diekspor oleh modul tersebut (seharusnya `consume, clientKey`).
+  - Menggunakan kondisi `if (!rlRes.allowed)` yang selalu bernilai truthy karena `consume()` mengembalikan properti `ok`, bukan `allowed`.
+  - Menggunakan kontrak lama `const { valid, errors } = validateQuery(query)` yang tidak sesuai dengan kontrak standar `validateOr400(query, spec)`.
+  - Mengakses hasil query basis data menggunakan indeks posisi array rapuh (`order[3]`, `row[0]`), padahal driver mengembalikan baris bertipe objek dengan properti bernama.
+- **Perubahan**:
+  - `functions/api/notifications.js`:
+    - Mengimpor `getDb` dari `../_db.js`.
+    - Mengimpor `clientKey, consume` dari `../_ratelimit.js`.
+    - Memperbaiki penanganan rate limit menjadi `if (!rlRes.ok)`.
+    - Menyelaraskan validasi dengan helper `validateOr400`.
+    - Membaca properti objek (`order.status`, `row.id`, `row.message`, dsb) secara aman.
+    - Menjaga route tetap terisolasi di `src/index.js` (404 bersih) hingga integrasi penuh C3.
+  - `tools/verify_fase0_5.mjs` + `tools/verify_fase0_5_run.mjs`: Harness verifikasi menyeluruh (20/20 HIJAU) mencakup pengujian statik impor/kontrak, runtime validasi, mock DB (not found, order found tanpa/dengan notifikasi), pengujian lonjakan rate limit (HTTP 429), dan proteksi worker entrypoint.
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_5_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai 0.5 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 34.
+- **Verifikasi**:
+  - `node tools/verify_fase0_5_run.mjs` → **HIJAU 20/20**.
+  - Seluruh rangkaian verifier proyek (27/27) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Mutasi 1: Mengubah impor `getDb` kembali ke `getDB` → crash impor ESM (MERAH, exit 1).
+    - Mutasi 2: Mengubah `order.status` kembali ke `order[3]` → tertangkap statik dan runtime (18/20 MERAH, exit 1).
+    - Dipulihkan → kembali **HIJAU 20/20**.
+- **Commit**: `42a5ea3`
+- **Status**: **DONE**
