@@ -820,4 +820,44 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `4d6273d`
 - **Status**: **DONE**
 
+---
+
+## Tick 38 — 2026-09-16T10:05:00+08:00 (Fase 0.9: Pembatalan Sesi, session_version & Refresh Token)
+
+- **Task**: 0.9 (Fase 0.9) — Pembatalan sesi: `users.session_version` & refresh token (K7)
+- **Temuan sebelum perubahan**:
+  - Sesi JWT diterbitkan dengan masa berlaku statis 30 hari tanpa mekanisme pembatalan di sisi server (stateless penuh).
+  - Ketika pengguna logout atau mengganti kata sandi, token lama yang mungkin telah disalin atau disusupi tetap sah hingga 30 hari karena `getUserFromSession()` hanya memverifikasi tanda tangan kriptografis dan `exp`.
+  - Tidak ada endpoint refresh token untuk memperpanjang sesi aktif tanpa login ulang.
+- **Perubahan**:
+  - Berkas migrasi database `db/migrations/0004_add_session_version_to_users.sql`:
+    - `ALTER TABLE users ADD COLUMN session_version INT NOT NULL DEFAULT 1 AFTER role;`
+    - Dilengkapi petunjuk rollback.
+  - `functions/_db.js`:
+    - `createSessionToken()`: Membatasi masa berlaku token menjadi 7 hari (`7 * 24 * 60 * 60`), menyematkan `session_version` ke dalam muatan token.
+    - `getUserFromSession()`: Bila token membawa `session_version`, lakukan pencocokan terhadap kolom `session_version` pengguna di database. Bila tidak cocok (sesi dicabut), tolak akses (`null` / fail-closed). Toleran terhadap ketiadaan kolom / mock DB tanpa merusak kontrak verifier warisan.
+  - `functions/api/auth/logout.js`:
+    - Menambahkan `UPDATE users SET session_version = session_version + 1 WHERE id = ?` saat pengguna terautentikasi logout, sehingga token lama seketika tidak berlaku.
+  - `functions/api/profile.js`:
+    - Pada aksi `change_password`, menaikkan `session_version` di database (`UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?`), membatalkan sesi di perangkat lain, dan menerbitkan cookie sesi baru untuk perangkat yang sedang aktif.
+  - `functions/api/auth/login.js` & `functions/api/auth/register.js`:
+    - Membaca `session_version` dari database dan memperbarui atribut `Max-Age` cookie sesi menjadi 7 hari.
+  - `functions/api/auth/refresh.js`:
+    - Endpoint baru `POST /api/auth/refresh` untuk memperpanjang sesi yang sah dan menolak sesi yang telah dicabut.
+  - `src/index.js`:
+    - Mendaftarkan rute dan preflight CORS untuk `/api/auth/refresh`.
+  - `tools/verify_fase0_9.mjs` + `tools/verify_fase0_9_run.mjs`:
+    - Harness pengujian baru (30/30 HIJAU) menguji migrasi, batasan exp 7 hari, verifikasi penolakan sesi versi tidak cocok, alur logout pembatalan token, alur ganti sandi lintas perangkat, dan endpoint refresh token.
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_9_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai 0.9 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 38.
+- **Verifikasi**:
+  - `node tools/verify_fase0_9_run.mjs` → **HIJAU 30/30**.
+  - Seluruh rangkaian verifier proyek (31/31) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Menonaktifkan evaluasi `user.session_version !== rows[0].session_version` tertangkap MERAH (25/30, exit 1).
+    - Dipulihkan → kembali **HIJAU 30/30**.
+- **Commit**: `(pending commit)`
+- **Status**: **DONE**
+
 

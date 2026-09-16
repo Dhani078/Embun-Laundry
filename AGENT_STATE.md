@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:51:00+08:00
-Tick ke: 37
+Terakhir update: 2026-09-16T10:05:00+08:00
+Tick ke: 38
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,14 +44,28 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 37 selesai)
+- ID: — (tidak ada; tick 38 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.9** (Fase 0.9) — Pembatalan Sesi: `users.session_version` & Refresh Token (P0) —
+  `(pending commit)` (tick 38)
+  - **Penutupan celah sesi tak terbatas & tidak dapat dibatalkan (K7)**:
+    - Skema database: `db/migrations/0004_add_session_version_to_users.sql` menambahkan `ALTER TABLE users ADD COLUMN session_version INT NOT NULL DEFAULT 1 AFTER role`.
+    - Masa berlaku token dipersingkat dari 30 hari menjadi 7 hari pada `functions/_db.js`, `login.js`, dan `register.js`.
+    - `getUserFromSession()` memvalidasi `session_version` terhadap DB dan menggagalkan token yang tidak cocok (fail-closed / revoked).
+    - `POST /api/auth/logout` menaikkan `session_version` di DB untuk membatalkan token lama.
+    - `POST /api/profile` action `change_password` menaikkan `session_version` di DB, membatalkan token lama di perangkat lain, dan menyetel token baru untuk sesi saat ini.
+    - Endpoint baru `POST /api/auth/refresh` di `functions/api/auth/refresh.js` terdaftar di `src/index.js` untuk rotasi / perpanjangan token sesi.
+    - `tools/verify_fase0_9.mjs` + `tools/verify_fase0_9_run.mjs`: Harness pengujian baru (30/30 HIJAU).
+    - Uji mutasi: Menonaktifkan pengecekan versi sesi terbukti ditangkap MERAH (25/30, exit 1). Dipulihkan kembali HIJAU 30/30.
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 31 verifier (semua HIJAU).
+
 - **0.8** (Fase 0.8) — Cabut Fallback Plaintext & SHA-256 Tanpa Salt di `_password.js` (P0) —
+  `4d6273d` (tick 37)
   `4d6273d` (tick 37)
   - **Menutup celah legacy auth bypass (K6)**:
     - Menghapus pengecekan plaintext `if (password === stored) return true;` di `functions/_password.js`.

@@ -79,7 +79,7 @@ export async function onRequestPost({ request, env, ctx }) {
 
     // Find user by email, phone, or full_name
     const users = await db.query(
-      `SELECT id, full_name, email, phone, password_hash, role 
+      `SELECT id, full_name, email, phone, password_hash, role, session_version 
        FROM users 
        WHERE email = ? OR phone = ? OR full_name = ? 
        LIMIT 1`,
@@ -91,6 +91,7 @@ export async function onRequestPost({ request, env, ctx }) {
     }
 
     const user = users[0];
+    user.session_version = user.session_version || 1;
     
     // Verify password
     const valid = await verifyPassword(password, user.password_hash);
@@ -123,7 +124,7 @@ export async function onRequestPost({ request, env, ctx }) {
     // Login sah -> bersihkan jatah supaya pengguna yang tadi salah ketik
     // beberapa kali tidak terkunci pada kali berikutnya ia butuh masuk.
     const headers = new Headers();
-    headers.set('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${30 * 24 * 60 * 60}`);
+    headers.set('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 60 * 60}`);
 
     const res = new Response(JSON.stringify({
       ok: true,

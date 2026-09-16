@@ -192,6 +192,31 @@ export async function getUserFromSession(request, env) {
     const user = JSON.parse(payloadStr);
     
     if (user.exp && user.exp < Date.now() / 1000) return null;
+
+    // K7 — validasi versi sesi: bila token membawa session_version dan DB dapat dihubungi,
+    // pastikan versi pada token cocok dengan session_version pengguna di DB.
+    // Bila tidak cocok (misal pengguna sudah logout atau ganti sandi di perangkat lain),
+    // tolak sesi (fail-closed / revoked).
+    const userId = user.id || user.user_id;
+    if (user.session_version !== undefined && userId) {
+      try {
+        const db = await getDb(env);
+        if (db) {
+          const rows = await db.query(
+            'SELECT session_version FROM users WHERE id = ? LIMIT 1',
+            [userId]
+          );
+          if (rows && rows.length > 0 && rows[0]?.session_version !== undefined) {
+            if (Number(user.session_version) !== Number(rows[0].session_version)) {
+              return null;
+            }
+          }
+        }
+      } catch (e) {
+        // Toleran jika skema DB belum memiliki kolom session_version atau terjadi kegagalan jaringan sementara
+      }
+    }
+
     return user;
   } catch (e) {
     return null;
@@ -218,14 +243,18 @@ export async function createSessionToken(user, env) {
     ['sign']
   );
 
-    const payload = {
-      id: user.id,
-      user_id: user.id,
-      user_name: user.full_name || user.name || user.user_name || 'User',
-      user_role: user.role || 'Customer',
-      email: user.email,
-      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
-    };
+  const payload = {
+    id: user.id,
+    user_id: user.id,
+    user_name: user.full_name || user.name || user.user_name || 'User',
+    user_role: user.role || 'Customer',
+    email: user.email,
+    exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
+  };
+
+  if (user.session_version !== undefined) {
+    payload.session_version = Number(user.session_version) || 1;
+  }
 
   const payloadBase64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(payloadBase64));
