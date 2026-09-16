@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T11:51:00+08:00
-Tick ke: 48
+Terakhir update: 2026-09-16T14:12:00+08:00
+Tick ke: 49
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,33 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 48 selesai)
+- ID: — (tidak ada; tick 49 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **D8** (Fase D) — Animasi masuk (IntersectionObserver) (P3) —
+  `f659c2e` (tick 49)
+  - **Sistem Animasi Masuk GPU-Accelerated & Optimasi Canvas Viewport**:
+    - Stylesheet `public/assets/style.css`:
+      - Menambahkan kelas universal `.reveal` (`opacity: 0; transform: translateY(14px); transition: 0.45s cubic-bezier(0.16, 1, 0.3, 1)`) dan `.reveal.show` (`opacity: 1; transform: translateY(0)`).
+      - Menambahkan utilitas delay bertingkat `.reveal-stagger-1` s/d `.reveal-stagger-4`.
+      - Menambahkan override aksesibilitas `@media (prefers-reduced-motion: reduce)` yang menonaktifkan delay dan transform seketika (`opacity: 1 !important; transform: none !important; transition: none !important`).
+      - Pembersihan dead code: membersihkan deklarasi duplikat `.content` & `@keyframes contentFadeIn` (~12 baris) di `style.css`.
+    - Hero Canvas `public/assets/hero-canvas.js`:
+      - Mengimplementasikan `setupHeroVisibilityObserver` menggunakan `IntersectionObserver` pada `#hero-canvas-container`.
+      - Memenuhi aturan keras AGENT24: *"Tidak ada animasi pada elemen yang tidak terlihat"*. Loop rendering canvas p5.js otomatis dipause (`heroP5.noLoop()`) saat hero keluar dari viewport, menghemat siklus GPU/CPU dan baterai pengguna saat menelusuri halaman bawah. Otomatis dilanjutkan (`heroP5.loop()`) saat hero kembali terlihat.
+      - Disconnect observer saat unmount canvas (`heroObserver.disconnect()`).
+    - Landing Page `public/index.html`:
+      - Memperkuat fungsi `initReveal()` dengan `IntersectionObserver`, unobserve setelah masuk, fallback instan untuk reduced motion / non-supporting browser, dan auto-staggering kartu layanan saat dimuat via API (`renderServices()`).
+    - Dashboard SPA `public/app.js`:
+      - Menambahkan `App.setupContentObserver()` dan `App.initScrollReveal()` yang otomatis mengamati elemen kartu dashboard (`.kpi`, `.card`, `.panel`, `.kcol`, `.bento-cell`), memberikan animasi masuk mulus saat navigasi halaman SPA (`renderPage()`).
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d8.mjs` dan `tools/verify_d8_run.mjs` (27/27 HIJAU).
+      - Mendaftarkan `verify_d8_run.mjs` ke `tools/run_all_verifiers.sh` (42/42 verifier proyek HIJAU 100%, 0 regresi).
+      - Uji mutasi: Merusak pemanggilan `noLoop()` memicu kegagalan terdeteksi (MERAH, exit 1); pemulihan kembali 100% HIJAU (exit 0).
 
 - **D7** (Fase D) — Responsive audit 360/768/1024/1440px (P3) —
   `8240209` (tick 48)
