@@ -88,7 +88,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
-| D1 | Terapkan design token ke seluruh dashboard | P3 | [ ] | — |
+| D1 | Terapkan design token ke seluruh dashboard | P3 | [x] | `f0b39d8` |
 | D2 | Dark mode toggle (localStorage) | P3 | [x] | `f6d59dd` |
 | D3 | Skeleton loading di semua tabel | P3 | [x] | `1d5feaf` |
 | D4 | Empty state bermakna di setiap list | P3 | [x] | `1d5feaf` |
