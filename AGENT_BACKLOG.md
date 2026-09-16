@@ -108,7 +108,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | E2 | Lazy load gambar non-kritis | P3 | [x] | `b9db8c5` |
 | E3 | Preconnect/preload font kritis | P3 | [x] | `b9db8c5` |
 | E4 | Minifikasi CSS/JS saat build | P4 | [ ] | — |
-| E5 | Logging terstruktur (dev only) | P3 | [ ] | — |
+| E5 | Logging terstruktur (dev only) | P3 | [x] | (tick52) |
 | E6 | Error boundary global SPA | P3 | [x] | `a8912df` |
 
 ---
