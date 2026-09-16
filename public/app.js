@@ -215,6 +215,59 @@ const App = window.App = {
     modal.style.display = 'grid';
   },
 
+  // C4: Pratinjau Bukti Pembayaran (Transfer Bank / E-Wallet)
+  async viewPaymentProof(orderCode) {
+    try {
+      const res = await fetch(`/api/pay?order_code=${encodeURIComponent(orderCode)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        this.toast(data.msg || 'Gagal memuat data pembayaran', 'error');
+        return;
+      }
+      const payments = data.payments || [];
+      let modal = document.getElementById('proofModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'proofModal';
+        modal.className = 'invoice-modal';
+        document.body.appendChild(modal);
+      }
+      const proofs = payments.filter(p => p.proof_image);
+      modal.innerHTML = `
+        <div class="card" style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%;margin:20px auto;position:relative;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:12px;">
+            <div>
+              <h4 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">Bukti Pembayaran</h4>
+              <div style="font-size:12px;color:#64748b;font-weight:600;">Nota: ${esc(orderCode)}</div>
+            </div>
+            <button type="button" onclick="document.getElementById('proofModal').style.display='none'" style="border:none;background:#f1f5f9;border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
+          </div>
+          ${proofs.length === 0 ? `
+            <div style="text-align:center;padding:30px 10px;color:#64748b;font-size:13px;">
+              <div style="font-size:36px;margin-bottom:8px;">🧾</div>
+              <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">Tidak Ada Lampiran Foto Bukti</div>
+              <span style="font-size:12px;color:#94a3b8;">Pembayaran langsung di kasir (tunai / QRIS) tanpa lampiran struk transfer.</span>
+            </div>
+          ` : proofs.map(p => `
+            <div style="margin-bottom:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
+                <span style="font-weight:700;color:#0f172a;">Rp ${Number(p.amount).toLocaleString('id-ID')} (${esc(p.method)})</span>
+                <span style="color:#64748b;">${esc(p.created_at || '')}</span>
+              </div>
+              <a href="${p.proof_image}" target="_blank" title="Buka gambar penuh" style="display:block;">
+                <img src="${p.proof_image}" alt="Bukti Transfer" style="width:100%;max-height:360px;object-fit:contain;border-radius:6px;background:#fff;border:1px solid #cbd5e1;cursor:zoom-in;">
+              </a>
+              <div style="font-size:11px;color:#64748b;margin-top:6px;text-align:right;">Klik gambar untuk memperbesar</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      modal.style.display = 'grid';
+    } catch (e) {
+      this.toast('Koneksi gagal', 'error');
+    }
+  },
+
   async checkAuth() {
     try {
       const res = await fetch('/api/me');
@@ -1043,6 +1096,7 @@ const App = window.App = {
                   </td>
                   <td style="padding: 10px; text-align: right; white-space: nowrap;">
                     <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
+                    <button type="button" class="btn btn-sm btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🖼️ Bukti</button>
                     <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Bayar</a>
                     ${(isStaff || o.status === 'baru') ? `
                       <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border: 1px solid #ef4444; background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>

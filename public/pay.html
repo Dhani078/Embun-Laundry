@@ -3,26 +3,76 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Pembayaran · Embun Laundry</title>
+  <title>Pembayaran & Bukti Transfer · Embun Laundry</title>
   <link rel="stylesheet" href="/assets/design-tokens.css"/>
   <link rel="stylesheet" href="/assets/style.css"/>
   <!-- B9: escaping HTML untuk data pesanan (lihat public/assets/escape.js) -->
   <script src="/assets/escape.js"></script>
+  <style>
+    .method-pill {
+      flex: 1 1 70px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #334155;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .method-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .dropzone:hover {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .preview-thumb {
+      max-width: 100%;
+      max-height: 180px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      display: block;
+      margin: 0 auto 8px;
+      object-fit: contain;
+    }
+  </style>
 </head>
-<body style="background: #f8fafc; padding: 20px; display: grid; place-items: center; min-height: 100vh; margin: 0;">
-  <div class="card" style="width: 100%; max-width: 440px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);">
+<body style="background: #f8fafc; padding: 20px; display: grid; place-items: center; min-height: 100vh; margin: 0; font-family: var(--font-sans, system-ui, sans-serif);">
+  <div class="card" style="width: 100%; max-width: 480px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); box-sizing: border-box;">
     <div style="text-align: center; margin-bottom: 20px;">
-      <img src="/img/Logo.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 10px; margin-bottom: 8px;">
-      <h3 style="margin: 0; font-size: 18px; font-weight: 800;">Pembayaran Laundry</h3>
-      <p id="ordCodeLabel" style="margin: 4px 0 0; color: #64748b; font-size: 13px;">Memuat rincian...</p>
+      <a href="/" style="text-decoration: none;">
+        <img src="/img/Logo.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 10px; margin-bottom: 8px;">
+      </a>
+      <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">Pembayaran Laundry</h3>
+      <p id="ordCodeLabel" style="margin: 4px 0 0; color: #64748b; font-size: 13px;">Memuat rincian pesanan...</p>
     </div>
+
+    <div id="payAlert" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
 
     <div id="payContent">
-      <div style="text-align: center; padding: 20px; color: #64748b;">Memuat data tagihan...</div>
+      <div style="text-align: center; padding: 30px 20px; color: #64748b;">
+        <span class="spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid #cbd5e1; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -4px; margin-right: 8px;"></span>
+        Memuat data tagihan...
+      </div>
     </div>
 
-    <div style="margin-top: 24px; text-align: center;">
-      <a href="/" class="btn" style="padding: 8px 16px; font-size: 13px;">← Kembali ke Dashboard</a>
+    <div style="margin-top: 24px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+      <a href="/" class="btn" style="padding: 8px 16px; font-size: 13px; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; text-decoration: none; border-radius: 8px; display: inline-block;">← Kembali ke Beranda</a>
     </div>
   </div>
 
@@ -30,57 +80,346 @@
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
+    let currentOrder = null;
+    let selectedMethod = 'QRIS';
+    let base64Proof = null;
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('payAlert');
+      box.style.display = 'block';
+      box.textContent = msg;
+      if (type === 'error') {
+        box.style.background = '#fef2f2';
+        box.style.color = '#b91c1c';
+        box.style.border = '1px solid #fecaca';
+      } else if (type === 'success') {
+        box.style.background = '#ecfdf5';
+        box.style.color = '#047857';
+        box.style.border = '1px solid #a7f3d0';
+      } else {
+        box.style.background = '#fffbeb';
+        box.style.color = '#b45309';
+        box.style.border = '1px solid #fde68a';
+      }
+    }
+
+    function hideAlert() {
+      const box = document.getElementById('payAlert');
+      if (box) box.style.display = 'none';
+    }
+
+    function setMethod(method) {
+      selectedMethod = method;
+      document.querySelectorAll('.method-pill').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-method') === method);
+      });
+      const detailWrap = document.getElementById('methodDetailWrap');
+      if (!detailWrap) return;
+
+      if (method === 'QRIS') {
+        detailWrap.innerHTML = `
+          <div style="text-align: center; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px;">
+            <div style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px;">Scan QRIS Dinamis</div>
+            <svg width="140" height="140" viewBox="0 0 64 64" style="display:block;margin:0 auto;border:1px solid #e2e8f0;padding:6px;border-radius:8px;background:#fff">
+              <rect width="64" height="64" fill="#fff"/>
+              <path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/>
+            </svg>
+            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Mendukung BCA, Mandiri, GoPay, OVO, ShopeePay, DANA</div>
+          </div>
+        `;
+      } else if (method === 'TRANSFER') {
+        detailWrap.innerHTML = `
+          <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; font-size: 12px; color: #334155;">
+            <div style="font-weight: 700; margin-bottom: 6px; color: #0f172a;">Transfer Rekening Bank Resmi:</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span>Bank BCA: <strong>8901-234-567</strong></span>
+              <button type="button" onclick="navigator.clipboard.writeText('8901234567');alert('Nomor rekening BCA disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Bank Mandiri: <strong>137-00-1234567-8</strong></span>
+              <button type="button" onclick="navigator.clipboard.writeText('1370012345678');alert('Nomor rekening Mandiri disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">a.n. PT Embun Laundry Indonesia</div>
+          </div>
+        `;
+      } else if (['DANA', 'OVO', 'GOPAY'].includes(method)) {
+        detailWrap.innerHTML = `
+          <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; font-size: 12px; color: #334155;">
+            <div style="font-weight: 700; margin-bottom: 6px; color: #0f172a;">Nomor E-Wallet ${esc(method)}:</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>0812-3456-7890 (Embun Laundry)</span>
+              <button type="button" onclick="navigator.clipboard.writeText('081234567890');alert('Nomor e-wallet disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+            </div>
+          </div>
+        `;
+      } else {
+        detailWrap.innerHTML = `
+          <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; font-size: 12px; color: #64748b;">
+            Pembayaran tunai dapat diselesaikan langsung di kasir outlet Embun Laundry.
+          </div>
+        `;
+      }
+    }
+
+    function processImageFile(file) {
+      if (!file) return;
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
+        showAlert('Format file tidak didukung. Harap pilih gambar JPG, PNG, atau WEBP.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert('Ukuran file terlalu besar (maksimal 5MB sebelum kompresi).');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 1024;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          base64Proof = canvas.toDataURL('image/jpeg', 0.82);
+
+          const previewWrap = document.getElementById('proofPreviewWrap');
+          const previewImg = document.getElementById('proofPreviewImg');
+          const dropzonePrompt = document.getElementById('dropzonePrompt');
+          if (previewWrap && previewImg && dropzonePrompt) {
+            previewImg.src = base64Proof;
+            previewWrap.style.display = 'block';
+            dropzonePrompt.style.display = 'none';
+          }
+          hideAlert();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeProof() {
+      base64Proof = null;
+      const input = document.getElementById('proofInput');
+      if (input) input.value = '';
+      const previewWrap = document.getElementById('proofPreviewWrap');
+      const dropzonePrompt = document.getElementById('dropzonePrompt');
+      if (previewWrap && dropzonePrompt) {
+        previewWrap.style.display = 'none';
+        dropzonePrompt.style.display = 'block';
+      }
+    }
+
+    async function submitPayment() {
+      hideAlert();
+      const btn = document.getElementById('confirmPayBtn');
+      const amtInput = document.getElementById('payAmount');
+      const amount = Number(amtInput ? amtInput.value : (currentOrder ? currentOrder.remaining : 0));
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        showAlert('Masukkan jumlah pembayaran yang valid.');
+        return;
+      }
+
+      if (amount > currentOrder.remaining) {
+        showAlert(`Jumlah bayar melebihi sisa tagihan (Maksimal Rp ${currentOrder.remaining.toLocaleString('id-ID')}).`);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:-2px;margin-right:6px"></span>Memproses Pembayaran...';
+
+      try {
+        const payload = {
+          order_code: currentOrder.order_code,
+          method: selectedMethod,
+          amount: Math.round(amount),
+          proof_image: base64Proof || null,
+          idempotency_key: 'PAY-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 8).toUpperCase()
+        };
+
+        const res = await fetch('/api/pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if (res.status === 401) {
+          showAlert('Sesi login diperlukan untuk mencatat pembayaran. Silakan masuk ke akun Anda.', 'warn');
+          btn.disabled = false;
+          btn.textContent = 'Masuk untuk Membayar';
+          btn.onclick = () => {
+            window.location.href = `/auth/login.html?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+          };
+          return;
+        }
+
+        if (!res.ok || !data || !data.ok) {
+          showAlert((data && data.msg) || 'Gagal memproses pembayaran. Periksa data Anda.');
+          btn.disabled = false;
+          btn.textContent = 'Konfirmasi Pembayaran';
+          return;
+        }
+
+        // Sukses
+        showAlert('Pembayaran berhasil dicatat dan diverifikasi!', 'success');
+        document.getElementById('payContent').innerHTML = `
+          <div style="text-align: center; padding: 24px 10px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+            <h4 style="margin: 0 0 6px; font-size: 18px; font-weight: 800; color: #0f172a;">Pembayaran Berhasil!</h4>
+            <p style="margin: 0 0 18px; font-size: 13px; color: #64748b;">
+              Pembayaran sebesar <strong>Rp ${Number(amount).toLocaleString('id-ID')}</strong> (${esc(selectedMethod)}) telah diterima.
+            </p>
+            ${base64Proof ? `
+              <div style="margin-bottom: 18px;">
+                <div style="font-size: 11px; color: #64748b; margin-bottom: 6px;">Bukti transfer terlampir:</div>
+                <img src="${base64Proof}" alt="Bukti" style="max-width: 140px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              </div>
+            ` : ''}
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <a href="/track.html?code=${encodeURIComponent(currentOrder.order_code)}" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; text-decoration: none; border-radius: 8px;">
+                🔍 Lacak Pesanan
+              </a>
+              <a href="/" class="btn" style="padding: 8px 16px; font-size: 13px; background: #f1f5f9; color: #334155; text-decoration: none; border-radius: 8px; border: 1px solid #cbd5e1;">
+                Ke Beranda
+              </a>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        showAlert('Terjadi kesalahan koneksi server. Coba beberapa saat lagi.');
+        btn.disabled = false;
+        btn.textContent = 'Konfirmasi Pembayaran';
+      }
+    }
+
     async function loadPay() {
       if (!code) {
-        document.getElementById('payContent').innerHTML = '<div class="err">Kode pesanan tidak ditemukan di URL</div>';
+        document.getElementById('payContent').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;font-size:13px">Kode pesanan tidak ditemukan di URL.</div>';
         return;
       }
       try {
         const res = await fetch('/api/pay?order_code=' + encodeURIComponent(code));
         const data = await res.json();
         if (!data.ok) {
-          document.getElementById('payContent').innerHTML = '<div class="err">' + esc(data.msg || 'Gagal memuat pesanan') + '</div>';
+          document.getElementById('payContent').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;font-size:13px">' + esc(data.msg || 'Pesanan tidak ditemukan') + '</div>';
           return;
         }
 
         const o = data.order;
-        document.getElementById('ordCodeLabel').textContent = o.order_code + ' • ' + o.customer_name;
+        const total = Number(o.total_amount) || 0;
+        const paid = Number(o.paid_amount) || 0;
+        const remaining = Math.max(0, total - paid);
+        const isPaid = (o.payment_status === 'paid' || o.payment_status === 'lunas') || (paid >= total && total > 0);
+
+        currentOrder = {
+          ...o,
+          total,
+          paid,
+          remaining,
+          isPaid
+        };
+
+        document.getElementById('ordCodeLabel').textContent = o.order_code + ' • ' + (o.customer_name || 'Pelanggan');
+
+        if (isPaid) {
+          document.getElementById('payContent').innerHTML = `
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px;">
+              <div style="font-size: 36px; margin-bottom: 8px;">🎉</div>
+              <div style="font-weight: 800; font-size: 16px; color: #065f46; margin-bottom: 4px;">Tagihan Sudah Lunas!</div>
+              <div style="font-size: 13px; color: #047857;">Pesanan ini telah dibayar penuh sebesar <strong>Rp ${total.toLocaleString('id-ID')}</strong>.</div>
+            </div>
+            <div style="text-align: center;">
+              <a href="/track.html?code=${encodeURIComponent(o.order_code)}" class="btn btn-primary" style="padding: 10px 18px; font-size: 13px; text-decoration: none; border-radius: 8px; display: inline-block;">
+                🧾 Buka & Cetak Invoice
+              </a>
+            </div>
+          `;
+          return;
+        }
 
         document.getElementById('payContent').innerHTML = `
-          <div style="background: #f1f5f9; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-              <span>Layanan:</span> <span style="font-weight: 600;">${esc(o.service_name)} (${esc(o.weight_kg)} kg)</span>
+          <div style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #475569;">
+              <span>Layanan:</span> <span style="font-weight: 600; color: #0f172a;">${esc(o.service_name || 'Laundry')} (${esc(o.weight_kg || 0)} kg)</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-              <span>Total Tagihan:</span> <span style="font-weight: 800; color: #2563eb; font-size: 16px;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #475569;">
+              <span>Total Tagihan:</span> <span style="font-weight: 700; color: #0f172a;">Rp ${total.toLocaleString('id-ID')}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 13px;">
-              <span>Status Bayar:</span> <span style="font-weight: 700;">${esc(o.payment_status || 'unpaid')}</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: #16a34a;">
+              <span>Sudah Dibayar:</span> <span style="font-weight: 600;">Rp ${paid.toLocaleString('id-ID')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; color: #2563eb; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 6px;">
+              <span>Sisa Tagihan:</span> <span>Rp ${remaining.toLocaleString('id-ID')}</span>
             </div>
           </div>
 
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 12px;">Scan QRIS untuk Pembayaran Instant</div>
-            <div style="width: 200px; height: 200px; margin: 0 auto; background: #fff; border: 2px dashed #cbd5e1; border-radius: 12px; display: grid; place-items: center;">
-              <div style="font-size: 11px; color: #94a3b8; text-align: center; padding: 12px;">
-                <div style="font-size: 32px; margin-bottom: 8px;">📱</div>
-                QRIS Dinamis<br><strong>${esc(o.order_code)}</strong><br>Rp ${Number(o.total_amount).toLocaleString('id-ID')}
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">Pilih Metode Pembayaran:</label>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="method-pill active" data-method="QRIS" onclick="setMethod('QRIS')">QRIS</button>
+              <button type="button" class="method-pill" data-method="TRANSFER" onclick="setMethod('TRANSFER')">Transfer Bank</button>
+              <button type="button" class="method-pill" data-method="DANA" onclick="setMethod('DANA')">DANA</button>
+              <button type="button" class="method-pill" data-method="GOPAY" onclick="setMethod('GOPAY')">GoPay</button>
+              <button type="button" class="method-pill" data-method="OVO" onclick="setMethod('OVO')">OVO</button>
+            </div>
+          </div>
+
+          <div id="methodDetailWrap"></div>
+
+          <div style="margin-bottom: 16px;">
+            <label for="payAmount" style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">Jumlah Pembayaran (Rp):</label>
+            <input type="number" id="payAmount" value="${remaining}" min="1000" max="${remaining}" 
+              style="width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 14px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; font-family: var(--font-mono, monospace);">
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+              Unggah Bukti Transfer / Struk: <span style="font-weight: normal; color: #64748b;">(Opsional)</span>
+            </label>
+            <input type="file" id="proofInput" accept="image/jpeg,image/png,image/webp" style="display: none;" onchange="processImageFile(this.files[0])">
+            <div class="dropzone" onclick="document.getElementById('proofInput').click()">
+              <div id="dropzonePrompt">
+                <div style="font-size: 24px; margin-bottom: 4px;">📷</div>
+                <div style="font-size: 12px; font-weight: 600; color: #2563eb;">Pilih atau Tarik Foto Bukti Transfer</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Format JPG, PNG, atau WEBP</div>
+              </div>
+              <div id="proofPreviewWrap" style="display: none;">
+                <img id="proofPreviewImg" class="preview-thumb" src="" alt="Pratinjau">
+                <button type="button" onclick="event.stopPropagation(); removeProof();" 
+                  style="padding: 4px 10px; font-size: 11px; border: 1px solid #ef4444; color: #ef4444; background: #fff; border-radius: 6px; cursor: pointer;">
+                  ✕ Hapus Foto
+                </button>
               </div>
             </div>
           </div>
 
-          <button class="btn btn-primary" id="confirmPayBtn" style="width: 100%; padding: 12px; font-weight: 700;">
-            Konfirmasi Pembayaran Selesai
+          <button class="btn btn-primary" id="confirmPayBtn" onclick="submitPayment()" style="width: 100%; padding: 12px; font-weight: 700; font-size: 14px; border-radius: 8px; cursor: pointer;">
+            Konfirmasi Pembayaran
           </button>
         `;
 
-        document.getElementById('confirmPayBtn').onclick = async () => {
-          alert('Pembayaran diverifikasi! Petugas akan segera memproses cucian Anda.');
-          window.location.href = '/';
-        };
+        setMethod('QRIS');
 
       } catch (e) {
-        document.getElementById('payContent').innerHTML = '<div class="err">Kesalahan koneksi</div>';
+        document.getElementById('payContent').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;font-size:13px">Kesalahan koneksi ke server.</div>';
       }
     }
 

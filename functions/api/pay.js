@@ -90,7 +90,8 @@ export async function onRequest({ request, env }) {
           label: 'Metode pembayaran'
         },
         amount: { type: 'int', required: true, min: 1, max: 100000000, label: 'Jumlah bayar' },
-        idempotency_key: { type: 'str', max: 64, label: 'Kunci idempotensi' }
+        idempotency_key: { type: 'str', max: 64, label: 'Kunci idempotensi' },
+        proof_image: { type: 'str', max: 2500000, label: 'Bukti pembayaran' }
       });
       if (!v.ok) return v.response;
 
@@ -98,6 +99,20 @@ export async function onRequest({ request, env }) {
       const method = v.data.method;
       const amount = v.data.amount;
       const idempotencyKey = cleanStr(v.data.idempotency_key || request.headers.get('Idempotency-Key') || '').slice(0, 64);
+
+      // C4 — Validasi ketat format bukti pembayaran (data URI image/jpeg, image/png, image/webp)
+      let proofImage = null;
+      if (body.proof_image != null && body.proof_image !== '') {
+        const rawProof = String(body.proof_image).trim();
+        if (rawProof.length > 2200000) {
+          return jsonResponse({ ok: false, msg: 'Validasi gagal: Ukuran bukti pembayaran terlalu besar (maksimal 1.5MB)' }, 400);
+        }
+        const isDataImage = /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/.test(rawProof);
+        if (!isDataImage) {
+          return jsonResponse({ ok: false, msg: 'Validasi gagal: Format bukti pembayaran tidak valid (hanya JPG, PNG, atau WEBP)' }, 400);
+        }
+        proofImage = rawProof;
+      }
 
       if (!code) return jsonResponse({ ok: false, msg: 'Invalid params' }, 400);
 
@@ -236,17 +251,25 @@ export async function onRequest({ request, env }) {
 
       try {
         await db.execute(
-          `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at, idempotency_key)
-           VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?, ?)`,
-          [order.id, method, amount, qrPayload, now, now, finalKey]
+          `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, proof_image, created_at, paid_at, idempotency_key)
+           VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?, ?, ?)`,
+          [order.id, method, amount, qrPayload, proofImage, now, now, finalKey]
         );
       } catch (insertErr) {
-        // Fallback untuk backward-compatibility jika kolom idempotency_key belum dibuat
-        await db.execute(
-          `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at)
-           VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?)`,
-          [order.id, method, amount, qrPayload, now, now]
-        );
+        // Fallback untuk backward-compatibility jika kolom proof_image atau idempotency_key belum dibuat
+        try {
+          await db.execute(
+            `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at, idempotency_key)
+             VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?, ?)`,
+            [order.id, method, amount, qrPayload, now, now, finalKey]
+          );
+        } catch (fb2Err) {
+          await db.execute(
+            `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at)
+             VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?)`,
+            [order.id, method, amount, qrPayload, now, now]
+          );
+        }
       }
 
       // C3 — Catat notifikasi pembayaran berhasil untuk real-time polling
@@ -263,7 +286,8 @@ export async function onRequest({ request, env }) {
       return jsonResponse({
         ok: true,
         qr_payload: qrPayload,
-        amount
+        amount,
+        proof_image: proofImage
       });
     } catch (e) {
       return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
