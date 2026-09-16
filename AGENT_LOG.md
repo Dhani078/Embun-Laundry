@@ -1164,6 +1164,42 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `b3a4e0f`
 - **Status**: **DONE**
 
+---
+
+## Tick 44 — 2026-09-16T11:05:00+08:00 (Task D2: Dark Mode Toggle - localStorage)
+
+- **Task**: D2 (Fase D) — Dark mode toggle (localStorage, anti-FOUC script) (P3)
+- **Temuan sebelum perubahan**:
+  - Aplikasi memiliki dukungan parsial dark theme di `style.css` (hanya sebatas beberapa selector), namun token desain utama belum mendukung dark mode.
+  - Belum ada mekanisme anti-FOUC (Flash of Unstyled Content) saat halaman di-refresh dalam mode gelap, menyebabkan kedipan putih (white flash) yang mengganggu pengguna.
+  - Sidebar di `style.css` menggunakan background hardcoded `#ffffff;` sehingga tidak dapat mewarisi permukaan elevated dark theme (`#111827`).
+  - Belum ada komponen toggle tema yang dapat diakses pengguna di dashboard, landing page, pelacakan pesanan, maupun halaman pembayaran, serta belum ada sinkronisasi multi-tab.
+- **Perubahan**:
+  - Design Tokens & Stylesheet:
+    - `public/assets/design-tokens.css`: Menambahkan tokens `[data-theme="dark"], html.dark` dengan palet slate Linear/Vercel: `--color-bg-primary: #090d16;`, elevated card surface `#111827`, border `#1e293b`/`#334155`, dan text `#f8fafc`.
+    - `public/assets/style.css`: Menyesuaikan `.sidebar` dengan `background: var(--card);`, memperluas styling dark theme untuk topbar, nav, search, card, form controls, dan tabel, serta membuat styling kelas `.theme-toggle-btn`.
+  - Anti-FOUC (Flash of Unstyled Content):
+    - Menyematkan script sinkronus inline anti-FOUC di dalam `<head>` sebelum CSS di seluruh file HTML: `dashboard.html`, `index.html`, `track.html`, dan `pay.html`.
+    - Script memeriksa `localStorage.getItem('theme')` atau preferensi sistem `window.matchMedia('(prefers-color-scheme: dark)')` secara instan sebelum browser me-render DOM.
+  - Komponen Tombol Toggle & SPA App:
+    - `public/app.js`: Menambahkan `App.initTheme()`, `App.applyTheme()`, `App.toggleTheme()`, dan `App.updateThemeIcons()`.
+    - Sinkronisasi instan multi-tab via event `storage`.
+    - Menyematkan tombol `#themeToggleBtn` di topbar Dashboard SPA, navigasi Landing Page, header `track.html`, dan header `pay.html`.
+  - Harness Pengujian:
+    - Membuat `tools/verify_d2.mjs` dan `tools/verify_d2_run.mjs` (30/30 HIJAU).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_d2_run.mjs` (total 37 verifier).
+    - Verifikasi mutasi: Memalsukan key localStorage menjadi `theme_broken` memicu 3 kegagalan (MERAH, exit 1). Dipulihkan kembali ke HIJAU 30/30.
+    - Seluruh rangkaian pengujian proyek (37 verifier) 100% HIJAU (0 regresi).
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task D2 selesai `[x]` (`f6d59dd`).
+    - `AGENT_STATE.md`: Memperbarui tick ke 44 dan mencatat ringkasan dark mode.
+- **Verifikasi**:
+  - `node tools/verify_d2_run.mjs` → **HIJAU 30/30**.
+  - Seluruh rangkaian verifier proyek (37/37) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+- **Commit**: `f6d59dd`
+- **Status**: **DONE**
+
+
 
 
 
