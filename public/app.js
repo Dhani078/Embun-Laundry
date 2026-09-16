@@ -8,6 +8,7 @@ const App = window.App = {
 
   async init() {
     this.initTheme();
+    this.initRipple();
     this.checkAuth();
     this.bindEvents();
   },
@@ -56,6 +57,30 @@ const App = window.App = {
     icons.forEach(el => {
       el.textContent = isDark ? '☀️' : '🌙';
     });
+  },
+
+  // D6: Micro-interaction ripple feedback on buttons
+  initRipple() {
+    if (this._rippleInitialized) return;
+    this._rippleInitialized = true;
+    if (typeof document === 'undefined') return;
+    document.addEventListener('pointerdown', e => {
+      const btn = e.target && e.target.closest && e.target.closest('.btn, .btn-primary, .tabbtn, .tab');
+      if (!btn || btn.disabled || (btn.classList && btn.classList.contains('disabled'))) return;
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+      ripple.style.width = `${size}px`;
+      ripple.style.height = `${size}px`;
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+      setTimeout(() => { if (ripple.parentNode) ripple.remove(); }, 650);
+    }, { passive: true });
   },
 
   // D3: Skeleton Loading & D4: Empty State Helpers
