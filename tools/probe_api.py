@@ -13,6 +13,7 @@ Cara pakai:
   python tools/probe_api.py http://127.0.0.1:8787
 """
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -80,8 +81,12 @@ def main():
 
     # --- 1. Login untuk dapat cookie ---
     print("\n[1] LOGIN")
+    admin_identity = os.environ.get("ADMIN_IDENTITY", "admin@gmail.com")
+    admin_password = os.environ.get("ADMIN_PASSWORD", "")
+    if not admin_password:
+        print("  CATATAN: ADMIN_PASSWORD tidak diset via environment. Menggunakan empty password (bisa 401).")
     st, ct, raw, sc = req("POST", "/api/auth/login",
-                          {"identity": "admin@gmail.com", "password": "admin123"})
+                          {"identity": admin_identity, "password": admin_password})
     cookie = None
     for c in sc:
         cookie = c.split(";")[0]

@@ -20,9 +20,16 @@ printf '%-40s %s  ' "GET /api/me" "$(code "$BASE/api/me")"; body; echo
 printf '%-40s %s  ' "GET /api/profile" "$(code "$BASE/api/profile")"; body; echo
 printf '%-40s %s  ' "POST /api/profile" "$(code -X POST -H 'Content-Type: application/json' -d '{"action":"update_profile","full_name":"X"}' "$BASE/api/profile")"; body; echo
 
+ADMIN_IDENTITY="${ADMIN_IDENTITY:-admin@gmail.com}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+if [ -z "$ADMIN_PASSWORD" ]; then
+  echo "ADMIN_PASSWORD belum diset. Jalankan: ADMIN_PASSWORD=... bash tools/probe_b13_live.sh"
+  exit 1
+fi
+
 echo "== login admin =="
 code -c "$J" -X POST -H 'Content-Type: application/json' \
-  -d '{"identity":"admin@gmail.com","password":"admin123"}' "$BASE/api/auth/login" > /dev/null
+  -d "{\"identity\":\"$ADMIN_IDENTITY\",\"password\":\"$ADMIN_PASSWORD\"}" "$BASE/api/auth/login" > /dev/null
 body; echo
 grep -q '"ok":true' "$OUT" || { echo "LOGIN GAGAL - hentikan"; exit 1; }
 

@@ -37,9 +37,16 @@ say "pay POST method asing"        "$(code -X POST -H 'Content-Type: application
 say "pay POST order_code raksasa"  "$(code -X POST -H 'Content-Type: application/json' -d "{\"order_code\":\"$(printf 'X%.0s' $(seq 1 5000))\",\"amount\":50000}" "$BODY")"
 
 # --- 4. login admin -> jalur sukses ---------------------------------------
+ADMIN_IDENTITY="${ADMIN_IDENTITY:-admin@gmail.com}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+if [ -z "$ADMIN_PASSWORD" ]; then
+  echo "ADMIN_PASSWORD belum diset. Jalankan: ADMIN_PASSWORD=... bash tools/probe_b14_live.sh"
+  exit 1
+fi
+
 LOGIN=$(curl -s -c "$JAR" -X POST "$B/api/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"identity":"admin@gmail.com","password":"admin123"}')
+  -d "{\"identity\":\"$ADMIN_IDENTITY\",\"password\":\"$ADMIN_PASSWORD\"}")
 say "login admin" "$(printf '%s' "$LOGIN" | head -c 90)"
 
 say "GET /api/me (bersesi)"        "$(code -b "$JAR" "$B/api/me")"

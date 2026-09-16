@@ -658,8 +658,37 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
     - Mutasi 1: Menghapus aturan `db/*.sql` dari `.gitignore` → tertangkap **MERAH** (5/8, exit 1).
     - Mutasi 2: Melacak kembali `db/embun_laundry.sql` ke git index (`git add -f`) → tertangkap **MERAH** (7/8, exit 1).
     - Dipulihkan → kembali **HIJAU 8/8**.
-- **Commit**: `af08836`
+- **Commit**: `2c047ed`
 - **Status**: **DONE**
+
+---
+
+## Tick 33 — 2026-09-16T09:30:00+08:00 (Fase 0.4: Pembersihan Sandi dari tools/probe_* & Direktori .tmp/)
+
+- **Task**: 0.4 (Fase 0.4) — Hapus sandi dari `tools/probe_*.sh` dan `.tmp/`, ganti dengan variabel lingkungan `ADMIN_PASSWORD` (K12)
+- **Temuan sebelum perubahan**:
+  - `tools/probe_b13_live.sh` dan `tools/probe_b14_live.sh` memuat sandi admin hardcoded `admin123`.
+  - `tools/probe_api.py`, `probe_b8_live.mjs`, `probe_hash.mjs`, dan `probe_schema.mjs` juga memuat hardcoded `admin123`.
+  - Folder `.tmp/` memuat sejumlah skrip scratch lama yang memuat kata sandi.
+- **Perubahan**:
+  - `tools/probe_b13_live.sh` & `tools/probe_b14_live.sh`: Diganti menggunakan variabel lingkungan `ADMIN_PASSWORD` dan `ADMIN_IDENTITY`, skrip menolak dieksekusi bila variabel belum diset.
+  - `tools/probe_api.py`: Membaca kredensial dari `os.environ`.
+  - `tools/probe_b8_live.mjs`, `tools/probe_hash.mjs`, `tools/probe_schema.mjs`: Membaca `ADMIN_PASSWORD` dari `process.env`.
+  - `.tmp/`: Seluruh skrip scratch lama dibersihkan, dipastikan `.tmp/` kosong dan tidak pernah terlacak git.
+  - `tools/verify_fase0_4.mjs` + `tools/verify_fase0_4_run.mjs`: Harness pengujian baru (14/14 HIJAU).
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_4_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai task 0.4 sebagai selesai.
+  - `AGENT_STATE.md`: Catat status tick 33.
+- **Verifikasi**:
+  - `node tools/verify_fase0_4_run.mjs` → **HIJAU 14/14**.
+  - Seluruh verifier proyek (26/26) **HIJAU**, nol regresi.
+  - Uji mutasi ganda:
+    - Mutasi 1: Menyisipkan kembali sandi hardcoded ke `probe_b13_live.sh` → tertangkap **MERAH** (13/14, exit 1).
+    - Mutasi 2: Menghapus aturan `.tmp/` dari `.gitignore` → tertangkap **MERAH** (13/14, exit 1).
+    - Dipulihkan → kembali **HIJAU 14/14**.
+- **Commit**: `123ee5d`
+- **Status**: **DONE**
+
 
 
 
