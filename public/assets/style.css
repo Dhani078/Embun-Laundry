@@ -1322,6 +1322,140 @@ textarea {
   border-color: #475569;
 }
 
+/* ==========================================================================
+   TASK D3 — SKELETON LOADING SHIMMER & EMPTY STATES
+   ========================================================================== */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e2e8f0;
+  border-radius: 6px;
+  user-select: none;
+  pointer-events: none;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeletonShimmer 1.6s infinite;
+}
+[data-theme="dark"] .skeleton, html.dark .skeleton {
+  background: #1e293b;
+}
+[data-theme="dark"] .skeleton::after, html.dark .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@keyframes skeletonShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+}
+.skeleton-title {
+  height: 20px;
+  width: 50%;
+  margin-bottom: 12px;
+  border-radius: 6px;
+}
+.skeleton-badge {
+  height: 22px;
+  width: 68px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.skeleton-btn {
+  height: 32px;
+  width: 80px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.skeleton-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.skeleton-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  overflow-x: auto;
+  box-shadow: var(--shadow);
+}
+.skeleton-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.skeleton-table th,
+.skeleton-table td {
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--card);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  margin: 12px 0;
+}
+.empty-state-icon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 12px;
+  display: inline-block;
+  opacity: 0.85;
+}
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.empty-state-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 380px;
+  margin: 0 auto 16px;
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    background: transparent;
+  }
+  .skeleton {
+    animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+}
+
 /* Toggle pill switch */
 .toggle {
   position: relative;
