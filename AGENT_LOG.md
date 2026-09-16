@@ -1094,6 +1094,52 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `a220f3a` (code) + `52ea710` (toast)
 - **Status**: **DONE**
 
+---
+
+## Tick 43 — 2026-09-16T10:55:00+08:00 (Task C4: Upload Bukti Pembayaran)
+
+- **Task**: C4 (Fase C) — Upload bukti pembayaran (Cloudflare R2 / base64 kecil) (P3)
+- **Temuan sebelum perubahan**:
+  - Pelanggan dan kasir belum memiliki sarana untuk mengunggah dan memverifikasi bukti transfer pembayaran (struk bank / screenshot transfer e-wallet).
+  - Halaman `public/pay.html` sebelumnya hanya menampilkan tombol dummy dengan `alert('Pembayaran diverifikasi!...')` tanpa pernah memanggil endpoint API pembayaran riil `POST /api/pay`.
+  - Diperlukan mekanisme pertahanan upload file di sisi server: validasi strictly MIME type (`image/jpeg`, `image/png`, `image/webp`), batas ukuran payload (~1.5MB base64), dan penolakan format berbahaya seperti SVG/HTML yang berpotensi Stored XSS.
+- **Perubahan**:
+  - Skema Database:
+    - Membuat berkas migrasi `db/migrations/0006_add_proof_image_to_payments.sql` menambahkan kolom `proof_image MEDIUMTEXT NULL` pada tabel `payments`.
+  - Backend API (`functions/api/pay.js`):
+    - Memvalidasi opsional `proof_image` pada payload `POST /api/pay`:
+      - Regex ketat format data URI: `^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$`.
+      - Menolak secara aman format SVG (`data:image/svg+xml`), text/html, atau format asing dengan status 400 Bad Request.
+      - Membatasi panjang teks payload maksimum (2.200.000 karakter, ~1.5MB base64).
+    - Menyimpan `proof_image` via parameterized query `?` pada klausa `INSERT INTO payments`.
+    - Menyediakan fallback multi-level backward-compatibility jika kolom belum termigrasi.
+    - Mengembalikan `proof_image` pada respons JSON pembayaran dan query `GET /api/pay`.
+  - Frontend Pelanggan (`public/pay.html`):
+    - Antarmuka baru interaktif untuk pembayaran:
+      - Tombol pill pemilih metode pembayaran (`QRIS`, `TRANSFER`, `DANA`, `GOPAY`, `OVO`, `CASH`).
+      - Petunjuk transfer dinamis: QRIS dinamis, nomor rekening resmi BCA & Mandiri dengan tombol salin cepat, dan nomor e-wallet.
+      - Input jumlah pembayaran fleksibel (dibatasi oleh sisa tagihan pesanan).
+      - Dropzone unggah bukti pembayaran foto struk transfer dengan pratinjau thumbnail, tombol hapus foto, dan kompresi kanvas sisi klien (maksimum 1024px dimensi, kualitas JPEG 0.82) agar upload cepat dan ringan.
+      - Pengiriman riil `POST /api/pay` dengan penanganan status respons, kunci idempotensi unik, dan layar sukses transaksi lengkap dengan tautan lacak pesanan.
+  - Frontend Staf (`public/app.js`):
+    - Menambahkan method `App.viewPaymentProof(orderCode)` dan modal dialog `proofModal` yang menampilkan seluruh bukti pembayaran terkait pesanan.
+    - Menambahkan tombol aksi `🖼️ Bukti` (`btn-view-proof`) pada setiap baris pesanan di tabel `renderPesanan`.
+    - Sanitasi XSS `esc()` pada nomor nota dan metode pembayaran.
+  - Harness Pengujian:
+    - Membuat `tools/verify_c4.mjs` + `tools/verify_c4_run.mjs` (29/29 HIJAU).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c4_run.mjs`.
+    - Verifikasi mutasi: Mematikan validasi MIME gambar menghasilkan status MERAH (exit 1). Dipulihkan kembali ke HIJAU 29/29.
+    - Seluruh rangkaian pengujian (36 verifier) 100% HIJAU (0 regresi).
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task C4 selesai `[x]`.
+    - `AGENT_STATE.md`: Meningkatkan tick ke 43 dan mencatat baseline upload bukti pembayaran.
+- **Verifikasi**:
+  - `node tools/verify_c4_run.mjs` → **HIJAU 29/29**.
+  - Seluruh rangkaian verifier proyek (36/36) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+- **Commit**: `b3a4e0f`
+- **Status**: **DONE**
+
+
 
 
 

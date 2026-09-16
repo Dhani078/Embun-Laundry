@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T10:46:23+08:00
-Tick ke: 42
+Terakhir update: 2026-09-16T10:55:00+08:00
+Tick ke: 43
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -54,6 +54,32 @@ Model: kr/auto
 - Mulai: —
 
 ## Task selesai
+
+- **C4** (Fase C4) — Upload Bukti Pembayaran (Cloudflare R2 / base64 kecil) (P3) —
+  `b3a4e0f` (tick 43)
+  - **Upload & Verifikasi Bukti Transfer Pembayaran**:
+    - Skema Database `db/migrations/0006_add_proof_image_to_payments.sql`: Menambahkan kolom `proof_image MEDIUMTEXT NULL` pada tabel `payments`.
+    - Backend API `functions/api/pay.js`:
+      - Memvalidasi secara ketat format bukti pembayaran: hanya mengizinkan data URI gambar sah (`image/jpeg`, `image/png`, `image/webp`).
+      - Menolak dengan aman format berbahaya berpotensi Stored XSS seperti SVG (`data:image/svg+xml`), dokumen HTML, atau executable (status 400).
+      - Membatasi ukuran muatan bukti (maksimal ~1.5MB base64).
+      - Memasukkan `proof_image` via parameterized SQL query (`?`) untuk mencegah SQL injection.
+      - Mengembalikan `proof_image` pada payload respons `POST /api/pay` dan query `GET /api/pay`.
+    - Frontend Pelanggan `public/pay.html`:
+      - Menggantikan alur dummy `alert()` lama dengan antarmuka pembayaran interaktif modern.
+      - Seleksi metode pembayaran (QRIS, TRANSFER, DANA, GOPAY, OVO, CASH) beserta nomor rekening resmi & petunjuk transfer.
+      - Dropzone interaktif untuk unggah foto bukti transfer dengan drag-and-drop, pratinjau thumbnail, tombol hapus, dan optimasi kompresi otomatis di sisi klien menggunakan HTML5 Canvas.
+      - Pengiriman riil `POST /api/pay` dengan feedback status sukses dan rincian transaksi.
+    - Frontend Staf `public/app.js`:
+      - Menambahkan method `App.viewPaymentProof(orderCode)` dan dialog modal pratinjau bukti transfer (`proofModal`).
+      - Tombol aksi `🖼️ Bukti` pada setiap baris pesanan di tabel `renderPesanan` untuk mempermudah verifikasi kasir.
+      - Sanitasi XSS `esc()` pada nomor nota dan metode pembayaran.
+    - Harness Pengujian:
+      - Membuat `tools/verify_c4.mjs` + `tools/verify_c4_run.mjs` (29/29 HIJAU).
+      - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c4_run.mjs`.
+    - Verifikasi Mutasi:
+      - Mematikan validasi MIME gambar di `pay.js` tertangkap MERAH (exit code 1) pada pengujian format SVG. Dipulihkan kembali ke HIJAU 29/29.
+      - Seluruh 36 verifier pada suite regresi 100% HIJAU (0 regresi).
 
 - **C5 & E1 & D5** (Fase C & D & E) — Invoice PDF & Cetak Struk Kasir + Toast Notification & Optimasi Ringan Edge Caching (P3) —
   `a220f3a` + `52ea710` (tick 42)
