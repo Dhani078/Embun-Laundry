@@ -719,5 +719,41 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
     - Mutasi 1: Mengubah impor `getDb` kembali ke `getDB` → crash impor ESM (MERAH, exit 1).
     - Mutasi 2: Mengubah `order.status` kembali ke `order[3]` → tertangkap statik dan runtime (18/20 MERAH, exit 1).
     - Dipulihkan → kembali **HIJAU 20/20**.
-- **Commit**: `42a5ea3`
+- **Commit**: `3d42d2d`
+- **Status**: **DONE**
+
+---
+
+## Tick 35 — 2026-09-16T09:40:00+08:00 (Fase 0.6: Ganti Dasar Kepemilikan dari Nama Jadi user_id di orders/pay)
+
+- **Task**: 0.6 (Fase 0.6) — Ganti dasar kepemilikan dari nama jadi `user_id` di orders/pay (K4)
+- **Temuan sebelum perubahan**:
+  - `functions/api/pay.js` dan `functions/api/orders.js` menggunakan perbandingan nama string `order.customer_name === user.user_name` untuk menentukan hak akses, isolasi PII (sensor nomor telepon dan alamat), serta izin pembayaran dan pembatalan pesanan.
+  - Pengguna dengan nama yang sama (mis. "Budi Santoso") dapat membuka pesanan, melihat telepon/alamat, membayar, dan membatalkan pesanan milik pengguna lain yang memiliki nama identik (kerentanan IDOR fatal).
+  - Tabel `orders` belum memiliki kolom relasi `user_id` integer ke tabel `users`.
+- **Perubahan**:
+  - Berkas migrasi database `db/migrations/0002_add_user_id_to_orders.sql`:
+    - `ALTER TABLE orders ADD COLUMN user_id INT NULL AFTER id;`
+    - `ALTER TABLE orders ADD INDEX idx_orders_user_id (user_id);`
+    - Menambahkan kueri backfill relasi data historis dari `users` berdasarkan kesamaan `full_name`.
+    - Menyertakan petunjuk rollback lengkap.
+  - `functions/api/orders.js`:
+    - `GET /api/orders`: pelanggan non-staff difilter dengan `(o.user_id = ? OR (o.user_id IS NULL AND o.customer_name = ?))`, mencegah kebocoran pesanan antar pengguna bernama sama, dengan fallback aman untuk baris lawas.
+    - `POST /api/orders` (`create_order`): menyertakan `user_id` pemilik akun pada kolom `user_id` tabel `orders`.
+    - `POST /api/orders` (`delete_order`): memverifikasi `order[0].user_id === user.id`.
+  - `functions/api/pay.js`:
+    - `GET /api/pay`: memeriksa kepemilikan via `order.user_id === user.id` untuk menentukan apakah PII disensor atau diizinkan.
+    - `POST /api/pay`: memverifikasi `order.user_id === user.id` untuk memastikan hanya pemilik sah (atau staf/admin) yang dapat mencatat pembayaran.
+  - `tools/verify_fase0_6.mjs` + `tools/verify_fase0_6_run.mjs`: Harness pengujian komprehensif (22/22 HIJAU) mencakup audit migrasi, audit statik, dan simulasi runtime IDOR dengan dua pengguna bernama identik.
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_6_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai 0.6 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 35.
+- **Verifikasi**:
+  - `node tools/verify_fase0_6_run.mjs` → **HIJAU 22/22**.
+  - Seluruh rangkaian verifier proyek (28/28) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Mutasi 1: Mengembalikan `isOwner` di `pay.js` ke `order.customer_name === user.user_name` → sensor PII bocor, tertangkap runtime (20/22 MERAH, exit 1).
+    - Mutasi 2: Mengembalikan `payIsOwner` di `pay.js` ke `order.customer_name === user.user_name` → tertangkap statik dan runtime (17/22 MERAH, exit 1).
+    - Dipulihkan → kembali **HIJAU 22/22**.
+- **Commit**: `1d357fa`
 - **Status**: **DONE**

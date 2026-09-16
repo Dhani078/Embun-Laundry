@@ -45,7 +45,7 @@ export async function onRequest({ request, env }) {
       // dan status bayar. Telepon dan alamat pelanggan tidak pernah
       // ditampilkan, jadi jangan dikirim ke pemanggil yang bukan pemiliknya.
       const isStaff = user && ['Admin', 'Owner', 'Staff'].includes(user.user_role);
-      const isOwner = !!user && !!user.user_name && order.customer_name === user.user_name;
+      const isOwner = !!user && (order.user_id != null ? order.user_id === user.id : (!!user.user_name && order.customer_name === user.user_name));
       const safeOrder = (isStaff || isOwner)
         ? order
         : { ...order, customer_phone: null, customer_address: null };
@@ -124,7 +124,7 @@ export async function onRequest({ request, env }) {
       // Pemilik boleh membayar pesanannya sendiri; staf (kasir) boleh untuk
       // semua pesanan. Pelanggan asing DITOLAK — sebelum B17 ia diterima.
       const payIsStaff = ['Admin', 'Owner', 'Staff'].includes(user.user_role);
-      const payIsOwner = !!user.user_name && order.customer_name === user.user_name;
+      const payIsOwner = !!user && (order.user_id != null ? order.user_id === user.id : (!!user.user_name && order.customer_name === user.user_name));
       if (!payIsStaff && !payIsOwner) {
         return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
       }

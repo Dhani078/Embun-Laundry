@@ -62,8 +62,13 @@ export async function onRequest({ request, env }) {
       const params = [];
 
       if (!isStaff && myName) {
-        sql += ' AND o.customer_name = ?';
-        params.push(myName);
+        if (user.id) {
+          sql += ' AND (o.user_id = ? OR (o.user_id IS NULL AND o.customer_name = ?))';
+          params.push(user.id, myName);
+        } else {
+          sql += ' AND o.customer_name = ?';
+          params.push(myName);
+        }
       }
       if (q) {
         sql += ` AND (o.order_code LIKE ? OR o.customer_name LIKE ? OR s.name LIKE ? OR o.customer_phone LIKE ? OR o.customer_address LIKE ?)`;
@@ -128,6 +133,7 @@ export async function onRequest({ request, env }) {
 
         const d = v.data;
         const customer = isStaff ? (d.customer_name || myName) : myName;
+        const orderUserId = !isStaff ? (user.id || null) : (body.user_id ? parseInt(body.user_id) : (user.id || null));
         const phone = d.customer_phone;
         const address = d.customer_address;
         const serviceId = d.service_id;
@@ -217,9 +223,9 @@ export async function onRequest({ request, env }) {
 
         await db.execute(
           `INSERT INTO orders
-           (order_code, customer_name, customer_phone, customer_address, service_id, weight_kg, price_per_kg, discount, total_amount, status, created_at, finished_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [code, customer, phone, address, serviceId, kg, priceKg, finalDisc, total, status, now, finished]
+           (order_code, user_id, customer_name, customer_phone, customer_address, service_id, weight_kg, price_per_kg, discount, total_amount, status, created_at, finished_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [code, orderUserId, customer, phone, address, serviceId, kg, priceKg, finalDisc, total, status, now, finished]
         );
 
         const newOrder = await db.query('SELECT * FROM orders WHERE order_code = ?', [code]);
@@ -305,8 +311,12 @@ export async function onRequest({ request, env }) {
         if (isStaff) {
           await db.execute('DELETE FROM orders WHERE id = ?', [id]);
         } else {
-          const order = await db.query('SELECT status, customer_name FROM orders WHERE id = ?', [id]);
-          if (order.length > 0 && order[0].status === 'baru' && order[0].customer_name === myName) {
+          const order = await db.query('SELECT id, status, customer_name, user_id FROM orders WHERE id = ?', [id]);
+          if (order.length === 0) {
+            return jsonResponse({ ok: false, msg: 'Tidak diizinkan' }, 403);
+          }
+          const isOwner = order[0].user_id != null ? order[0].user_id === user.id : order[0].customer_name === myName;
+          if (order[0].status === 'baru' && isOwner) {
             await db.execute('DELETE FROM orders WHERE id = ?', [id]);
           } else {
             return jsonResponse({ ok: false, msg: 'Tidak diizinkan' }, 403);
