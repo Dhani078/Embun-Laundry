@@ -72,7 +72,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 |----|------|---|--------|--------|
 | C1 | Halaman "Layanan" publik + filter | P2 | [x] | `1a02520` |
 | C2 | Tracking order publik by kode (tanpa login) | P2 | [x] | `1551773` |
-| C3 | Notifikasi real-time status (polling) | P2 | [ ] | — |
+| C3 | Notifikasi real-time status (polling) | P2 | [x] | `pending-commit` |
 | C4 | Upload bukti pembayaran (R2 / base64 kecil) | P3 | [ ] | — |
 | C5 | Invoice PDF (client-side / print CSS) | P3 | [ ] | — |
 | C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `824df1d` |

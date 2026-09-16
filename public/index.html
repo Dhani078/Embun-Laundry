@@ -1415,9 +1415,68 @@ function openTrackModal(prefillCode = '') {
 
 function closeTrackModal() {
   if (!trackModal) return;
+  stopTrackPolling();
   trackModal.classList.remove('show');
   trackModal.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('no-scroll');
+}
+
+let trackPollTimer = null;
+
+function stopTrackPolling() {
+  if (trackPollTimer) {
+    clearInterval(trackPollTimer);
+    trackPollTimer = null;
+  }
+  const ind = document.getElementById('modalPollInd');
+  if (ind) ind.style.display = 'none';
+}
+
+async function fetchModalNotifications(code) {
+  try {
+    const res = await fetch(`/api/notifications?order_code=${encodeURIComponent(code)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.ok) return;
+
+    const list = document.getElementById('modalNotifList');
+    if (list && Array.isArray(data.notifications)) {
+      if (data.notifications.length === 0) {
+        list.innerHTML = '<li style="font-size:0.75rem;color:var(--text-muted);padding:4px">Belum ada riwayat status.</li>';
+      } else {
+        list.innerHTML = data.notifications.map(n => {
+          const time = n.created_at ? new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+          return `<li style="font-size:0.75rem;padding:6px 8px;background:var(--bg-surface);border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+            <span>${esc(n.message)}</span>
+            <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${time}</span>
+          </li>`;
+        }).join('');
+      }
+    }
+
+    if (data.order_status) {
+      const st = String(data.order_status).toLowerCase();
+      if (st === 'selesai' || st === 'batal') {
+        stopTrackPolling();
+      }
+    }
+  } catch (e) {
+    // Silent polling error
+  }
+}
+
+function startTrackPolling(code, status) {
+  stopTrackPolling();
+  fetchModalNotifications(code);
+  const st = String(status || '').toLowerCase();
+  if (st === 'selesai' || st === 'batal') return;
+
+  const ind = document.getElementById('modalPollInd');
+  if (ind) ind.style.display = 'inline-block';
+
+  trackPollTimer = setInterval(() => {
+    fetchModalNotifications(code);
+  }, 10000);
 }
 
 async function fetchTrackOrder(code) {
@@ -1430,6 +1489,7 @@ async function fetchTrackOrder(code) {
     return;
   }
 
+  stopTrackPolling();
   if (btnDoTrack) {
     btnDoTrack.disabled = true;
     btnDoTrack.textContent = 'Memuat...';
@@ -1450,6 +1510,7 @@ async function fetchTrackOrder(code) {
     }
 
     renderTrackResult(data.order);
+    startTrackPolling(data.order.order_code, data.order.status);
   } catch (err) {
     if (trackError) {
       trackError.textContent = 'Gagal menghubungi server. Silakan periksa koneksi Anda.';
@@ -1539,6 +1600,13 @@ function renderTrackResult(order) {
           <span class="badge-soft">${esc(order.delivery.type)} · ${esc(order.delivery.status)}</span>
         </div>
       ` : ''}
+    </div>
+    <div id="modalNotifBox" style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px">
+      <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span>Riwayat Status Real-Time</span>
+        <span id="modalPollInd" style="font-size:10px;color:var(--primary);display:none">● Live</span>
+      </div>
+      <ul id="modalNotifList" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto"></ul>
     </div>
     ${payActionHtml}
   `;

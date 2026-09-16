@@ -270,6 +270,14 @@
         <dt>Status pembayaran</dt>  <dd id="r-pay"></dd>
         <dt>Dibuat</dt>             <dd id="r-created"></dd>
       </dl>
+
+      <div id="notif-box" style="margin-top:var(--space-4);border-top:1px solid var(--color-border);padding-top:var(--space-4)">
+        <div style="font-size:var(--text-caption);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:flex;justify-content:space-between;align-items:center">
+          <span>Riwayat Status & Notifikasi Real-Time</span>
+          <span id="poll-indicator" style="font-size:11px;color:var(--color-primary);display:none">● Memantau (Live)</span>
+        </div>
+        <ul id="notif-list" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);max-height:220px;overflow-y:auto"></ul>
+      </div>
     </section>
 
     <p class="note">
@@ -289,6 +297,13 @@
     var result = document.getElementById('result');
 
     var STATUSES = ['baru', 'proses', 'selesai'];
+    var pollTimer = null;
+
+    function escapeHtml(str) {
+      var d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
 
     function showMsg(text, kind) {
       msg.textContent = text;
@@ -302,6 +317,71 @@
 
     function setText(id, val) {
       document.getElementById(id).textContent = val;
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      var ind = document.getElementById('poll-indicator');
+      if (ind) ind.style.display = 'none';
+    }
+
+    async function fetchNotifications(code) {
+      try {
+        var res = await fetch('/api/notifications?order_code=' + encodeURIComponent(code));
+        if (!res.ok) return;
+        var data = await res.json();
+        if (!data || !data.ok) return;
+
+        var list = document.getElementById('notif-list');
+        if (list && Array.isArray(data.notifications)) {
+          if (data.notifications.length === 0) {
+            list.innerHTML = '<li style="font-size:var(--text-small);color:var(--color-text-secondary);padding:var(--space-2)">Belum ada riwayat aktivitas untuk pesanan ini.</li>';
+          } else {
+            list.innerHTML = data.notifications.map(function (n) {
+              var time = n.created_at ? new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+              return '<li style="font-size:var(--text-small);padding:var(--space-2) var(--space-3);background:var(--color-surface-subtle);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;gap:var(--space-2)">' +
+                '<span>' + escapeHtml(n.message) + '</span>' +
+                '<span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">' + time + '</span>' +
+                '</li>';
+            }).join('');
+          }
+        }
+
+        if (data.order_status) {
+          var currentStatus = String(data.order_status).toLowerCase();
+          var st = document.getElementById('r-status');
+          if (st && st.textContent !== currentStatus) {
+            st.textContent = currentStatus;
+            st.className = 'status-pill status-' + currentStatus;
+            var idx = currentStatus === 'batal' ? -1 : STATUSES.indexOf(currentStatus);
+            for (var i = 1; i <= 3; i++) {
+              document.getElementById('s' + i).className = 'step' + (idx >= i - 1 ? ' done' : '');
+            }
+          }
+          if (currentStatus === 'selesai' || currentStatus === 'batal') {
+            stopPolling();
+          }
+        }
+      } catch (e) {
+        // Silent polling error
+      }
+    }
+
+    function startPolling(code, status) {
+      stopPolling();
+      fetchNotifications(code);
+      var currentStatus = String(status || '').toLowerCase();
+      if (currentStatus === 'selesai' || currentStatus === 'batal') return;
+
+      var ind = document.getElementById('poll-indicator');
+      if (ind) ind.style.display = 'inline-block';
+
+      pollTimer = setInterval(function () {
+        fetchNotifications(code);
+      }, 10000);
     }
 
     function render(o) {
@@ -329,6 +409,8 @@
         document.getElementById('s' + i).className = 'step' + (idx >= i - 1 ? ' done' : '');
       }
       result.className = 'card show';
+
+      startPolling(o.order_code, o.status);
     }
 
     form.addEventListener('submit', async function (e) {
@@ -336,6 +418,7 @@
       var code = (input.value || '').trim();
       if (!code) { showMsg('Kode pesanan wajib diisi.', 'error'); input.focus(); return; }
 
+      stopPolling();
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Mencari…';
       result.className = 'card';

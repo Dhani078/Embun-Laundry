@@ -103,6 +103,16 @@ export async function onRequestGet(context) {
   }
 }
 
+export async function onRequestOptions() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
+}
+
 export default {
-  onRequestGet
+  onRequestGet,
+  onRequestOptions
 };

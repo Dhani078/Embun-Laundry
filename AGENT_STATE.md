@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T10:05:00+08:00
-Tick ke: 38
+Terakhir update: 2026-09-16T10:15:00+08:00
+Tick ke: 39
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -38,18 +38,32 @@ Model: gemini-flash
 | `/dashboard.html` | 307 → `/dashboard` | Worker serve `dashboard.html` |
 | `/api/health` | 200 | Liveness OK |
 | `/api/services` | 200 | 4 layanan |
+| `/api/notifications` | 200 / 400 | Query order_code required, rate limited 30 req/5m |
 | `/assets/design-tokens.css` | **200** | DULU 404 — sudah fix di tick 3 |
 | `/assets/hero-canvas.js` | **200** | DULU 404 — sudah fix di tick 3 |
 | login admin | OK | Sesi tertutup (kredensial default dicabut dari dokumentasi) |
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 38 selesai)
+- ID: — (tidak ada; tick 39 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **C3** (Fase C3) — Notifikasi Real-Time Status Order via Polling (P2) —
+  (tick 39)
+  - **Integrasi notifikasi real-time terdistribusi**:
+    - Skema database: `db/migrations/0005_create_notifications_table.sql` membuat tabel `notifications` (`id`, `order_code`, `message`, `status`, `created_at`).
+    - Modul backend: Mengaktifkan `functions/api/notifications.js` (`GET /api/notifications?order_code=...`) dengan validasi input, limit 20 notifikasi terbaru, rate limiting 30 req/5m per IP, dan generic server error.
+    - Router Worker: Menghubungkan `notificationsHandler` di `src/index.js` untuk `GET /api/notifications` dan OPTIONS preflight CORS di `optMap`.
+    - Event Dispatch: Menambahkan trigger notifikasi otomatis di `functions/api/orders.js` saat pembuatan pesanan baru (`create_order`) dan pembaruan status (`move_status`), serta di `functions/api/pay.js` saat verifikasi pembayaran lunas (`dibayar`).
+    - Frontend Tracking UI: Menambahkan timeline notifikasi interaktif dan polling otomatis (10 detik) di `public/track.html` dan modal pelacakan di `public/index.html`. Polling otomatis berhenti saat status pesanan mencapai terminal (`selesai`/`batal`) atau modal ditutup.
+    - Backward compatibility: Menyesuaikan `tools/verify_fase0_5.mjs` agar menerima kode rute aktif.
+    - Harness pengujian: `tools/verify_c3.mjs` + `tools/verify_c3_run.mjs` (35/35 HIJAU).
+    - Uji mutasi: Mematikan validasi input di `notifications.js` tertangkap MERAH (28/35, exit 1). Dipulihkan kembali HIJAU 35/35.
+    - Terdaftar di `tools/run_all_verifiers.sh`, kini 32 verifier (semua 100% HIJAU).
 
 - **0.9** (Fase 0.9) — Pembatalan Sesi: `users.session_version` & Refresh Token (P0) —
   `bf92626` (tick 38)
