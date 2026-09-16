@@ -329,6 +329,143 @@ const App = window.App = {
         });
         this.renderPesanan();
       }
+
+      // C7: Promo & Voucher Interactions
+      if (e.target.id === 'openNewPromoModal') {
+        const form = document.getElementById('promoForm');
+        if (form) form.reset();
+        const idEl = document.getElementById('promoId');
+        if (idEl) idEl.value = '';
+        const titleEl = document.getElementById('promoModalTitle');
+        if (titleEl) titleEl.textContent = 'Tambah Promo Baru';
+        const modal = document.getElementById('promoModal');
+        if (modal) modal.style.display = 'grid';
+      }
+
+      if (e.target.id === 'closePromoModalBtn') {
+        const modal = document.getElementById('promoModal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      const btnEditPromo = e.target.closest('.btn-edit-promo');
+      if (btnEditPromo) {
+        try {
+          const p = JSON.parse(btnEditPromo.getAttribute('data-promo') || '{}');
+          document.getElementById('promoId').value = p.id || '';
+          document.getElementById('promoCode').value = p.code || '';
+          document.getElementById('promoName').value = p.name || '';
+          document.getElementById('promoType').value = p.type || 'percent';
+          document.getElementById('promoValue').value = p.value || 0;
+          document.getElementById('promoMinSpend').value = p.min_spend || 0;
+          document.getElementById('promoMaxDiscount').value = p.max_discount || 0;
+          let expVal = '';
+          if (p.expires_at) {
+            expVal = p.expires_at.slice(0, 16);
+          }
+          document.getElementById('promoExpiresAt').value = expVal;
+          document.getElementById('promoIsActive').checked = p.is_active == 1;
+          document.getElementById('promoModalTitle').textContent = 'Edit Promo: ' + (p.code || '');
+          const modal = document.getElementById('promoModal');
+          if (modal) modal.style.display = 'grid';
+        } catch (err) {}
+      }
+
+      const btnDelPromo = e.target.closest('.btn-del-promo');
+      if (btnDelPromo) {
+        if (!confirm('Hapus promo ini?')) return;
+        const id = btnDelPromo.getAttribute('data-id');
+        const res = await fetch('/api/promos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_promo', id: parseInt(id) })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          this.renderPromo();
+        } else {
+          alert(d.msg || 'Gagal menghapus promo');
+        }
+      }
+
+      const btnTogglePromo = e.target.closest('.btn-toggle-promo');
+      if (btnTogglePromo) {
+        const id = parseInt(btnTogglePromo.getAttribute('data-id'));
+        const curActive = parseInt(btnTogglePromo.getAttribute('data-active'));
+        const newActive = curActive === 1 ? 0 : 1;
+        const res = await fetch('/api/promos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'toggle_promo', id, is_active: newActive })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          this.renderPromo();
+        } else {
+          alert(d.msg || 'Gagal mengubah status promo');
+        }
+      }
+
+      if (e.target.id === 'openGrantVoucherModal') {
+        const modal = document.getElementById('grantVoucherModal');
+        if (modal) modal.style.display = 'grid';
+      }
+
+      if (e.target.id === 'closeGrantVoucherModalBtn') {
+        const modal = document.getElementById('grantVoucherModal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      const btnDelVoucher = e.target.closest('.btn-del-voucher');
+      if (btnDelVoucher) {
+        if (!confirm('Hapus/cabut voucher ini?')) return;
+        const id = parseInt(btnDelVoucher.getAttribute('data-id'));
+        const res = await fetch('/api/vouchers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_voucher', id })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          this.renderPromo();
+        } else {
+          alert(d.msg || 'Gagal mencabut voucher');
+        }
+      }
+
+      if (e.target.id === 'tabBtnPromos') {
+        document.getElementById('promoPanel')?.style.setProperty('display', 'block');
+        document.getElementById('voucherPanel')?.style.setProperty('display', 'none');
+        document.getElementById('tabBtnPromos')?.style.setProperty('border-bottom', '2px solid #2563eb');
+        document.getElementById('tabBtnPromos')?.style.setProperty('color', '#2563eb');
+        document.getElementById('tabBtnVouchers')?.style.setProperty('border-bottom', 'none');
+        document.getElementById('tabBtnVouchers')?.style.setProperty('color', '#64748b');
+      }
+
+      if (e.target.id === 'tabBtnVouchers') {
+        document.getElementById('promoPanel')?.style.setProperty('display', 'none');
+        document.getElementById('voucherPanel')?.style.setProperty('display', 'block');
+        document.getElementById('tabBtnVouchers')?.style.setProperty('border-bottom', '2px solid #2563eb');
+        document.getElementById('tabBtnVouchers')?.style.setProperty('color', '#2563eb');
+        document.getElementById('tabBtnPromos')?.style.setProperty('border-bottom', 'none');
+        document.getElementById('tabBtnPromos')?.style.setProperty('color', '#64748b');
+      }
+
+      if (e.target.id === 'btnSearchPromo') {
+        const q = document.getElementById('promoSearchInput')?.value.trim() || '';
+        this.renderPromo({ q });
+      }
+
+      const btnCopyCode = e.target.closest('.btn-copy-code');
+      if (btnCopyCode) {
+        const code = btnCopyCode.getAttribute('data-code');
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(code).then(() => {
+            const originalText = btnCopyCode.textContent;
+            btnCopyCode.textContent = '✓ Tersalin!';
+            setTimeout(() => { btnCopyCode.textContent = originalText; }, 2000);
+          });
+        }
+      }
     });
 
     // Global Change Delegation
@@ -347,6 +484,9 @@ const App = window.App = {
     document.addEventListener('keyup', (e) => {
       if (e.target.id === 'ordSearch' && e.key === 'Enter') {
         document.getElementById('btnFilterOrders')?.click();
+      }
+      if (e.target.id === 'promoSearchInput' && e.key === 'Enter') {
+        document.getElementById('btnSearchPromo')?.click();
       }
     });
 
@@ -416,6 +556,93 @@ const App = window.App = {
           document.getElementById('passForm').reset();
         } else {
           alert(resData.msg || 'Gagal ganti sandi');
+        }
+      }
+
+      if (e.target.id === 'promoForm') {
+        e.preventDefault();
+        const idVal = document.getElementById('promoId').value.trim();
+        const codeVal = document.getElementById('promoCode').value.trim().toUpperCase();
+        const nameVal = document.getElementById('promoName').value.trim();
+        const typeVal = document.getElementById('promoType').value;
+        const valVal = parseInt(document.getElementById('promoValue').value) || 0;
+        const minSpendVal = parseInt(document.getElementById('promoMinSpend').value) || 0;
+        const maxDiscVal = parseInt(document.getElementById('promoMaxDiscount').value) || 0;
+        const expInput = document.getElementById('promoExpiresAt').value;
+        const isActiveVal = document.getElementById('promoIsActive').checked ? 1 : 0;
+
+        let expiresAt = null;
+        if (expInput) {
+          expiresAt = expInput.replace('T', ' ') + (expInput.length === 16 ? ':00' : '');
+        }
+
+        const payload = {
+          action: idVal ? 'update_promo' : 'create_promo',
+          code: codeVal,
+          name: nameVal,
+          type: typeVal,
+          value: valVal,
+          min_spend: minSpendVal,
+          max_discount: maxDiscVal,
+          expires_at: expiresAt,
+          is_active: isActiveVal
+        };
+        if (idVal) payload.id = parseInt(idVal);
+
+        const res = await fetch('/api/promos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const modal = document.getElementById('promoModal');
+          if (modal) modal.style.display = 'none';
+          this.renderPromo();
+        } else {
+          alert(data.msg || 'Gagal menyimpan promo');
+        }
+      }
+
+      if (e.target.id === 'grantVoucherForm') {
+        e.preventDefault();
+        const promoId = parseInt(document.getElementById('grantPromoId').value);
+        const grantType = document.getElementById('grantType').value;
+        const userIdInput = document.getElementById('grantUserId').value.trim();
+
+        let payload = {};
+        if (grantType === 'single') {
+          payload = {
+            action: 'create_voucher',
+            promo_id: promoId,
+            user_id: parseInt(userIdInput)
+          };
+        } else {
+          const ids = userIdInput.split(',').map(s => parseInt(s.trim())).filter(n => !Number.isNaN(n) && n > 0);
+          if (ids.length === 0) {
+            alert('Masukkan minimal satu User ID valid');
+            return;
+          }
+          payload = {
+            action: 'bulk_claim',
+            promo_id: promoId,
+            user_ids: ids
+          };
+        }
+
+        const res = await fetch('/api/vouchers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const modal = document.getElementById('grantVoucherModal');
+          if (modal) modal.style.display = 'none';
+          alert(grantType === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`);
+          this.renderPromo();
+        } else {
+          alert(data.msg || 'Gagal menerbitkan voucher');
         }
       }
     });
@@ -789,6 +1016,7 @@ const App = window.App = {
     document.getElementById('pageTitle').textContent = 'Promo & Voucher Diskon';
     const c = document.getElementById('mainContent');
     c.innerHTML = '<div style="padding: 20px;">Memuat promo...</div>';
+    const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user?.role || this.user?.user_role);
 
     try {
       const [pRes, vRes] = await Promise.all([
@@ -797,54 +1025,271 @@ const App = window.App = {
       ]);
       const pData = await pRes.json();
       const vData = await vRes.json();
-
       const promos = pData.promos || [];
       const vouchers = vData.vouchers || [];
+      this._promos = promos;
+      this._editPromoId = null;
 
-      c.innerHTML = `
-        <h3 style="margin: 0 0 16px;">Voucher Tersedia</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px;">
-          ${promos.map(p => `
-            <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-              <span class="badge" style="background: #eff6ff; color: #2563eb; font-weight: 700;">${esc(p.code || 'PROMO')}</span>
-              <h4 style="margin: 8px 0 4px; font-size: 16px;">${esc(p.name)}</h4>
-              <div style="font-size: 18px; font-weight: 800; color: #059669; margin-bottom: 8px;">
-                ${p.type === 'percent' ? `Diskon ${esc(p.value)}%` : `Potongan Rp ${Number(p.value).toLocaleString('id-ID')}`}
+      if (isStaff) {
+        c.innerHTML = `
+          <div id="promoFormWrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;" role="region" aria-label="Form promo">
+            <h4 id="promoFormTitle" style="margin:0 0 16px;font-size:16px;font-weight:700;">Tambah Promo</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <label for="pfCode" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Kode</label>
+                <input id="pfCode" type="text" maxlength="32" placeholder="misal: LEBARAN10" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
               </div>
-              <p style="font-size: 12px; color: #64748b; margin: 0 0 12px;">Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</p>
-              <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.claimVoucher(${esc(p.id)})">Klaim Voucher</button>
+              <div>
+                <label for="pfName" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Nama Promo <span aria-hidden="true" style="color:#ef4444">*</span></label>
+                <input id="pfName" type="text" maxlength="120" placeholder="Nama promo" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;" required>
+              </div>
+              <div>
+                <label for="pfType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Tipe</label>
+                <select id="pfType" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                  <option value="percent">Persen (%)</option>
+                  <option value="nominal">Nominal (Rp)</option>
+                </select>
+              </div>
+              <div>
+                <label for="pfValue" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Nilai</label>
+                <input id="pfValue" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;" aria-label="Nilai promo">
+              </div>
+              <div>
+                <label for="pfMinSpend" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Min. Belanja (Rp)</label>
+                <input id="pfMinSpend" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+              </div>
+              <div>
+                <label for="pfMaxDiscount" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Maks. Diskon (Rp)</label>
+                <input id="pfMaxDiscount" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+              </div>
+              <div>
+                <label for="pfExpires" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Kedaluwarsa (opsional)</label>
+                <input id="pfExpires" type="datetime-local" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+              </div>
+              <div style="display:flex;align-items:flex-end;">
+                <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                  <input id="pfActive" type="checkbox" checked> Aktif
+                </label>
+              </div>
             </div>
-          `).join('')}
-        </div>
+            <div style="margin-top:16px;display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="App.savePromo()" style="padding:8px 20px;">Simpan</button>
+              <button class="btn" onclick="document.getElementById('promoFormWrap').style.display='none'" style="padding:8px 20px;">Batal</button>
+            </div>
+          </div>
 
-        <h3 style="margin: 0 0 16px;">Voucher Saya</h3>
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-            <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
-                <th style="padding: 10px;">Kode Klaim</th>
-                <th style="padding: 10px;">Nama Promo</th>
-                <th style="padding: 10px;">Nilai</th>
-                <th style="padding: 10px;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${vouchers.map(v => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 700; color: #2563eb;">${esc(v.code)}</td>
-                  <td style="padding: 10px;">${esc(v.name)}</td>
-                  <td style="padding: 10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
-                  <td style="padding: 10px;">
-                    <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
-                  </td>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;">Daftar Promo</h3>
+            <button class="btn btn-primary" onclick="App.openPromoForm()" style="padding:8px 16px;">+ Tambah Promo</button>
+          </div>
+          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;margin-bottom:24px;">
+            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+              <thead>
+                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                  <th style="padding:10px;">Kode</th>
+                  <th style="padding:10px;">Nama</th>
+                  <th style="padding:10px;">Tipe</th>
+                  <th style="padding:10px;">Nilai</th>
+                  <th style="padding:10px;">Min. Belanja</th>
+                  <th style="padding:10px;">Kedaluwarsa</th>
+                  <th style="padding:10px;">Status</th>
+                  <th style="padding:10px;">Aksi</th>
                 </tr>
+              </thead>
+              <tbody>
+                ${promos.length === 0
+                  ? '<tr><td colspan="8" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada promo</td></tr>'
+                  : promos.map(p => `
+                  <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(p.code)}</td>
+                    <td style="padding:10px;">${esc(p.name)}</td>
+                    <td style="padding:10px;">${p.type === 'percent' ? 'Persen' : 'Nominal'}</td>
+                    <td style="padding:10px;">${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;">Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;">${p.expires_at ? esc(String(p.expires_at).slice(0, 10)) : '—'}</td>
+                    <td style="padding:10px;"><span class="badge ${p.is_active ? 'status-selesai' : 'status-batal'}">${p.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+                    <td style="padding:10px;">
+                      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.openPromoForm(${p.id})" aria-label="Edit promo ${esc(p.code)}">Edit</button>
+                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.togglePromo(${p.id},${p.is_active ? 0 : 1})" aria-label="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo ${esc(p.code)}">${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+                        <button class="btn" style="padding:4px 10px;font-size:12px;background:#fef2f2;color:#dc2626;" onclick="App.deletePromo(${p.id})" aria-label="Hapus promo ${esc(p.code)}">Hapus</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin:0 0 16px;">Semua Voucher Pengguna</h3>
+          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;">
+            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+              <thead>
+                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                  <th style="padding:10px;">Kode Voucher</th>
+                  <th style="padding:10px;">Nama Promo</th>
+                  <th style="padding:10px;">Nilai</th>
+                  <th style="padding:10px;">User ID</th>
+                  <th style="padding:10px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${vouchers.length === 0
+                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
+                  : vouchers.map(v => `
+                  <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(v.code)}</td>
+                    <td style="padding:10px;">${esc(v.name)}</td>
+                    <td style="padding:10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;">${esc(String(v.user_id))}</td>
+                    <td style="padding:10px;"><span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else {
+        c.innerHTML = `
+          <h3 style="margin:0 0 16px;">Voucher Tersedia</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
+            ${promos.filter(p => p.is_active).length === 0
+              ? '<div style="color:#94a3b8;padding:20px;">Belum ada promo aktif.</div>'
+              : promos.filter(p => p.is_active).map(p => `
+                <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;">
+                  <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;">${esc(p.code || 'PROMO')}</span>
+                  <h4 style="margin:8px 0 4px;font-size:16px;">${esc(p.name)}</h4>
+                  <div style="font-size:18px;font-weight:800;color:#059669;margin-bottom:8px;">
+                    ${p.type === 'percent' ? 'Diskon ' + esc(p.value) + '%' : 'Potongan Rp ' + Number(p.value).toLocaleString('id-ID')}
+                  </div>
+                  <p style="font-size:12px;color:#64748b;margin:0 0 12px;">Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</p>
+                  <button class="btn btn-primary" style="width:100%;padding:8px;font-size:13px;" onclick="App.claimVoucher(${p.id})">Klaim Voucher</button>
+                </div>
               `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+          </div>
+
+          <h3 style="margin:0 0 16px;">Voucher Saya</h3>
+          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;">
+            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+              <thead>
+                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                  <th style="padding:10px;">Kode Klaim</th>
+                  <th style="padding:10px;">Nama Promo</th>
+                  <th style="padding:10px;">Nilai</th>
+                  <th style="padding:10px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${vouchers.length === 0
+                  ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
+                  : vouchers.map(v => `
+                  <tr style="border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(v.code)}</td>
+                    <td style="padding:10px;">${esc(v.name)}</td>
+                    <td style="padding:10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;">
+                      <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat promo</div>';
+    }
+  },
+
+  openPromoForm(id) {
+    this._editPromoId = id || null;
+    const wrap = document.getElementById('promoFormWrap');
+    if (!wrap) return;
+    document.getElementById('promoFormTitle').textContent = id ? 'Edit Promo' : 'Tambah Promo';
+    document.getElementById('pfCode').value = '';
+    document.getElementById('pfName').value = '';
+    document.getElementById('pfType').value = 'percent';
+    document.getElementById('pfValue').value = '0';
+    document.getElementById('pfMinSpend').value = '0';
+    document.getElementById('pfMaxDiscount').value = '0';
+    document.getElementById('pfExpires').value = '';
+    document.getElementById('pfActive').checked = true;
+
+    if (id) {
+      const p = (this._promos || []).find(x => x.id === id);
+      if (p) {
+        document.getElementById('pfCode').value = p.code || '';
+        document.getElementById('pfName').value = p.name || '';
+        document.getElementById('pfType').value = p.type || 'percent';
+        document.getElementById('pfValue').value = p.value ?? 0;
+        document.getElementById('pfMinSpend').value = p.min_spend ?? 0;
+        document.getElementById('pfMaxDiscount').value = p.max_discount ?? 0;
+        document.getElementById('pfExpires').value = p.expires_at ? String(p.expires_at).slice(0, 16) : '';
+        document.getElementById('pfActive').checked = !!p.is_active;
+      }
+    }
+    wrap.style.display = 'block';
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  async savePromo() {
+    const id = this._editPromoId;
+    const expiresRaw = document.getElementById('pfExpires').value;
+    const payload = {
+      action: id ? 'update_promo' : 'create_promo',
+      ...(id ? { id } : {}),
+      code: document.getElementById('pfCode').value.trim(),
+      name: document.getElementById('pfName').value.trim(),
+      type: document.getElementById('pfType').value,
+      value: Number(document.getElementById('pfValue').value) || 0,
+      min_spend: Number(document.getElementById('pfMinSpend').value) || 0,
+      max_discount: Number(document.getElementById('pfMaxDiscount').value) || 0,
+      expires_at: expiresRaw ? expiresRaw.replace('T', ' ') + ':00' : null,
+      is_active: document.getElementById('pfActive').checked ? 1 : 0
+    };
+    try {
+      const res = await fetch('/api/promos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.ok) this.renderPromo();
+      else alert(data.msg || 'Gagal menyimpan promo');
+    } catch (e) {
+      alert('Koneksi gagal');
+    }
+  },
+
+  async togglePromo(id, newVal) {
+    try {
+      const res = await fetch('/api/promos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_active', id, is_active: newVal })
+      });
+      const data = await res.json();
+      if (data.ok) this.renderPromo();
+      else alert(data.msg || 'Gagal mengubah status');
+    } catch (e) {
+      alert('Koneksi gagal');
+    }
+  },
+
+  async deletePromo(id) {
+    if (!confirm('Hapus promo ini? Voucher yang sudah diklaim tidak akan terhapus.')) return;
+    try {
+      const res = await fetch('/api/promos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_promo', id })
+      });
+      const data = await res.json();
+      if (data.ok) this.renderPromo();
+      else alert(data.msg || 'Gagal menghapus');
+    } catch (e) {
+      alert('Koneksi gagal');
     }
   },
 
