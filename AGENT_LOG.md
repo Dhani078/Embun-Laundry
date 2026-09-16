@@ -4,6 +4,37 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 49 — 2026-09-16T14:12:00+08:00
+
+- Task: **D8** — Animasi masuk (IntersectionObserver) (P3)
+- Perubahan:
+  - `public/assets/style.css`:
+    - Menambahkan kelas `.reveal` dan `.reveal.show` dengan transisi transform GPU-accelerated.
+    - Menambahkan kelas `.reveal-stagger-1` s/d `.reveal-stagger-4` untuk efek stagger dinamis.
+    - Menambahkan override aksesibilitas `@media (prefers-reduced-motion: reduce)` yang menonaktifkan transform dan delay reveal seketika.
+    - Membersihkan dead code: duplikasi deklarasi `.content` dan `@keyframes contentFadeIn` dihapus.
+  - `public/assets/hero-canvas.js`:
+    - Mengaitkan `setupHeroVisibilityObserver` menggunakan `IntersectionObserver` pada `#hero-canvas-container`.
+    - Menghentikan loop animasi canvas saat tidak terlihat di viewport (`heroP5.noLoop()`), dan melanjutkan kembali (`heroP5.loop()`) saat terlihat (memenuhi aturan AGENT24).
+    - Menambahkan pembersihan observer saat unmount (`heroObserver.disconnect()`).
+  - `public/index.html`:
+    - Memperkuat `initReveal()` dengan `IntersectionObserver`, auto-unobserve setelah reveal, dan auto-staggering kartu.
+    - Sinkronisasi render kartu layanan dinamis via `renderServices()` dengan `initReveal()`.
+  - `public/app.js`:
+    - Menambahkan `App.setupContentObserver()` dan `App.initScrollReveal()` untuk mendeteksi kartu dan panel dashboard yang dimuat secara dinamis, mengaktifkan animasi masuk secara otomatis.
+    - Menghubungkan ke siklus navigasi `App.renderPage()`.
+  - Tools & Verifikasi:
+    - Membuat harness `tools/verify_d8.mjs` dan runner `tools/verify_d8_run.mjs` (27/27 HIJAU).
+    - Mendaftarkan `verify_d8_run.mjs` ke `tools/run_all_verifiers.sh` -> 42/42 verifier proyek HIJAU 100% (0 regresi).
+    - Uji mutasi memvalidasi deteksi kegagalan (exit 1 MERAH saat mutasi, exit 0 HIJAU saat pulih).
+- Commit: `f659c2e`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - D9 (finalisasi p5.js hero droplet+ripple) — P3
+  - E4 (minifikasi CSS/JS), E5 (logging dev), E6 (error boundary global SPA) — P3/P4
+
+---
+
 ## Tick 48 — 2026-09-16T11:51:00+08:00
 
 - Task: **D7** — Responsive audit 360/768/1024/1440px (P3)
