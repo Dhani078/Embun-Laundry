@@ -1,15 +1,20 @@
 /* ==========================================================================
-   EMBUN LAUNDRY — p5.js HERO CANVAS
+   EMBUN LAUNDRY — p5.js HERO CANVAS (Task D9)
    Generative water/droplet animation — laundry themed, performant, accessible
    Loaded via CDN, zero dependencies, respects prefers-reduced-motion
    ========================================================================== */
 
+// Disable friendly errors for maximum canvas rendering performance (AGENT24:699)
+if (typeof p5 !== 'undefined') {
+  p5.disableFriendlyErrors = true;
+}
+
 // Configuration
 const HERO_CONFIG = {
   seed: 42,
-  particleCount: 120,
-  dropletCount: 15,
-  rippleCount: 8,
+  particleCount: 100,
+  dropletCount: 12,
+  rippleCount: 16,
   colorMode: 'hsb',
   canvasWidth: 1920,
   canvasHeight: 1080,
@@ -39,8 +44,11 @@ let prefersReducedMotion = false;
 const heroSketch = (p) => {
   
   p.setup = () => {
+    // Disable friendly errors in instance mode
+    p5.disableFriendlyErrors = true;
+
     // Check reduced motion preference
-    prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
     // Create canvas - responsive
     const container = document.getElementById('hero-canvas-container');
@@ -55,7 +63,7 @@ const heroSketch = (p) => {
     heroCanvas.style('width', '100%');
     heroCanvas.style('height', '100%');
     
-    p.pixelDensity(1); // Prevent 2x-4x overdraw on retina
+    p.pixelDensity(1); // Prevent 2x-4x overdraw on retina (AGENT24:699)
     p.colorMode(p.HSB, 360, 100, 100, 100);
     p.noStroke();
     
@@ -63,7 +71,7 @@ const heroSketch = (p) => {
     p.randomSeed(HERO_CONFIG.seed);
     p.noiseSeed(HERO_CONFIG.seed);
     
-    // Initialize particles
+    // Initialize particles & droplets
     initParticles(p);
     initDroplets(p);
     
@@ -78,6 +86,24 @@ const heroSketch = (p) => {
         initDroplets(p);     // keep droplets inside the new bounds
       }
     });
+
+    // Pointer move ripple interaction on hero section
+    const heroSec = document.querySelector('.hero');
+    if (heroSec) {
+      let lastMove = 0;
+      heroSec.addEventListener('pointermove', (e) => {
+        if (prefersReducedMotion) return;
+        const now = performance.now();
+        if (now - lastMove < 160) return;
+        const rect = heroSec.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x >= 0 && x <= p.width && y >= 0 && y <= p.height) {
+          addRipple(x, y, p.random(22, 42));
+          lastMove = now;
+        }
+      }, { passive: true });
+    }
   };
   
   p.draw = () => {
@@ -154,13 +180,14 @@ function initDroplets(p) {
   heroDroplets = [];
   for (let i = 0; i < HERO_CONFIG.dropletCount; i++) {
     heroDroplets.push({
-      x: p.random(p.width * 0.2, p.width * 0.8),
-      y: p.random(-p.height * 0.5, p.height * 0.3),
-      size: p.random(8, 20),
-      speedY: p.random(0.5, 1.5),
+      x: p.random(p.width * 0.15, p.width * 0.85),
+      y: p.random(-p.height * 0.5, p.height * 0.2),
+      targetY: p.random(p.height * 0.65, p.height * 0.95),
+      size: p.random(8, 18),
+      speedY: p.random(0.8, 1.8),
       wobble: p.random(0.02, 0.05),
       wobblePhase: p.random(p.TWO_PI),
-      opacity: p.random(40, 70),
+      opacity: p.random(45, 75),
       trail: [],
       maxTrail: 8,
     });
@@ -172,23 +199,25 @@ function initDroplets(p) {
 // ============================================================================
 
 function addRipple(x, y, maxRadius) {
+  if (heroRipples.length >= HERO_CONFIG.rippleCount) {
+    heroRipples.shift(); // keep array bounded FIFO
+  }
   heroRipples.push({
     x,
     y,
-    radius: 1,
+    radius: 2,
     maxRadius,
-    opacity: 60,
+    opacity: 70,
     life: 1,
-    decay: p5.prototype ? 0.008 : 0.008, // fallback
   });
 }
 
 function updateRipples(p) {
   for (let i = heroRipples.length - 1; i >= 0; i--) {
     const r = heroRipples[i];
-    r.radius += (r.maxRadius - r.radius) * 0.08;
-    r.opacity *= 0.96;
-    r.life -= 0.02;
+    r.radius += (r.maxRadius - r.radius) * 0.07;
+    r.opacity *= 0.965;
+    r.life -= 0.015;
     if (r.life <= 0 || r.opacity < 2) {
       heroRipples.splice(i, 1);
     }
@@ -198,12 +227,19 @@ function updateRipples(p) {
 function drawRipples(p) {
   for (const r of heroRipples) {
     const alpha = r.opacity * r.life;
-    p.stroke(...HERO_PALETTE.ripple, alpha);
-    p.strokeWeight(1.5);
     p.noFill();
-    p.drawingContext.setLineDash([4, 4]);
-    p.ellipse(r.x, r.y, r.radius * 2);
-    p.drawingContext.setLineDash([]);
+    
+    // Primary outer expanding ripple ring (perspective flattening)
+    p.stroke(...HERO_PALETTE.ripple, alpha * 0.85);
+    p.strokeWeight(1.5);
+    p.ellipse(r.x, r.y, r.radius * 2, r.radius * 1.25);
+    
+    // Concentric inner secondary wave crest
+    if (r.radius > 10) {
+      p.stroke(...HERO_PALETTE.primary, alpha * 0.45);
+      p.strokeWeight(1.0);
+      p.ellipse(r.x, r.y, (r.radius - 8) * 2, (r.radius - 8) * 1.25);
+    }
   }
 }
 
@@ -217,17 +253,21 @@ function updateDroplets(p) {
     d.trail.push({ x: d.x, y: d.y });
     if (d.trail.length > d.maxTrail) d.trail.shift();
     
-    // Fall down with wobble
+    // Fall down with gentle sine wobble
     d.y += d.speedY;
     d.wobblePhase += d.wobble;
-    d.x += p.sin(d.wobblePhase) * 0.5;
+    d.x += p.sin(d.wobblePhase) * 0.45;
     
-    // Reset when off screen
-    if (d.y > p.height + 50) {
-      d.y = p.random(-100, -20);
-      d.x = p.random(p.width * 0.1, p.width * 0.9);
-      d.speedY = p.random(0.5, 1.5);
-      d.size = p.random(8, 20);
+    // Splash when reaching target water level or bottom
+    if (d.y >= d.targetY || d.y > p.height + 40) {
+      if (d.y >= d.targetY && heroRipples.length < HERO_CONFIG.rippleCount) {
+        addRipple(d.x, d.y, d.size * p.random(2.4, 3.8));
+      }
+      d.y = p.random(-120, -20);
+      d.x = p.random(p.width * 0.15, p.width * 0.85);
+      d.targetY = p.random(p.height * 0.65, p.height * 0.95);
+      d.speedY = p.random(0.8, 1.8);
+      d.size = p.random(8, 18);
       d.trail = [];
     }
   }
