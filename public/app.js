@@ -9,6 +9,7 @@ const App = window.App = {
   async init() {
     this.initTheme();
     this.initRipple();
+    this.initMobileSidebar();
     this.checkAuth();
     this.bindEvents();
   },
@@ -81,6 +82,79 @@ const App = window.App = {
       ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
       setTimeout(() => { if (ripple.parentNode) ripple.remove(); }, 650);
     }, { passive: true });
+  },
+
+  // D7: Responsive Mobile Drawer Navigation
+  initMobileSidebar() {
+    if (this._sidebarInitialized) return;
+    this._sidebarInitialized = true;
+    if (typeof document === 'undefined') return;
+
+    document.addEventListener('click', (e) => {
+      const toggle = e.target.closest('#sidebarToggleBtn, .sidebar-toggle-btn');
+      if (toggle) {
+        e.preventDefault();
+        this.toggleMobileSidebar();
+        return;
+      }
+
+      const closeBtn = e.target.closest('#sidebarCloseBtn, .sidebar-close-btn');
+      if (closeBtn) {
+        e.preventDefault();
+        this.closeMobileSidebar();
+        return;
+      }
+
+      const overlay = e.target.closest('#sidebarOverlay, .sidebar-overlay');
+      if (overlay) {
+        e.preventDefault();
+        this.closeMobileSidebar();
+        return;
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeMobileSidebar();
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+          this.closeMobileSidebar();
+        }
+      }, { passive: true });
+    }
+  },
+
+  openMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('#sidebarOverlay, .sidebar-overlay');
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('open');
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.add('sidebar-locked');
+    }
+  },
+
+  closeMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('#sidebarOverlay, .sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove('sidebar-locked');
+    }
+  },
+
+  toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      this.closeMobileSidebar();
+    } else {
+      this.openMobileSidebar();
+    }
   },
 
   // D3: Skeleton Loading & D4: Empty State Helpers
@@ -608,11 +682,15 @@ const App = window.App = {
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
 
     document.body.innerHTML = `
+      <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
       <div class="wrap">
         <aside class="sidebar">
           <div class="brand">
             <img src="/img/Logo.png" alt="Embun Laundry" class="logo-img" width="36" height="36" />
             <div class="brand-text">Embun Laundry</div>
+            <button id="sidebarCloseBtn" class="btn btn-icon sidebar-close-btn" type="button" aria-label="Tutup menu" title="Tutup">
+              <span>✕</span>
+            </button>
           </div>
           <nav class="nav">
             <a href="#" class="nav-link ${this.currentPage === 'dashboard' ? 'active' : ''}" data-page="dashboard">
@@ -652,7 +730,10 @@ const App = window.App = {
         <section class="main">
           <div class="topbar">
             <div class="topbar-inner" style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="sidebarToggleBtn" class="btn btn-icon sidebar-toggle-btn" type="button" aria-label="Buka navigasi menu" title="Menu Navigasi">
+                  <span>☰</span>
+                </button>
                 <div class="h1" id="pageTitle" style="font-size: 20px; font-weight: 700; margin: 0;">Dashboard</div>
                 <div class="badge" style="margin-left: 8px;">${esc(this.user.role || this.user.user_role)}</div>
               </div>
@@ -682,6 +763,9 @@ const App = window.App = {
           this.currentPage = page;
           document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
           navLink.classList.add('active');
+          if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+            this.closeMobileSidebar();
+          }
           this.renderPage(page);
         }
       }

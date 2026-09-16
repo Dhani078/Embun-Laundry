@@ -11,7 +11,7 @@ for f in tools/verify_a6_run.mjs tools/verify_fase0_2_run.mjs tools/verify_fase0
          tools/verify_c1_run.mjs tools/verify_c2_run.mjs tools/verify_c3_run.mjs tools/verify_c4_run.mjs tools/verify_c_pay_sync_run.mjs \
          tools/verify_c5_run.mjs tools/verify_c6.mjs tools/verify_c7_run.mjs tools/verify_c8_run.mjs \
          tools/verify_d1_run.mjs tools/verify_d2_run.mjs tools/verify_d3_run.mjs \
-         tools/verify_d6_run.mjs; do
+         tools/verify_d6_run.mjs tools/verify_d7_run.mjs; do
   out=$(node "$f" 2>&1); rc=$?
   last=$(printf '%s' "$out" | grep -oE '[0-9]+/[0-9]+' | tail -1)
   if [ $rc -eq 0 ]; then

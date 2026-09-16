@@ -27,6 +27,7 @@
 </head>
 <body>
 
+<div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 <div class="wrap">
   <!-- SIDEBAR -->
   <aside class="sidebar">
@@ -40,6 +41,9 @@
         fetchpriority="high"
       />
       <div class="brand-text">Embun Laundry</div>
+      <button id="sidebarCloseBtn" class="btn btn-icon sidebar-close-btn" type="button" aria-label="Tutup menu" title="Tutup">
+        <span>✕</span>
+      </button>
     </div>
 
     <nav class="nav">
@@ -78,8 +82,13 @@
   <section class="main">
     <div class="topbar">
       <div class="topbar-inner">
-        <div class="h1" id="pageTitle">Dashboard</div>
-        <div class="badge" id="roleBadge" style="margin-left:8px">Customer</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="sidebarToggleBtn" class="btn btn-icon sidebar-toggle-btn" type="button" aria-label="Buka navigasi menu" title="Menu Navigasi">
+            <span>☰</span>
+          </button>
+          <div class="h1" id="pageTitle">Dashboard</div>
+          <div class="badge" id="roleBadge" style="margin-left:4px">Customer</div>
+        </div>
         <div style="margin-left:auto; display: flex; align-items: center; gap: 12px;">
           <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
             <span class="theme-icon" id="themeIcon">🌙</span>

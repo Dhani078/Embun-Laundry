@@ -1606,34 +1606,138 @@ textarea {
   100% { transform: rotate(0); }
 }
 
-/* Responsive Grid Adjustments */
-@media (max-width: 1200px) {
+/* Mobile Sidebar & Drawer Controls (Task D7) */
+.sidebar-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--bg);
+  border-color: var(--blue);
+}
+
+.sidebar-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  transition: all 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: var(--red-border);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+}
+
+.sidebar-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+body.sidebar-locked {
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------
+   Responsive Tier 1: Wide Desktop (>= 1440px)
+   ---------------------------------------------------- */
+@media (min-width: 1440px) {
   .wrap {
-    grid-template-columns: 1fr;
+    grid-template-columns: 280px 1fr;
   }
-  .sidebar {
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: 1px solid var(--line);
-    padding: 12px 24px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+  .main {
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
   }
-  .brand {
-    margin-bottom: 0;
-    padding: 0;
-  }
-  .nav {
-    display: none; /* Can be toggled or responsive menu */
-  }
-  .sb-foot, .side-bottom {
-    display: none;
+  .kpis {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
+/* ----------------------------------------------------
+   Responsive Tier 2: Tablet & Off-canvas Drawer (<= 1024px)
+   ---------------------------------------------------- */
 @media (max-width: 1024px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-toggle-btn {
+    display: inline-flex;
+  }
+  .sidebar-close-btn {
+    display: inline-flex;
+  }
+  .sidebar-overlay {
+    display: block;
+  }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+    box-shadow: none;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--line);
+    background: var(--card);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.28);
+  }
+  .sidebar .nav {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar .side-bottom {
+    display: block;
+    margin-top: auto;
+  }
   .kpis {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1641,16 +1745,31 @@ textarea {
     grid-template-columns: 1fr;
   }
   .kanban {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 640px) {
-  .kpis {
-    grid-template-columns: 1fr;
+/* ----------------------------------------------------
+   Responsive Tier 3: Mobile & Snap Kanban (<= 768px)
+   ---------------------------------------------------- */
+@media (max-width: 768px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .kanban {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+    padding-bottom: 12px;
+  }
+  .kanban .kcol {
+    flex: 0 0 270px;
+    min-width: 270px;
+    scroll-snap-align: start;
   }
   .row {
     flex-direction: column;
@@ -1659,7 +1778,63 @@ textarea {
   .grid2 {
     grid-template-columns: 1fr;
   }
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -10px;
+    padding: 0 10px;
+  }
+  .modal-dialog, .modal-content, .card-modal {
+    max-width: 95vw;
+    margin: 16px auto;
+  }
+  .invoice-modal {
+    padding: 10px;
+  }
 }
+
+/* ----------------------------------------------------
+   Responsive Tier 4: Small Mobile Screens (360px - 480px)
+   ---------------------------------------------------- */
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 10px;
+  }
+  .topbar {
+    padding: 10px;
+  }
+  .h1, #pageTitle {
+    font-size: 1.15rem !important;
+  }
+  .kpis {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .kpi {
+    padding: 14px;
+  }
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  .toast-item {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  .invoice-paper {
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
 
 /* Toast Notification System */
 .toast-container {
