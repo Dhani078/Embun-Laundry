@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T14:18:00+08:00
-Tick ke: 50
+Terakhir update: 2026-09-16T14:35:00+08:00
+Tick ke: 51
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,39 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 50 selesai)
-- Judul: —
-- Fase: selesai
-- Mulai: —
+- ID: E6
+- Judul: Error boundary global SPA
+- Fase: plan
+- Mulai: 2026-09-16T14:35:00+08:00
 
 ## Task selesai
+
+- **Fase F (F1, F2, F3, F4)** — Sinkronisasi Seluruh Dokumentasi Proyek (.md) (P4) —
+  (tick 51)
+  - **Audit & Sinkronisasi Total Dokumentasi Markdown**:
+    - `README.md`:
+      - Memperbarui arsitektur Cloudflare Workers + Static Assets binding.
+      - Menghapus referensi dump PII lama yang sudah dicabut, menggantikannya dengan dokumentasi `db/init.sql` & `db/migrations/` (0001 s/d 0006).
+      - Menambahkan dokumentasi sistem pengujian otomatis 43 test suites via `tools/run_all_verifiers.sh`.
+      - Menjabarkan fitur desain (Glassmorphism, design tokens, hero p5.js droplet + ripple) dan enterprise security hardening.
+    - `DATABASE_SCHEMA.md` & `TIDB_SETUP.md`:
+      - Menambahkan kolom `session_version INT NOT NULL DEFAULT 1` pada tabel `users`.
+      - Menambahkan kolom `user_id INT DEFAULT NULL` dan index `idx_orders_user_id` pada tabel `orders`.
+      - Menambahkan `idempotency_key VARCHAR(64) UNIQUE` dan `proof_image MEDIUMTEXT` pada tabel `payments`.
+      - Menambahkan tabel ke-10 `daily_checkins` dan tabel ke-11 `notifications`.
+      - Mendokumentasikan seluruh 6 skrip migrasi database.
+    - `API_DOCUMENTATION.md`:
+      - Spesifikasi lengkap seluruh endpoint: `/api/auth/*`, `/api/health`, `/api/services`, `/api/track`, `/api/notifications`, `/api/orders`, `/api/pay` (idempotency, overpayment guard, upload proof), `/api/customers`, `/api/delivery`, `/api/promos`, `/api/vouchers`, `/api/reports` (RBAC), `/api/profile`, `/api/checkin`.
+      - Matriks perizinan hak akses pengguna (RBAC: Publik, Customer, Staff, Admin/Owner).
+      - Spesifikasi rate limiting dan kebijakan CORS ketat.
+    - `DEPLOYMENT.md`:
+      - Panduan deployment modern Cloudflare Workers (`npx wrangler deploy`) dan Cloudflare Pages.
+      - Tata cara pengelolaan secret terenkripsi (`wrangler secret put TIDB_DATABASE_URL`, `wrangler secret put JWT_SECRET`) dan `.dev.vars` lokal.
+      - Alur verifikasi pre-flight & sanity check pasca-deployment.
+    - `CONTRIBUTING.md` (Task F4):
+      - Panduan komprehensif kontributor, setup dev lokal, standar desain tokens, protokol keamanan, dan alur pembuatan migrasi database serta test harness.
+    - `AGENT24.md` & `AGENT_BACKLOG.md`:
+      - Menyinkronkan seluruh checklist status backlog untuk Fase A, B, C, D, E1-E3, dan F1-F4.
 
 - **D9** (Fase D) — Finalisasi p5.js hero (droplet + ripple) (P3) —
   `21df0ae` (tick 50)

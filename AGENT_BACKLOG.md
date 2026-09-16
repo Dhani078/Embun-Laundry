@@ -109,7 +109,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | E3 | Preconnect/preload font kritis | P3 | [x] | `b9db8c5` |
 | E4 | Minifikasi CSS/JS saat build | P4 | [ ] | — |
 | E5 | Logging terstruktur (dev only) | P3 | [ ] | — |
-| E6 | Error boundary global SPA | P3 | [ ] | — |
+| E6 | Error boundary global SPA | P3 | [x] | (tick51) |
 
 ---
 
@@ -117,10 +117,11 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
-| F1 | Update `README.md` (arsitektur final) | P4 | [ ] | — |
-| F2 | Lengkapi `API_DOCUMENTATION.md` | P4 | [ ] | — |
-| F3 | `DATABASE_SCHEMA.md` sinkron TiDB aktual | P4 | [ ] | — |
-| F4 | `CONTRIBUTING.md` + panduan dev lokal | P4 | [ ] | — |
+| F1 | Update `README.md` (arsitektur final) | P4 | [x] | `pending` |
+| F2 | Lengkapi `API_DOCUMENTATION.md` | P4 | [x] | `pending` |
+| F3 | `DATABASE_SCHEMA.md` sinkron TiDB aktual | P4 | [x] | `pending` |
+| F4 | `CONTRIBUTING.md` + panduan dev lokal | P4 | [x] | `pending` |
+
 
 ---
 

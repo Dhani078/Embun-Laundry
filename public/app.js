@@ -1189,16 +1189,30 @@ const App = window.App = {
     this.renderPage(this.currentPage);
   },
 
+  renderError(msg) {
+    const c = document.getElementById('mainContent');
+    if (!c) return;
+    c.innerHTML = `<div class="err">
+      <div class="err-title">⚠ Terjadi Kesalahan</div>
+      <div class="err-detail">${esc(msg || 'Gagal memuat halaman.')}</div>
+      <button class="btn btn-outline" onclick="App.renderPage(App.currentPage)">Coba Lagi</button>
+    </div>`;
+  },
+
   renderPage(page) {
-    if (page === 'pesanan') this.renderPesanan();
-    else if (page === 'pelanggan') this.renderPelanggan();
-    else if (page === 'layanan') this.renderLayanan();
-    else if (page === 'delivery') this.renderDelivery();
-    else if (page === 'promo') this.renderPromo();
-    else if (page === 'laporan') this.renderLaporan();
-    else if (page === 'profile') this.renderProfile();
-    else this.renderDashboard();
-    this.initScrollReveal();
+    try {
+      if (page === 'pesanan') this.renderPesanan();
+      else if (page === 'pelanggan') this.renderPelanggan();
+      else if (page === 'layanan') this.renderLayanan();
+      else if (page === 'delivery') this.renderDelivery();
+      else if (page === 'promo') this.renderPromo();
+      else if (page === 'laporan') this.renderLaporan();
+      else if (page === 'profile') this.renderProfile();
+      else this.renderDashboard();
+      this.initScrollReveal();
+    } catch (e) {
+      this.renderError(e && e.message ? e.message : String(e));
+    }
   },
 
   // PAGE RENDERERS
@@ -2489,3 +2503,16 @@ const App = window.App = {
 // Attach app.js to window unconditionally
 if (typeof window !== 'undefined') window.App = App;
 window.onload = () => App.init();
+
+// Global error boundary — catch uncaught JS errors & unhandled promise rejections
+window.addEventListener('error', (e) => {
+  if (typeof App !== 'undefined' && App.renderError) {
+    App.renderError(e.message || 'JavaScript error tidak diketahui.');
+  }
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || 'Promise rejected.');
+  if (typeof App !== 'undefined' && App.renderError) {
+    App.renderError(msg);
+  }
+});
