@@ -4,6 +4,35 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 47 — 2026-09-16T11:44:13+08:00
+
+- Task: **D6** — Micro-interaction konsisten hover/focus/active (P3)
+- Perubahan: `public/assets/style.css` (+157 baris)
+  - `:focus-visible` global (2px blue, no outline mouse)
+  - `.nav a/.nav-link`: active translateX+scale, focus ring
+  - `.btn`: decomposed transition, disabled state, lift/press/ring semua varian
+  - `.btn-icon`: shadow hover, scale(0.94) active
+  - `.tabbtn`: decomposed transition, press, ring
+  - `.input/select/textarea`: hover border, focus shadow via `--blue-soft`, disabled state
+  - `.theme-toggle-btn`: focus ring
+  - Semua animasi pakai `transform`+`opacity`/`shadow` (GPU composite)
+- File: `public/assets/style.css`
+- Verifikasi:
+  - Gate 1: `node --check` → exit 0 semua file
+  - Gate 8: `npx wrangler deploy --dry-run` → 163.51 KiB exit 0
+  - Verifiers: `bash tools/run_all_verifiers.sh` → **39/39 HIJAU** 0 regresi
+  - Post-deploy: `/api/health` → 200, `/` → 200
+- Commit: `14f257d`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - D7 (responsive audit 360/768/1024/1440px) — P3
+  - D8 (IntersectionObserver animasi masuk) — P3
+  - D9 (finalisasi p5.js hero droplet+ripple) — P3
+  - E5 (logging dev), E6 (error boundary SPA) — P3
+  - C9 (service worker offline), C10 (i18n P4)
+
+---
+
 ## Tick 46 — 2026-09-16T11:28:00+08:00
 
 - Task: **D1** — Migrasi hardcoded hex → CSS token di `style.css` (P3)
