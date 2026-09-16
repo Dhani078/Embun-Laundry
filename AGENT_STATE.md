@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T11:03:00+08:00
-Tick ke: 44
+Terakhir update: 2026-09-16T11:13:00+08:00
+Tick ke: 45
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,29 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 44 selesai)
+- ID: — (tidak ada; tick 45 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **D3 & D4** (Fase D) — Skeleton loading di semua tabel & Empty state bermakna (P3) —
+  `1d5feaf` (tick 45)
+  - **Skeleton Shimmer Loading & Empty States**:
+    - Stylesheet `public/assets/style.css`:
+      - Menambahkan kelas utilitas `.skeleton`, `.skeleton-text`, `.skeleton-title`, `.skeleton-badge`, `.skeleton-btn`, `.skeleton-card`, dan `.skeleton-table-wrap`.
+      - Efek animasi gradien shimmer murni berbasis CSS (`@keyframes skeletonShimmer`) dengan warna adaptif otomatis pada mode terang dan mode gelap (`[data-theme="dark"]`, `html.dark`).
+      - Menghormati aksesibilitas `prefers-reduced-motion` dengan mengganti animasi geser shimmer menjadi pulsasi opasitas statis lembut.
+      - Menambahkan komponen `.empty-state` yang elegan (ikon, judul, deskripsi, dan tombol aksi).
+    - Aplikasi SPA `public/app.js`:
+      - Helper reusable: `App.renderSkeletonTable()`, `App.renderSkeletonCards()`, dan `App.renderEmptyState()`.
+      - Menggantikan seluruh teks mentah "Memuat..." pada 7 fungsi render utama (`renderDashboard`, `renderPesanan`, `renderPelanggan`, `renderLayanan`, `renderDelivery`, `renderPromo`, `renderLaporan`, dan `renderProfile`).
+      - Menyematkan render empty state terstruktur saat hasil query array bernilai kosong (`orders`, `customers`, `services`, `tasks`, `promos`).
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d3.mjs` dan `tools/verify_d3_run.mjs` (26/26 HIJAU).
+      - Mendaftarkan `verify_d3_run.mjs` ke `tools/run_all_verifiers.sh` (38/38 verifier HIJAU, 0 regresi).
+      - Pengujian mutasi: Merusak nama keyframe shimmer memicu kegagalan (MERAH, exit 1); pemulihan kembali 100% HIJAU (exit 0).
 
 - **D2** (Fase D) — Dark mode toggle (localStorage, anti-FOUC script) (P3) —
   `f6d59dd` (tick 44)
