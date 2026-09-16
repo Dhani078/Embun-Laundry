@@ -4,6 +4,33 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 42 — 2026-09-16T10:46:23+08:00
+
+- Task: **D5** — Toast notification global + confirm modal (ganti alert/confirm)
+- Perubahan:
+  - `public/app.js`: tambah `const esc()` HTML escaper module-level
+  - `public/app.js`: tambah `App.confirm(msg)` → Promise modal bersih (role=dialog, aria-modal)
+  - `public/app.js`: ganti 5x `window.confirm()` → `await this.confirm()`
+  - `public/app.js`: ganti 29x `alert()` → `this.toast(..., type)` (success/error/warning)
+  - `public/app.js`: fix type `'warn'` → `'warning'` selaras CSS class `.toast-warning`
+  - Toast CSS & container sudah ada di `public/assets/style.css` sejak tick sebelumnya
+- File: `public/app.js`
+- Verifikasi:
+  - Gate 1: `node --check public/app.js` → exit 0
+  - Gate 1: `node --check src/index.js && node --check functions/_db.js` → exit 0
+  - Gate 8: `npx wrangler deploy --dry-run` → exit 0
+  - All verifiers: `bash tools/run_all_verifiers.sh` → **34/34 HIJAU** (0 regresi)
+  - Post-deploy: `/api/health` → `{"ok":true,"status":"healthy"}`
+  - Sisa bare `alert()`: 0, sisa bare `confirm()`: 0
+- Commit: `52ea710`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - Task P3 tersisa: D1 (token ke dashboard), D2 (dark mode), D3 (skeleton), D4 (empty state), D6 (micro-interaction), D7 (responsive), D8 (animasi), D9 (p5.js hero)
+  - E2 (lazy load), E3 (preconnect font), E5 (logging dev), E6 (error boundary)
+  - C4 (upload bukti bayar) dan C9 (service worker) masih open
+
+---
+
 ## Tick 40 — 2026-09-16T10:26:39+08:00
 
 - Task: **C7** — Manajemen Voucher & Promo Admin (P2)
