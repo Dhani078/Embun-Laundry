@@ -12,8 +12,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
 | 0.1 | Rotasi kredensial TiDB & JWT_SECRET + sanitasi `wrangler.toml` (K1, A6, B3) | **P0** | [x] | `be2d2f2` |
-| 0.2 | Hapus kredensial default dari `README.md` & `TIDB_SETUP.md`, migrasi bersihkan debug (K2) | **P0** | [x] | `e141854` |
-| 0.3 | Keluarkan `db/*.sql` data pribadi dari git & repo (K10) | **P0** | [ ] | — |
+| 0.2 | Hapus kredensial default dari `README.md` & `TIDB_SETUP.md`, migrasi bersihkan debug (K2) | **P0** | [x] | `c8a2e85` |
+| 0.3 | Keluarkan `db/*.sql` data pribadi dari git & repo (K10) | **P0** | [x] | `af08836` |
 | 0.4 | Hapus sandi dari `tools/probe_*.sh` dan `.tmp/`, ganti env var (K12) | **P0** | [ ] | — |
 | 0.5 | Perbaiki / nonaktifkan `/api/notifications` rusak (K3) | **P0** | [ ] | — |
 | 0.6 | Ganti dasar kepemilikan dari nama jadi `user_id` di orders/pay (K4) | **P0** | [ ] | — |

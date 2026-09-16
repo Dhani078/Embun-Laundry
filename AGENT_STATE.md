@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-15T14:22:00+08:00
-Tick ke: 31
+Terakhir update: 2026-09-16T09:25:00+08:00
+Tick ke: 32
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,15 +44,26 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 31 selesai)
+- ID: — (tidak ada; tick 32 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.3** (Fase 0.3) — Keluarkan `db/*.sql` yang Memuat Data Pribadi (PII) dari Git (P0) —
+  `af08836` (tick 32)
+  - **Menutup celah kebocoran data pribadi (K10)**: `db/embun_laundry.sql` dan `db/dhani_laundry.sql`
+    sebelumnya terlacak di git dan memuat email nyata, no telepon, hash bcrypt, dan token reset password.
+  - Perubahan:
+    - `git rm --cached`: Menghapus pelacakan `db/embun_laundry.sql` dan `db/dhani_laundry.sql` dari git index.
+    - `.gitignore`: Memperketat filter dengan `db/*.sql` dan whitelist eksplisit `!db/init.sql`.
+    - `tools/verify_fase0_3.mjs` + `tools/verify_fase0_3_run.mjs`: Harness pengujian audit `git ls-files` dan `.gitignore` (8/8 HIJAU).
+    - Uji mutasi ganda: Menghapus filter gitignore dan melacak kembali file dump terbukti ditangkap MERAH (5/8 dan 7/8, exit 1).
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 24 verifier (semua HIJAU).
+
 - **0.2** (Fase 0.2) — Pembersihan Kredensial Default dari Dokumentasi & Skrip Pembersihan Debug (P0) —
-  `e141854` (tick 31)
+  `c8a2e85` (tick 31)
   - **Menutup celah publikasi akun default**: `README.md` dan `TIDB_SETUP.md` sebelumnya
     mempublikasikan pasangan email dan password plaintext aktif (`admin@gmail.com/admin123`,
     `staff@gmail.com/staff123`, `user@gmail.com/user123`).

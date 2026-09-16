@@ -633,7 +633,33 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
     - Mutasi 1: Menyisipkan kembali `admin123` ke `README.md` → tertangkap **MERAH** (10/11, exit 1).
     - Mutasi 2: Menyisipkan kembali `staff123` ke `TIDB_SETUP.md` → tertangkap **MERAH** (10/11, exit 1).
     - Dipulihkan → kembali **HIJAU 11/11**.
-- **Commit**: `e141854`
+- **Commit**: `c8a2e85`
 - **Status**: **DONE**
+
+---
+
+## Tick 32 — 2026-09-16T09:25:00+08:00 (Fase 0.3: Pencabutan Dump DB PII dari Git & Pengetatan .gitignore)
+
+- **Task**: 0.3 (Fase 0.3) — Keluarkan `db/*.sql` yang memuat data pribadi dari repo git, perketat `.gitignore`, simpan dump di luar pelacakan git (K10)
+- **Temuan sebelum perubahan**:
+  - `git ls-files db/` menampilkan `db/embun_laundry.sql` dan `db/dhani_laundry.sql` masih terlacak di git index.
+  - Berkas dump tersebut memuat data pribadi riil (email pelanggan, no telepon, hash bcrypt, token reset sandi).
+- **Perubahan**:
+  - `git rm --cached db/embun_laundry.sql db/dhani_laundry.sql`: Mencabut berkas dump produksi dari indeks pelacakan git tanpa menghapus salinan lokal.
+  - `.gitignore`: Memperketat filter dump dengan `db/*.sql` dan whitelist eksplisit `!db/init.sql` serta tetap menyaring `embun_laundry.sql` dan `dhani_laundry.sql`.
+  - `tools/verify_fase0_3.mjs` + `tools/verify_fase0_3_run.mjs`: Harness pengujian baru (8/8 HIJAU) untuk mengaudit `git ls-files db/` dan aturan `git check-ignore`.
+  - `tools/run_all_verifiers.sh`: Daftarkan `tools/verify_fase0_3_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai task 0.3 sebagai selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 32.
+- **Verifikasi**:
+  - `node tools/verify_fase0_3_run.mjs` → **HIJAU 8/8**.
+  - Seluruh verifier proyek (25/25) **HIJAU**, nol regresi.
+  - Uji mutasi ganda:
+    - Mutasi 1: Menghapus aturan `db/*.sql` dari `.gitignore` → tertangkap **MERAH** (5/8, exit 1).
+    - Mutasi 2: Melacak kembali `db/embun_laundry.sql` ke git index (`git add -f`) → tertangkap **MERAH** (7/8, exit 1).
+    - Dipulihkan → kembali **HIJAU 8/8**.
+- **Commit**: `af08836`
+- **Status**: **DONE**
+
 
 
