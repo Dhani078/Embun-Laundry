@@ -1386,3 +1386,162 @@ html[data-theme="dark"] .search { background: #0b1220; border-color: #243044; }
   }
 }
 
+/* Toast Notification System */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 400px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.toast-item.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-success {
+  background: #0f172a;
+  color: #fff;
+  border-left: 4px solid #10b981;
+}
+
+.toast-error {
+  background: #0f172a;
+  color: #fff;
+  border-left: 4px solid #ef4444;
+}
+
+.toast-warning {
+  background: #0f172a;
+  color: #fff;
+  border-left: 4px solid #f59e0b;
+}
+
+.toast-info {
+  background: #0f172a;
+  color: #fff;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Invoice Modal & Receipt Styles */
+.invoice-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  place-items: center;
+  z-index: 10000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.invoice-paper {
+  background: #fff;
+  color: #1e293b;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  transition: max-width 0.25s ease;
+}
+
+.invoice-paper.a4-mode {
+  max-width: 680px;
+}
+
+.invoice-header-brand {
+  text-align: center;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+}
+
+.invoice-table th, .invoice-table td {
+  padding: 8px 4px;
+}
+
+.invoice-table th {
+  border-bottom: 1px solid #cbd5e1;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.invoice-table td {
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+/* Print CSS Stylesheet (Task C5) */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  .wrap, aside, .sidebar, .topbar, .btn, .controls, .nav,
+  .toast-container, #orderModal, #grantVoucherModal,
+  .invoice-actions, .no-print, header, footer {
+    display: none !important;
+  }
+
+  .invoice-modal {
+    display: block !important;
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .invoice-paper {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .invoice-paper.thermal-mode {
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    font-size: 9pt !important;
+  }
+
+  @page {
+    margin: 10mm;
+  }
+}
+
+

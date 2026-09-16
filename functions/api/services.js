@@ -45,7 +45,8 @@ export async function onRequest({ request, env }) {
       sql += ` ORDER BY is_active DESC, id ASC LIMIT 300`;
 
       const services = await db.query(sql, params);
-      return jsonResponse({ ok: true, services });
+      const cacheHeaders = (!isStaff && !q) ? { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=60' } : {};
+      return jsonResponse({ ok: true, services }, 200, cacheHeaders);
     } catch (e) {
       return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
     }

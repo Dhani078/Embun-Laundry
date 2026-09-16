@@ -20,15 +20,16 @@ export async function getDb(env) {
   };
 }
 
-export function jsonResponse(data, status = 200) {
+export function jsonResponse(data, status = 200, extraHeaders = {}) {
+  const headers = Object.assign({
+    // B5: `Access-Control-Allow-Origin: *` DIHAPUS dari sini.
+    // Header CORS kini dipasang oleh `applyCors()` di src/index.js
+    // berdasarkan daftar izin origin (functions/_cors.js).
+    'Content-Type': 'application/json; charset=utf-8'
+  }, extraHeaders);
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      // B5: `Access-Control-Allow-Origin: *` DIHAPUS dari sini.
-      // Header CORS kini dipasang oleh `applyCors()` di src/index.js
-      // berdasarkan daftar izin origin (functions/_cors.js).
-      'Content-Type': 'application/json; charset=utf-8'
-    }
+    headers
   });
 }
 

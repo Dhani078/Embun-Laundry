@@ -205,6 +205,88 @@
       .spinner { animation: none; }
       button { transition: none; }
     }
+
+    /* --- C5: Cetak Invoice & Struk Kasir --- */
+    .invoice-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      overflow-y: auto;
+      padding: var(--space-4);
+      align-items: center;
+      justify-content: center;
+    }
+    .invoice-modal.show {
+      display: flex;
+    }
+    .invoice-paper {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      box-sizing: border-box;
+      font-family: var(--font-sans);
+    }
+    .invoice-paper.thermal-mode {
+      max-width: 380px;
+      font-size: var(--text-body-sm);
+    }
+    .invoice-paper.a4-mode {
+      max-width: 680px;
+      font-size: var(--text-body);
+    }
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+    .invoice-table th, .invoice-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .invoice-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+    }
+
+    @media print {
+      body * { visibility: hidden !important; }
+      #trackInvoiceModal, #trackInvoiceModal * { visibility: visible !important; }
+      #trackInvoiceModal {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .no-print { display: none !important; }
+      .invoice-paper {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 auto !important;
+        padding: 6mm !important;
+        max-width: 100% !important;
+      }
+      .invoice-paper.thermal-mode {
+        width: 80mm !important;
+        max-width: 80mm !important;
+        padding: 4mm !important;
+        font-size: 11px !important;
+      }
+      .invoice-paper.a4-mode {
+        width: 190mm !important;
+        max-width: 190mm !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -271,6 +353,12 @@
         <dt>Dibuat</dt>             <dd id="r-created"></dd>
       </dl>
 
+      <div style="margin-top:var(--space-5);padding-top:var(--space-4);border-top:1px solid var(--color-border-subtle);display:flex;gap:var(--space-3);flex-wrap:wrap">
+        <button type="button" id="btn-print-invoice" style="display:inline-flex;align-items:center;gap:6px;padding:var(--space-2) var(--space-4);font-size:var(--text-body-sm);background:var(--color-brand-primary);color:var(--color-text-on-inverse);border:none;border-radius:var(--radius-md);cursor:pointer;font-weight:var(--weight-semibold)">
+          🧾 Cetak / Unduh Invoice
+        </button>
+      </div>
+
       <div id="notif-box" style="margin-top:var(--space-4);border-top:1px solid var(--color-border);padding-top:var(--space-4)">
         <div style="font-size:var(--text-caption);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:flex;justify-content:space-between;align-items:center">
           <span>Riwayat Status & Notifikasi Real-Time</span>
@@ -279,6 +367,22 @@
         <ul id="notif-list" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);max-height:220px;overflow-y:auto"></ul>
       </div>
     </section>
+
+    <div id="trackInvoiceModal" class="invoice-modal" role="dialog" aria-modal="true" aria-labelledby="invModalTitle">
+      <div class="invoice-paper thermal-mode" id="trackInvoiceCard" style="padding:24px;position:relative;margin:20px auto;max-width:420px;background:#fff;border-radius:10px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15);">
+        <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid #e2e8f0;padding-bottom:12px">
+          <div style="display:flex;gap:6px">
+            <button type="button" id="invModeThermal" style="padding:5px 10px;font-size:11px;font-weight:600;border-radius:6px;background:#2563eb;color:#fff;border:none;cursor:pointer">Struk (80mm)</button>
+            <button type="button" id="invModeA4" style="padding:5px 10px;font-size:11px;font-weight:600;border-radius:6px;background:#f1f5f9;color:#475569;border:none;cursor:pointer">Formal (A4)</button>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" onclick="window.print()" style="padding:5px 12px;font-size:11px;font-weight:600;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Cetak</button>
+            <button type="button" id="closeTrackInvoice" style="padding:5px 8px;font-size:11px;background:#f1f5f9;color:#475569;border:none;border-radius:6px;cursor:pointer">✕</button>
+          </div>
+        </div>
+        <div id="trackInvoiceContent"></div>
+      </div>
+    </div>
 
     <p class="note">
       Butuh bantuan? Hubungi kami atau
@@ -409,8 +513,96 @@
         document.getElementById('s' + i).className = 'step' + (idx >= i - 1 ? ' done' : '');
       }
       result.className = 'card show';
+      currentTrackOrder = o;
 
       startPolling(o.order_code, o.status);
+    }
+
+    var currentTrackOrder = null;
+    var currentTrackMode = 'thermal';
+
+    function renderTrackInvoice(o, mode) {
+      if (!o) return;
+      var total = Number(o.total_amount) || 0;
+      var paid = Number(o.paid_amount) || 0;
+      var remaining = Math.max(0, total - paid);
+      var isPaid = (o.payment_status === 'paid' || o.payment_status === 'lunas') || (paid >= total && total > 0);
+      var weight = Number(o.weight_kg) || 0;
+      var unitPrice = weight > 0 ? Math.round(total / weight) : total;
+      var dateStr = o.created_at || new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      var qrSvg = '<svg width="64" height="64" viewBox="0 0 64 64" style="display:block;margin:0 auto;"><rect width="64" height="64" fill="#fff"/><path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/></svg>';
+
+      var card = document.getElementById('trackInvoiceCard');
+      if (card) {
+        card.className = 'invoice-paper ' + (mode === 'a4' ? 'a4-mode' : 'thermal-mode');
+        card.style.maxWidth = mode === 'a4' ? '680px' : '420px';
+      }
+
+      var bThermal = document.getElementById('invModeThermal');
+      var bA4 = document.getElementById('invModeA4');
+      if (bThermal && bA4) {
+        bThermal.style.background = mode === 'thermal' ? '#2563eb' : '#f1f5f9';
+        bThermal.style.color = mode === 'thermal' ? '#fff' : '#475569';
+        bA4.style.background = mode === 'a4' ? '#2563eb' : '#f1f5f9';
+        bA4.style.color = mode === 'a4' ? '#fff' : '#475569';
+      }
+
+      var html = '<div style="text-align:center;padding-bottom:12px;border-bottom:2px solid #0f172a;margin-bottom:14px">' +
+        '<div id="invModalTitle" style="font-size:18px;font-weight:900;letter-spacing:0.5px;color:#0f172a">EMBUN LAUNDRY</div>' +
+        '<div style="font-size:11px;color:#64748b;margin-top:2px">Layanan Cuci Bersih, Cepat & Terpercaya</div>' +
+        '<div style="font-size:11px;color:#64748b">Jl. Babarsari No. 7, Sleman, DIY · WA: 0812-3456-7890</div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px">' +
+        '<div><div style="color:#64748b">Nomor Nota:</div><div style="font-weight:800;font-size:13px;color:#0f172a">' + escapeHtml(o.order_code || '-') + '</div><div style="color:#64748b;margin-top:3px">Tanggal: ' + escapeHtml(dateStr) + '</div></div>' +
+        '<div style="text-align:right"><div style="color:#64748b">Pelanggan:</div><div style="font-weight:700;color:#0f172a">' + escapeHtml(o.customer_name_masked || o.customer_name || 'Pelanggan') + '</div></div>' +
+        '</div>' +
+        '<table class="invoice-table"><thead><tr><th style="text-align:left">Layanan</th><th style="text-align:center">Berat</th><th style="text-align:right">Tarif</th><th style="text-align:right">Subtotal</th></tr></thead>' +
+        '<tbody><tr><td style="font-weight:600;color:#1e293b">' + escapeHtml(o.service_name || 'Layanan Laundry') + '</td><td style="text-align:center">' + weight + ' kg</td><td style="text-align:right">' + rupiah(unitPrice) + '</td><td style="text-align:right;font-weight:700">' + rupiah(total) + '</td></tr></tbody></table>' +
+        '<div style="border-top:1px dashed #cbd5e1;padding-top:10px;margin-top:8px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:5px"><span>TOTAL:</span><span style="font-size:15px;color:#0f172a">' + rupiah(total) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:#16a34a;margin-bottom:4px"><span>Terbayar:</span><span>' + rupiah(paid) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:' + (remaining > 0 ? '#ea580c' : '#64748b') + ';font-weight:600;margin-bottom:8px"><span>Sisa:</span><span>' + rupiah(remaining) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:' + (isPaid ? '#ecfdf5' : '#fffbeb') + ';border-radius:6px;font-size:12px;font-weight:800;color:' + (isPaid ? '#065f46' : '#92400e') + '"><span>STATUS PEMBAYARAN:</span><span>' + (isPaid ? '✓ LUNAS' : '⏳ BELUM LUNAS') + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:1px dashed #cbd5e1">' +
+        '<div style="flex:1;font-size:10px;color:#64748b;line-height:1.4;padding-right:10px"><strong>Ketentuan:</strong><br>1. Pengambilan cucian wajib membawa nota resmi ini.<br>2. Terima kasih telah mempercayakan cucian Anda di Embun Laundry!</div>' +
+        '<div style="text-align:center">' + qrSvg + '<div style="font-size:9px;color:#94a3b8;margin-top:2px">Lacak Pesanan</div></div>' +
+        '</div>';
+
+      document.getElementById('trackInvoiceContent').innerHTML = html;
+    }
+
+    var btnPrintInv = document.getElementById('btn-print-invoice');
+    if (btnPrintInv) {
+      btnPrintInv.addEventListener('click', function () {
+        if (!currentTrackOrder) return;
+        renderTrackInvoice(currentTrackOrder, currentTrackMode);
+        document.getElementById('trackInvoiceModal').classList.add('show');
+      });
+    }
+
+    var btnCloseInv = document.getElementById('closeTrackInvoice');
+    if (btnCloseInv) {
+      btnCloseInv.addEventListener('click', function () {
+        document.getElementById('trackInvoiceModal').classList.remove('show');
+      });
+    }
+
+    var bThermal = document.getElementById('invModeThermal');
+    if (bThermal) {
+      bThermal.addEventListener('click', function () {
+        currentTrackMode = 'thermal';
+        renderTrackInvoice(currentTrackOrder, 'thermal');
+      });
+    }
+
+    var bA4 = document.getElementById('invModeA4');
+    if (bA4) {
+      bA4.addEventListener('click', function () {
+        currentTrackMode = 'a4';
+        renderTrackInvoice(currentTrackOrder, 'a4');
+      });
     }
 
     form.addEventListener('submit', async function (e) {
