@@ -1438,61 +1438,325 @@ const App = window.App = {
     }
   },
 
+  // C8: Laporan Keuangan & Kinerja dengan Visualisasi Chart Interaktif
+  _reportFilter: { group: 'bulan', start: '', end: '' },
+
+  setReportPreset(preset) {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    let start = '';
+    let end = fmt(today);
+
+    if (preset === 'today') {
+      start = end;
+    } else if (preset === 'month') {
+      start = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-01`;
+    } else if (preset === '30days') {
+      const past = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000);
+      start = fmt(past);
+    } else if (preset === 'year') {
+      start = `${today.getFullYear()}-01-01`;
+    } else if (preset === 'all') {
+      start = '';
+      end = '';
+    }
+
+    const sEl = document.getElementById('reportStart');
+    const eEl = document.getElementById('reportEnd');
+    if (sEl) sEl.value = start;
+    if (eEl) eEl.value = end;
+
+    this.applyReportFilter();
+  },
+
+  async applyReportFilter() {
+    const groupEl = document.getElementById('reportGroup');
+    const startEl = document.getElementById('reportStart');
+    const endEl = document.getElementById('reportEnd');
+
+    const group = groupEl ? groupEl.value : (this._reportFilter?.group || 'bulan');
+    const start = startEl ? startEl.value : (this._reportFilter?.start || '');
+    const end = endEl ? endEl.value : (this._reportFilter?.end || '');
+
+    this._reportFilter = { group, start, end };
+    await this.renderLaporan();
+  },
+
+  buildSvgChart(chartRows) {
+    if (!Array.isArray(chartRows) || chartRows.length === 0) {
+      return `
+        <div style="text-align: center; padding: 48px 16px; color: #64748b;">
+          <div style="font-size: 36px; margin-bottom: 8px;">📊</div>
+          <div style="font-weight: 700; font-size: 15px; color: #334155;">Tidak ada data grafik transaksi</div>
+          <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Coba ubah rentang tanggal atau pengelompokan periode di atas.</div>
+        </div>
+      `;
+    }
+
+    const maxVal = Math.max(...chartRows.map(d => (Number(d.paid) || 0) + (Number(d.unpaid) || 0)), 10000);
+    const niceMax = Math.ceil(maxVal * 1.15);
+
+    const svgWidth = 760;
+    const svgHeight = 280;
+    const padL = 75;
+    const padR = 25;
+    const padT = 25;
+    const padB = 45;
+    const plotW = svgWidth - padL - padR;
+    const plotH = svgHeight - padT - padB;
+
+    const n = chartRows.length;
+    const colW = plotW / n;
+    const barW = Math.max(8, Math.min(44, colW * 0.65));
+
+    const gridLines = [];
+    const ticks = 4;
+    for (let i = 0; i <= ticks; i++) {
+      const val = Math.round((niceMax / ticks) * i);
+      const y = padT + plotH - (val / niceMax) * plotH;
+      let label = val >= 1000000 ? `${(val / 1000000).toFixed(1)}jt` : (val >= 1000 ? `${Math.round(val / 1000)}rb` : String(val));
+      gridLines.push(`
+        <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="${i === 0 ? '0' : '4'}"/>
+        <text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="system-ui, sans-serif">Rp ${label}</text>
+      `);
+    }
+
+    const bars = [];
+    chartRows.forEach((d, i) => {
+      const paid = Number(d.paid) || 0;
+      const unpaid = Number(d.unpaid) || 0;
+      const total = paid + unpaid;
+
+      const paidH = (paid / niceMax) * plotH;
+      const unpaidH = (unpaid / niceMax) * plotH;
+
+      const cx = padL + (i + 0.5) * colW;
+      const bx = cx - barW / 2;
+      const byPaid = padT + plotH - paidH;
+      const byUnpaid = byPaid - unpaidH;
+
+      const periodLabel = String(d.g || '');
+      const shortLabel = periodLabel.length > 10 ? periodLabel.slice(-5) : periodLabel;
+
+      bars.push(`
+        <g class="chart-col" data-period="${esc(periodLabel)}" data-paid="${paid}" data-unpaid="${unpaid}" data-total="${total}" style="cursor: pointer;">
+          ${paid > 0 ? `<rect x="${bx}" y="${byPaid}" width="${barW}" height="${paidH}" fill="#2563eb" rx="2" class="bar-paid" style="transition: opacity 0.2s;"/>` : ''}
+          ${unpaid > 0 ? `<rect x="${bx}" y="${byUnpaid}" width="${barW}" height="${unpaidH}" fill="#f59e0b" rx="2" class="bar-unpaid" style="transition: opacity 0.2s;"/>` : ''}
+          <text x="${cx}" y="${padT + plotH + 20}" text-anchor="middle" font-size="11" fill="#64748b" font-weight="500">${esc(shortLabel)}</text>
+          <rect x="${padL + i * colW}" y="${padT}" width="${colW}" height="${plotH + 30}" fill="transparent" class="bar-hover-hit"/>
+        </g>
+      `);
+    });
+
+    return `
+      <div style="position: relative; width: 100%; overflow-x: auto;">
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; min-width: 600px; height: 280px; display: block;" preserveAspectRatio="xMidYMid meet" id="reportSvgChart">
+          ${gridLines.join('')}
+          ${bars.join('')}
+        </svg>
+        <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transform: translate(-50%, -100%); margin-top: -8px;"></div>
+      </div>
+    `;
+  },
+
   async renderLaporan() {
     document.getElementById('pageTitle').textContent = 'Laporan Keuangan & Kinerja';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat laporan...</div>';
+    c.innerHTML = '<div style="padding: 20px; color: #64748b;">Memuat laporan keuangan & kinerja...</div>';
+
+    const filter = this._reportFilter || { group: 'bulan', start: '', end: '' };
+    const params = new URLSearchParams();
+    if (filter.group) params.set('group', filter.group);
+    if (filter.start) params.set('start', filter.start);
+    if (filter.end) params.set('end', filter.end);
+
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
 
     try {
-      const res = await fetch('/api/reports');
+      const res = await fetch(`/api/reports${queryStr}`);
+      if (res.status === 403) {
+        c.innerHTML = '<div class="err" style="padding: 24px;">Akses ditolak: Laporan hanya tersedia untuk peran Admin, Owner, dan Staff.</div>';
+        return;
+      }
       const data = await res.json();
+      if (!data.ok) {
+        c.innerHTML = `<div class="err" style="padding: 24px;">Gagal memuat laporan: ${esc(data.msg || 'Terjadi kesalahan')}</div>`;
+        return;
+      }
+
       const kpi = data.kpi || {};
+      const chartRows = data.chart || [];
       const daily = data.daily || [];
 
+      const totalPaid = chartRows.reduce((acc, row) => acc + (Number(row.paid) || 0), 0);
+      const totalUnpaid = chartRows.reduce((acc, row) => acc + (Number(row.unpaid) || 0), 0);
+
       c.innerHTML = `
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Total Omset Periode</div>
-            <div style="font-size: 24px; font-weight: 800; color: #0f172a; margin-top: 4px;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
-          </div>
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Total Transaksi</div>
-            <div style="font-size: 24px; font-weight: 800; color: #2563eb; margin-top: 4px;">${kpi.ord || 0}</div>
-          </div>
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Rata-rata Bobot / Order</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px;">${kpi.avg_wt || 0} kg</div>
+        <!-- FILTER & CONTROLS -->
+        <div class="card" style="padding: 16px 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Kelompokkan</label>
+                <select id="reportGroup" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 500; background: #fff;">
+                  <option value="bulan" ${filter.group === 'bulan' ? 'selected' : ''}>Bulanan</option>
+                  <option value="minggu" ${filter.group === 'minggu' ? 'selected' : ''}>Mingguan</option>
+                  <option value="hari" ${filter.group === 'hari' ? 'selected' : ''}>Harian</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Dari Tanggal</label>
+                <input type="date" id="reportStart" value="${esc(filter.start || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Sampai Tanggal</label>
+                <input type="date" id="reportEnd" value="${esc(filter.end || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+              </div>
+
+              <button type="button" class="btn btn-primary" onclick="App.applyReportFilter()" style="padding: 8px 16px; font-size: 13px; font-weight: 600;">
+                🔍 Terapkan Filter
+              </button>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('month')" style="padding: 5px 10px; font-size: 12px;">Bulan Ini</button>
+              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('30days')" style="padding: 5px 10px; font-size: 12px;">30 Hari</button>
+              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('year')" style="padding: 5px 10px; font-size: 12px;">Tahun Ini</button>
+              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('all')" style="padding: 5px 10px; font-size: 12px;">Semua</button>
+              <button type="button" class="btn btn-sm" onclick="window.print()" style="padding: 5px 10px; font-size: 12px; background: #0f172a; color: #fff;">🖨️ Cetak</button>
+            </div>
           </div>
         </div>
 
+        <!-- EXECUTIVE KPI CARDS -->
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Omset</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Seluruh pendapatan kotor</div>
+          </div>
+          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb;">
+            <div style="font-size: 12px; color: #2563eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kas Terbayar</div>
+            <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;">Rp ${Number(totalPaid || kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pembayaran lunas diterima</div>
+          </div>
+          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 12px; color: #d97706; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Piutang / Belum Lunas</div>
+            <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">Rp ${Number(totalUnpaid).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Sisa tagihan pelanggan</div>
+          </div>
+          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order & Bobot</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">${kpi.ord || 0} <span style="font-size: 14px; font-weight: 600; color: #64748b;">order</span></div>
+            <div style="font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 2px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
+          </div>
+        </div>
+
+        <!-- INTERACTIVE CHART -->
+        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Grafik Perkembangan Pendapatan</h4>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Visualisasi omset terbayar vs piutang berdasarkan periode terpilih</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; font-weight: 600;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; background: #2563eb; border-radius: 2px; display: inline-block;"></span>
+                <span>Terbayar</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; display: inline-block;"></span>
+                <span>Piutang</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="chartContainer">
+            ${this.buildSvgChart(chartRows)}
+          </div>
+        </div>
+
+        <!-- DAILY BREAKDOWN TABLE -->
         <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
-          <h4 style="margin: 0 0 16px;">Rincian Harian</h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Rincian Harian Transaksi</h4>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Daftar rekapan pesanan per hari dalam rentang periode</div>
+            </div>
+            <div style="font-size: 13px; color: #64748b; font-weight: 600;">
+              Total: ${daily.length} hari
+            </div>
+          </div>
+
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
-                <th style="padding: 10px;">Tanggal</th>
-                <th style="padding: 10px;">Jumlah Order</th>
-                <th style="padding: 10px;">Total Berat</th>
-                <th style="padding: 10px;">Pendapatan</th>
+              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 13px;">
+                <th style="padding: 10px 12px;">Tanggal</th>
+                <th style="padding: 10px 12px;">Jumlah Order</th>
+                <th style="padding: 10px 12px;">Total Berat</th>
+                <th style="padding: 10px 12px;">Total Pendapatan</th>
               </tr>
             </thead>
             <tbody>
-              ${daily.map(d => `
+              ${daily.length === 0 ? `
+                <tr>
+                  <td colspan="4" style="padding: 24px; text-align: center; color: #94a3b8;">Tidak ada data harian pada rentang ini.</td>
+                </tr>
+              ` : daily.map(d => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px; font-weight: 600;">${esc(d.d)}</td>
-                  <td style="padding: 10px;">${esc(d.orders)}</td>
-                  <td style="padding: 10px;">${esc(d.weight)} kg</td>
-                  <td style="padding: 10px; font-weight: 700;">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
+                  <td style="padding: 10px 12px; font-weight: 600; color: #334155;">${esc(d.d)}</td>
+                  <td style="padding: 10px 12px; color: #2563eb; font-weight: 600;">${esc(d.orders)} order</td>
+                  <td style="padding: 10px 12px; color: #16a34a; font-weight: 600;">${esc(d.weight)} kg</td>
+                  <td style="padding: 10px 12px; font-weight: 700; color: #0f172a;">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
       `;
+
+      // Attach Chart Tooltip Event Listeners
+      const svg = document.getElementById('reportSvgChart');
+      const tooltip = document.getElementById('chartTooltip');
+      if (svg && tooltip) {
+        svg.querySelectorAll('.chart-col').forEach(col => {
+          col.addEventListener('mouseenter', () => {
+            const period = col.getAttribute('data-period');
+            const paid = Number(col.getAttribute('data-paid')) || 0;
+            const unpaid = Number(col.getAttribute('data-unpaid')) || 0;
+            const total = Number(col.getAttribute('data-total')) || 0;
+
+            tooltip.innerHTML = `
+              <div style="font-weight: 700; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 4px;">Periode: ${esc(period)}</div>
+              <div style="color: #60a5fa;">Terbayar: Rp ${paid.toLocaleString('id-ID')}</div>
+              <div style="color: #fbbf24;">Piutang: Rp ${unpaid.toLocaleString('id-ID')}</div>
+              <div style="font-weight: 700; margin-top: 4px; border-top: 1px solid #334155; padding-top: 4px;">Total: Rp ${total.toLocaleString('id-ID')}</div>
+            `;
+            tooltip.style.display = 'block';
+          });
+
+          col.addEventListener('mousemove', (e) => {
+            const containerRect = svg.parentElement.getBoundingClientRect();
+            const left = e.clientX - containerRect.left;
+            const top = e.clientY - containerRect.top;
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+          });
+
+          col.addEventListener('mouseleave', () => {
+            tooltip.style.display = 'none';
+          });
+        });
+      }
     } catch (e) {
-      c.innerHTML = '<div class="err">Kesalahan memuat laporan</div>';
+      c.innerHTML = '<div class="err" style="padding: 24px;">Kesalahan saat memuat data laporan keuangan.</div>';
     }
   },
+
 
   async renderProfile() {
     document.getElementById('pageTitle').textContent = 'Profil Saya';

@@ -121,3 +121,12 @@ export async function onRequestGet({ request, env }) {
     return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);
   }
 }
+
+export async function onRequestOptions() {
+  return corsOptions('GET, OPTIONS');
+}
+
+export default {
+  onRequestGet,
+  onRequestOptions
+};
