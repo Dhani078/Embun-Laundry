@@ -903,5 +903,53 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `c74f133`
 - **Status**: **DONE**
 
+---
+
+## Tick 40 — 2026-09-16T10:30:00+08:00 (Task C7: Manajemen Voucher & Promo - Admin)
+
+- **Task**: C7 (Fase C7) — Manajemen voucher & promo (admin) (P2)
+- **Temuan sebelum perubahan**:
+  - `functions/api/promos.js` belum memiliki filter query parameter individual `?id=...` untuk inspeksi promo tunggal, belum mendukung sinonim aksi `toggle_promo` (yang dipanggil pengujian warisan B18 di samping `toggle_active`), dan belum mengekspor `onRequestOptions` untuk pra-pemeriksaan CORS.
+  - `functions/api/vouchers.js` saat dipanggil staf belum menggabungkan data tabel `users`, sehingga nama dan email pelanggan yang memegang voucher tidak tampak. Filter pencarian staf juga belum mencakup nama/email pengguna.
+  - Antarmuka dashboard admin (`public/app.js`) belum memiliki kontrol lengkap untuk penerbitan voucher langsung ke pengguna tertentu (single atau bulk), belum memiliki tombol hapus/cabut voucher pelanggan, serta pada tampilan pelanggan kartu promo belum dilengkapi tombol salin kode ke clipboard.
+  - Hak akses RBAC: Pelanggan tidak boleh memanipulasi promo atau membuat voucher sembarangan (wajib ditolak 401); pembuatan voucher dan promo adalah hak eksklusif staf/admin.
+- **Perubahan**:
+  - Backend Promo (`functions/api/promos.js`):
+    - Menambahkan filter `?id=...` secara parameterized (`AND id = ?`).
+    - Mendukung aksi ganda `toggle_active` dan `toggle_promo` untuk kompatibilitas lintas pemanggil.
+    - Menambahkan ekspor `onRequestOptions` untuk CORS preflight.
+  - Backend Voucher (`functions/api/vouchers.js`):
+    - Menambahkan `LEFT JOIN users u ON u.id = uv.user_id` pada tampilan staf untuk menyertakan `u.full_name as user_name, u.email as user_email`.
+    - Menambahkan parameterized search `q` lintas kode promo, nama promo, kode voucher, nama pengguna, dan email pengguna.
+    - Menambahkan ekspor `onRequestOptions` untuk CORS preflight.
+  - Cloudflare Worker Router (`src/index.js`):
+    - Mendaftarkan rute `/api/promos` dan `/api/vouchers` di `optMap` penanganan preflight OPTIONS.
+  - Frontend Admin & Customer UI (`public/app.js`):
+    - Menambahkan antarmuka terbitkan voucher staf (`openGrantVoucherForm`, `grantVoucher`) dengan form promo ID, user ID/bulk user IDs, dan notifikasi konfirmasi.
+    - Menambahkan tabel data voucher staf lengkap dengan identitas pelanggan (nama & email).
+    - Menambahkan tombol aksi hapus/cabut voucher (`deleteVoucher`) dengan konfirmasi.
+    - Menambahkan tombol "Salin Kode" pada kartu promo pelanggan dengan integrasi Clipboard API.
+  - Harness Pengujian:
+    - Membuat `tools/verify_c7.mjs` + `tools/verify_c7_run.mjs` (39/39 HIJAU) yang mencakup:
+      1. Audit statik ekspor handler, routing optMap, dan skema database.
+      2. Hak akses RBAC (penolakan 401 untuk non-staf dan tanpa sesi pada semua operasi tulis).
+      3. Validasi input & aturan bisnis promo (persen > 100 ditolak 400, nama kosong ditolak 400, panjang kode > 32 ditolak 400, format datetime tidak valid ditolak 400, bulk ID array kosong/non-integer ditolak 400).
+      4. Alur CRUD runtime promo & voucher parameterized SQL (`create_promo`, `update_promo`, `toggle_active`, `delete_promo`, `GET ?id=...`, `delete_voucher`).
+      5. SQL injection defense dengan canary query parameter & Worker OPTIONS preflight.
+      6. Audit komponen antarmuka frontend (menu, form modal promo, voucher grant, toggle, delete, copy promo code).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c7_run.mjs`.
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Tandai Task C7 selesai `[x]`.
+    - `AGENT_STATE.md`: Tingkatkan tick ke 40 dan catat baseline `/api/promos` serta `/api/vouchers`.
+- **Verifikasi**:
+  - `node tools/verify_c7_run.mjs` → **HIJAU 39/39**.
+  - Seluruh rangkaian verifier proyek (33/33) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+  - Uji mutasi:
+    - Menonaktifkan validasi batas persentase diskon (`v.data.type === 'percent' && v.data.value > 100`) di `promos.js` menghasilkan kegagalan MERAH (38/39, exit 1).
+    - Kode dipulihkan → kembali **HIJAU 39/39** (exit 0).
+- **Commit**: `503a248`
+- **Status**: **DONE**
+
+
 
 
