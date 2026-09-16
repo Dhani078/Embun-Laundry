@@ -18,10 +18,18 @@ export async function onRequest({ request, env }) {
     try {
       const q = cleanStr(url.searchParams.get('q') || '').slice(0, 100);
       const active = cleanStr(url.searchParams.get('active') || '').slice(0, 10);
+      const idStr = url.searchParams.get('id');
 
       let sql = `SELECT * FROM promos WHERE 1=1`;
       const params = [];
 
+      if (idStr) {
+        const idNum = parseInt(idStr, 10);
+        if (!Number.isNaN(idNum) && idNum > 0) {
+          sql += ` AND id = ?`;
+          params.push(idNum);
+        }
+      }
       if (q) {
         sql += ` AND (code LIKE ? OR name LIKE ?)`;
         const likeQ = `%${q}%`;
@@ -124,7 +132,7 @@ export async function onRequest({ request, env }) {
         return jsonResponse({ ok: true });
       }
 
-      if (act === 'toggle_active') {
+      if (act === 'toggle_active' || act === 'toggle_promo') {
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
           is_active: { type: 'bool', default: 0, label: 'Status aktif' }
@@ -142,3 +150,17 @@ export async function onRequest({ request, env }) {
 
   return jsonResponse({ ok: false, msg: 'Method not allowed' }, 405);
 }
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
+}
+
+export default {
+  onRequest,
+  onRequestOptions
+};

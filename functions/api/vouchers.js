@@ -21,9 +21,11 @@ export async function onRequest({ request, env }) {
       let sql, params;
 
       if (isStaff) {
-        sql = `SELECT uv.*, p.code as promo_code, p.name as promo_name, p.type, p.value, p.min_spend, p.max_discount, p.expires_at as promo_expires
+        sql = `SELECT uv.*, p.code as promo_code, p.name as promo_name, p.type, p.value, p.min_spend, p.max_discount, p.expires_at as promo_expires,
+                      u.full_name as user_name, u.email as user_email
                FROM user_vouchers uv
                JOIN promos p ON p.id = uv.promo_id
+               LEFT JOIN users u ON u.id = uv.user_id
                WHERE 1=1`;
         params = [];
       } else {
@@ -35,9 +37,15 @@ export async function onRequest({ request, env }) {
       }
 
       if (q) {
-        sql += ` AND (p.code LIKE ? OR p.name LIKE ? OR uv.code LIKE ?)`;
-        const likeQ = `%${q}%`;
-        params.push(likeQ, likeQ, likeQ);
+        if (isStaff) {
+          sql += ` AND (p.code LIKE ? OR p.name LIKE ? OR uv.code LIKE ? OR u.full_name LIKE ? OR u.email LIKE ?)`;
+          const likeQ = `%${q}%`;
+          params.push(likeQ, likeQ, likeQ, likeQ, likeQ);
+        } else {
+          sql += ` AND (p.code LIKE ? OR p.name LIKE ? OR uv.code LIKE ?)`;
+          const likeQ = `%${q}%`;
+          params.push(likeQ, likeQ, likeQ);
+        }
       }
 
       sql += ` ORDER BY uv.created_at DESC LIMIT 300`;
@@ -171,3 +179,17 @@ export async function onRequest({ request, env }) {
 
   return jsonResponse({ ok: false, msg: 'Method not allowed' }, 405);
 }
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
+}
+
+export default {
+  onRequest,
+  onRequestOptions
+};

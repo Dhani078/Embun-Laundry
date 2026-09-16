@@ -1121,7 +1121,39 @@ const App = window.App = {
             </table>
           </div>
 
-          <h3 style="margin:0 0 16px;">Semua Voucher Pengguna</h3>
+          <!-- Form Grant Voucher (Staff Only) -->
+          <div id="grantVoucherWrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;" role="region" aria-label="Form terbitkan voucher">
+            <h4 style="margin:0 0 16px;font-size:16px;font-weight:700;">🎁 Terbitkan Voucher ke Pelanggan</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <label for="gvPromoId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Pilih Promo</label>
+                <select id="gvPromoId" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                  ${promos.filter(p => p.is_active).map(p => `<option value="${p.id}">${esc(p.code)} — ${esc(p.name)} (${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')})</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label for="gvType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Metode</label>
+                <select id="gvType" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                  <option value="single">Satu Pelanggan</option>
+                  <option value="bulk">Massal (Banyak ID)</option>
+                </select>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label for="gvUserId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">User ID Pelanggan</label>
+                <input id="gvUserId" type="text" placeholder="Contoh: 12 atau untuk massal: 1, 2, 3" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <div style="font-size:11px;color:#64748b;margin-top:4px;">Masukkan ID numerik akun pelanggan terdaftar.</div>
+              </div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="App.grantVoucher()" style="padding:8px 20px;">Terbitkan</button>
+              <button class="btn" onclick="document.getElementById('grantVoucherWrap').style.display='none'" style="padding:8px 20px;">Batal</button>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;">Semua Voucher Pengguna</h3>
+            <button class="btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;font-weight:600;border-radius:6px;cursor:pointer;" onclick="App.openGrantVoucherForm()">🎁 Terbitkan Voucher</button>
+          </div>
           <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;">
             <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
               <thead>
@@ -1129,20 +1161,27 @@ const App = window.App = {
                   <th style="padding:10px;">Kode Voucher</th>
                   <th style="padding:10px;">Nama Promo</th>
                   <th style="padding:10px;">Nilai</th>
-                  <th style="padding:10px;">User ID</th>
+                  <th style="padding:10px;">Penerima / User</th>
                   <th style="padding:10px;">Status</th>
+                  <th style="padding:10px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
+                  ? '<tr><td colspan="6" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher diterbitkan</td></tr>'
                   : vouchers.map(v => `
                   <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(v.code)}</td>
-                    <td style="padding:10px;">${esc(v.name)}</td>
-                    <td style="padding:10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
-                    <td style="padding:10px;">${esc(String(v.user_id))}</td>
+                    <td style="padding:10px;font-weight:700;color:#2563eb;font-family:monospace;">${esc(v.code)}</td>
+                    <td style="padding:10px;">${esc(v.promo_name || v.name)}</td>
+                    <td style="padding:10px;font-weight:600;color:#059669;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;">
+                      <div style="font-weight:600;">${esc(v.user_name || 'User #' + v.user_id)}</div>
+                      <div style="font-size:11px;color:#64748b;">${esc(v.user_email || 'ID: ' + v.user_id)}</div>
+                    </td>
                     <td style="padding:10px;"><span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span></td>
+                    <td style="padding:10px;text-align:right;">
+                      <button class="btn" style="padding:4px 10px;font-size:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;" onclick="App.deleteVoucher(${v.id})" aria-label="Cabut voucher ${esc(v.code)}">Cabut</button>
+                    </td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1154,16 +1193,24 @@ const App = window.App = {
           <h3 style="margin:0 0 16px;">Voucher Tersedia</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
             ${promos.filter(p => p.is_active).length === 0
-              ? '<div style="color:#94a3b8;padding:20px;">Belum ada promo aktif.</div>'
+              ? '<div style="color:#94a3b8;padding:20px;">Belum ada promo aktif saat ini.</div>'
               : promos.filter(p => p.is_active).map(p => `
-                <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;">
-                  <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;">${esc(p.code || 'PROMO')}</span>
-                  <h4 style="margin:8px 0 4px;font-size:16px;">${esc(p.name)}</h4>
-                  <div style="font-size:18px;font-weight:800;color:#059669;margin-bottom:8px;">
-                    ${p.type === 'percent' ? 'Diskon ' + esc(p.value) + '%' : 'Potongan Rp ' + Number(p.value).toLocaleString('id-ID')}
+                <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:space-between;">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-family:monospace;">${esc(p.code || 'PROMO')}</span>
+                      <span style="font-size:11px;color:#64748b;">${p.expires_at ? 'Hingga ' + esc(String(p.expires_at).slice(0, 10)) : 'Aktif'}</span>
+                    </div>
+                    <h4 style="margin:0 0 6px;font-size:16px;">${esc(p.name)}</h4>
+                    <div style="font-size:18px;font-weight:800;color:#059669;margin-bottom:8px;">
+                      ${p.type === 'percent' ? 'Diskon ' + esc(p.value) + '%' : 'Potongan Rp ' + Number(p.value).toLocaleString('id-ID')}
+                    </div>
+                    <div style="font-size:12px;color:#64748b;margin:0 0 12px;">
+                      <div>Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</div>
+                      ${p.max_discount > 0 ? `<div>Maks. diskon: Rp ${Number(p.max_discount).toLocaleString('id-ID')}</div>` : ''}
+                    </div>
                   </div>
-                  <p style="font-size:12px;color:#64748b;margin:0 0 12px;">Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</p>
-                  <button class="btn btn-primary" style="width:100%;padding:8px;font-size:13px;" onclick="App.claimVoucher(${p.id})">Klaim Voucher</button>
+                  <button class="btn btn-copy" style="width:100%;padding:8px;font-size:13px;border:1px dashed #2563eb;background:#eff6ff;color:#2563eb;border-radius:6px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(p.code)}'); this.textContent='✓ Tersalin!'; setTimeout(() => this.textContent='📋 Salin Kode Promo', 2000);">📋 Salin Kode Promo</button>
                 </div>
               `).join('')}
           </div>
@@ -1173,22 +1220,28 @@ const App = window.App = {
             <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
               <thead>
                 <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
-                  <th style="padding:10px;">Kode Klaim</th>
+                  <th style="padding:10px;">Kode Voucher</th>
                   <th style="padding:10px;">Nama Promo</th>
                   <th style="padding:10px;">Nilai</th>
                   <th style="padding:10px;">Status</th>
+                  <th style="padding:10px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
+                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
                   : vouchers.map(v => `
                   <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(v.code)}</td>
+                    <td style="padding:10px;font-weight:700;color:#2563eb;font-family:monospace;">${esc(v.code)}</td>
                     <td style="padding:10px;">${esc(v.name)}</td>
-                    <td style="padding:10px;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;font-weight:600;color:#059669;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
                     <td style="padding:10px;">
                       <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
+                    </td>
+                    <td style="padding:10px;text-align:right;">
+                      ${!v.used_at ? `
+                        <button class="btn" style="padding:4px 8px;font-size:12px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:4px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(v.code)}'); this.textContent='✓ Salin'; setTimeout(() => this.textContent='Salin', 2000);">Salin</button>
+                      ` : '-'}
                     </td>
                   </tr>
                 `).join('')}
@@ -1306,6 +1359,79 @@ const App = window.App = {
         this.renderPromo();
       } else {
         alert(data.msg || 'Gagal klaim');
+      }
+    } catch (e) {
+      alert('Koneksi gagal');
+    }
+  },
+
+  openGrantVoucherForm() {
+    const wrap = document.getElementById('grantVoucherWrap');
+    if (!wrap) return;
+    document.getElementById('gvUserId').value = '';
+    wrap.style.display = 'block';
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+
+  async grantVoucher() {
+    const promoId = Number(document.getElementById('gvPromoId').value);
+    const type = document.getElementById('gvType').value;
+    const rawUser = document.getElementById('gvUserId').value.trim();
+
+    if (!promoId || !rawUser) {
+      alert('Pilih promo dan masukkan User ID');
+      return;
+    }
+
+    try {
+      let payload;
+      if (type === 'single') {
+        const uid = Number(rawUser);
+        if (!uid || isNaN(uid)) {
+          alert('User ID harus berupa angka bulat valid');
+          return;
+        }
+        payload = { action: 'create_voucher', promo_id: promoId, user_id: uid };
+      } else {
+        const ids = rawUser.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n) && n > 0);
+        if (ids.length === 0) {
+          alert('Masukkan minimal satu User ID valid');
+          return;
+        }
+        payload = { action: 'bulk_claim', promo_id: promoId, user_ids: ids };
+      }
+
+      const res = await fetch('/api/vouchers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById('grantVoucherWrap').style.display = 'none';
+        alert(type === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`);
+        this.renderPromo();
+      } else {
+        alert(data.msg || 'Gagal menerbitkan voucher');
+      }
+    } catch (e) {
+      alert('Koneksi gagal');
+    }
+  },
+
+  async deleteVoucher(id) {
+    if (!confirm('Cabut voucher ini dari pelanggan?')) return;
+    try {
+      const res = await fetch('/api/vouchers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_voucher', id: Number(id) })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        this.renderPromo();
+      } else {
+        alert(data.msg || 'Gagal mencabut voucher');
       }
     } catch (e) {
       alert('Koneksi gagal');
