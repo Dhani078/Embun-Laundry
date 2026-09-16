@@ -4,6 +4,33 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 50 — 2026-09-16T14:18:00+08:00
+
+- Task: **D9** — Finalisasi p5.js hero droplet + ripple (P3)
+- Perubahan:
+  - `public/assets/hero-canvas.js`:
+    - Mengaktifkan `p5.disableFriendlyErrors = true` pada level modul dan setup instance (AGENT24:699) untuk eliminasi overhead validasi argument per-frame, memaksimalkan rendering 60 FPS.
+    - Menambahkan inisialisasi `targetY` zona splash pada droplet.
+    - Menambahkan pemicu splash ripple otomatis saat tetesan air mencapai permukaan (`d.y >= d.targetY`), memicu riak dan me-reset tetesan ke atas layar dengan target baru.
+    - Meningkatkan bentuk tetesan air teardrop bezier (`bezierVertex`) dengan pantulan specular highlight dan jejak partikel air.
+    - Meningkatkan sistem gelombang riak konsentris ganda (outer primary wave + inner wave crest) berperspektif isometrik elips.
+    - Menambahkan listener `pointermove` ter-throttle pada section `.hero` untuk efek riak interaktif saat kursor digerakkan.
+    - Bounding FIFO array ripples untuk mencegah pemborosan memori.
+  - Tools & Verifikasi:
+    - Membuat harness `tools/verify_d9.mjs` dan runner `tools/verify_d9_run.mjs` (21/21 HIJAU).
+    - Menambahkan ke `tools/run_all_verifiers.sh` -> 43/43 verifiers proyek HIJAU 100% (0 regresi).
+    - Uji mutasi memvalidasi deteksi kegagalan (exit 1 MERAH saat mutasi, exit 0 HIJAU saat pulih).
+- **FASE D (DESAIN & UX) 100% LENGKAP (D1 - D9 SELESAI)**.
+- Commit: `21df0ae`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - Masuk ke **FASE E — Performa & Observability**:
+    - E4 (minifikasi CSS/JS saat build) — P4
+    - E5 (logging terstruktur dev only) — P3
+    - E6 (error boundary global SPA) — P3
+
+---
+
 ## Tick 49 — 2026-09-16T14:12:00+08:00
 
 - Task: **D8** — Animasi masuk (IntersectionObserver) (P3)
