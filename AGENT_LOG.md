@@ -857,7 +857,7 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
   - Uji mutasi:
     - Menonaktifkan evaluasi `user.session_version !== rows[0].session_version` tertangkap MERAH (25/30, exit 1).
     - Dipulihkan → kembali **HIJAU 30/30**.
-- **Commit**: `(pending commit)`
+- **Commit**: `bf92626`
 - **Status**: **DONE**
 
 
