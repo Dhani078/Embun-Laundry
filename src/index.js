@@ -62,7 +62,9 @@ export default {
           '/api/auth/refresh': refreshHandler,
           '/api/health': healthHandler,
           '/api/me': meHandler,
-          '/api/notifications': notificationsHandler
+          '/api/notifications': notificationsHandler,
+          '/api/promos': promosHandler,
+          '/api/vouchers': vouchersHandler
         };
         const h = optMap[path];
         if (h?.onRequestOptions) {
