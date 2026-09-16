@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T11:13:00+08:00
-Tick ke: 45
+Terakhir update: 2026-09-16T11:30:00+08:00
+Tick ke: 46
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,28 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 45 selesai)
+- ID: — (tidak ada; tick 46 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **D1** (Fase D) — Terapkan design token ke seluruh dashboard (P3) —
+  `312f774` (tick 46)
+  - **Penerapan Design Token Global & Pembersihan Dead Code**:
+    - `public/assets/style.css`:
+      - Menjembatani seluruh variabel `:root` langsung ke token desain otoritatif di `design-tokens.css` (`--bg`, `--card`, `--line`, `--muted`, `--text`, `--blue`, `--green`, `--amber`, `--red`, `--shadow`, dll).
+      - Menghapus duplicate dead code: blok redundant `.card` (~25 baris) dan duplicate `.table` (~60 baris) dibersihkan tuntas, meringankan bundle CSS.
+      - Menstandarkan komponen inti (`.sidebar`, `.card`, `.table`, `.input`, `.btn-primary`) ke semantic token.
+    - `public/app.js`:
+      - Mengeliminasi 100% hardcoded inline card background (`background: #fff` / `#ffffff`) dan border (`#e2e8f0` / `#cbd5e1`), memastikan seluruh kartu di 8 view (`renderDashboard`, `renderPesanan`, `renderPelanggan`, `renderLayanan`, `renderDelivery`, `renderPromo`, `renderLaporan`, `renderProfile`) mengalirkan styling token secara otomatis dan responsif terhadap dark/light mode.
+      - Memperbarui dialog popup modal (konfirmasi `_appConfirm`, bukti transfer `proofModal`, struk/invoice modal `invoiceModal`) ke token CSS.
+      - Memperbarui SVG chart di `buildSvgChart` untuk menggunakan `var(--line)`, `var(--muted)`, dan inverted tooltip tokens.
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d1.mjs` dan `tools/verify_d1_run.mjs` (38/38 HIJAU).
+      - Mendaftarkan `verify_d1_run.mjs` ke `tools/run_all_verifiers.sh` (39/39 verifier proyek HIJAU 100%, 0 regresi).
+      - Uji mutasi: Merusak deklarasi token `:root --bg` memicu kegagalan (MERAH, exit 1); pemulihan kembali 100% HIJAU (exit 0).
 
 - **D3 & D4** (Fase D) — Skeleton loading di semua tabel & Empty state bermakna (P3) —
   `1d5feaf` (tick 45)

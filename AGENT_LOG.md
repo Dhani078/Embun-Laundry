@@ -1232,6 +1232,40 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `1d5feaf`
 - **Status**: **DONE**
 
+---
+
+## Tick 46 — 2026-09-16T11:30:00+08:00 (Task D1: Terapkan design token ke seluruh dashboard & pembersihan dead code)
+
+- **Task**: D1 (Fase D) — Terapkan design token ke seluruh dashboard (P3)
+- **Temuan sebelum perubahan**:
+  - Meskipun `design-tokens.css` sudah dimuat di `dashboard.html`, sebagian besar komponen dashboard di `public/app.js` masih menggunakan inline hardcoded hex colors seperti `background: #fff; border: 1px solid #e2e8f0;`.
+  - Hal ini menyebabkan kartu-kartu (cards) tidak otomatis mengikuti dark mode atau token tema, dan menyebabkan inkonsistensi visual saat berganti tema.
+  - `public/assets/style.css` memiliki dead code berupa deklarasi duplikat `.card` dan duplikat `.table` yang memperbesar ukuran file tanpa manfaat fungsional.
+  - Variabel `:root` di `style.css` belum seluruhnya dijembatani ke semantic token resmi di `design-tokens.css`.
+- **Perubahan**:
+  - Stylesheet (`public/assets/style.css`):
+    - Variabel `:root` dijembatani penuh ke design tokens: `--bg: var(--color-bg-secondary, #f8fafc)`, `--card: var(--color-bg-primary, #ffffff)`, `--line: var(--color-border-subtle, #e2e8f0)`, `--muted: var(--color-text-secondary, #64748b)`, `--text: var(--color-text-primary, #0f172a)`, `--blue: var(--color-brand-primary, #2563eb)`, `--green: var(--color-success, #10b981)`, `--amber: var(--color-warning, #f59e0b)`, `--red: var(--color-error, #ef4444)`, `--shadow: var(--shadow-card)`, dll.
+    - Pembersihan Dead Code: Menghapus blok duplikat `.card` (~25 baris) dan duplicate `.table` (~60 baris), merampingkan ukuran CSS dan mempercepat render parser browser.
+    - Selector dark mode diselaraskan dengan token variabel (`var(--card)`, `var(--line)`, `var(--text)`, `var(--muted)`), mempertahankan `--bg: #090d16` untuk kompatibilitas penuh.
+  - Aplikasi Frontend SPA (`public/app.js`):
+    - Mengeliminasi seluruh inline `background: #fff` dan `border: 1px solid #e2e8f0` / `#cbd5e1` pada kartu di seluruh 8 view: `renderDashboard()`, `renderPesanan()`, `renderPelanggan()`, `renderLayanan()`, `renderDelivery()`, `renderPromo()`, `renderLaporan()`, dan `renderProfile()`.
+    - Mengonversi elemen dialog modal (`_appConfirm`, `proofModal`, `invoiceModal`) agar menggunakan `var(--card)`, `var(--line)`, `var(--text)`, dan `var(--bg)`.
+    - Mengonversi `buildSvgChart` ke token CSS (`var(--line)` untuk garis kisi SVG, `var(--muted)` untuk label, dan inverted token untuk popup tooltip chart).
+  - Harness Pengujian:
+    - Membuat `tools/verify_d1.mjs` dan `tools/verify_d1_run.mjs` (38/38 pemeriksaan HIJAU 100%).
+    - Uji Mutasi: Merusak deklarasi `:root --bg` memicu kegagalan (MERAH, exit code 1). Dipulihkan kembali ke 100% HIJAU (exit code 0).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_d1_run.mjs` (total 39 suite pengujian).
+    - Seluruh 39 verifier suite proyek berjalan 100% HIJAU (0 regresi).
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task D1 selesai `[x]` (`312f774`).
+    - `AGENT_STATE.md`: Memperbarui status ke Tick 46 dan mencatat ringkasan Task D1.
+- **Verifikasi**:
+  - `node tools/verify_d1_run.mjs` → **HIJAU 38/38**.
+  - Seluruh rangkaian pengujian proyek (39/39) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+- **Commit**: `312f774`
+- **Status**: **DONE**
+
+
 
 
 
