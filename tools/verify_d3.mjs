@@ -67,7 +67,8 @@ check('D3-CSS-02: style.css mendefinisikan @keyframes skeletonShimmer untuk efek
 
 check('D3-CSS-03: style.css mendukung dark theme untuk .skeleton via [data-theme="dark"]',
   styleCss.includes('[data-theme="dark"] .skeleton') &&
-  styleCss.includes('background: #1e293b')
+  // token-aware: #1e293b diganti var(--blue-soft) oleh D1
+  (styleCss.includes('background: #1e293b') || styleCss.includes('background: var(--blue-soft)'))
 );
 
 check('D3-CSS-04: style.css mendefinisikan kelas .skeleton-table-wrap dan .skeleton-table',
