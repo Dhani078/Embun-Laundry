@@ -10,6 +10,7 @@ const App = window.App = {
     this.initTheme();
     this.initRipple();
     this.initMobileSidebar();
+    this.setupContentObserver();
     this.checkAuth();
     this.bindEvents();
   },
@@ -155,6 +156,55 @@ const App = window.App = {
     } else {
       this.openMobileSidebar();
     }
+  },
+
+  // D8: Entrance Animation & IntersectionObserver for Dashboard Cards/Sections
+  setupContentObserver() {
+    if (this._mutationObsInitialized || typeof window === 'undefined' || typeof document === 'undefined') return;
+    this._mutationObsInitialized = true;
+    const c = document.getElementById('mainContent');
+    if (!c || !('MutationObserver' in window)) return;
+
+    let debounceTimer;
+    const mo = new MutationObserver(() => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        this.initScrollReveal(c);
+      }, 40);
+    });
+    mo.observe(c, { childList: true, subtree: false });
+  },
+
+  initScrollReveal(rootEl = (typeof document !== 'undefined' ? document.getElementById('mainContent') : null)) {
+    if (!rootEl || typeof window === 'undefined' || typeof document === 'undefined') return;
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const items = rootEl.querySelectorAll('.kpi, .card, .panel, .kcol, .bento-cell');
+
+    if (!('IntersectionObserver' in window) || prefersReduced) {
+      items.forEach(el => el.classList.add('show'));
+      return;
+    }
+
+    if (this._scrollObserver) {
+      this._scrollObserver.disconnect();
+    }
+
+    this._scrollObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+    items.forEach((el, idx) => {
+      if (!el.classList.contains('reveal')) {
+        el.classList.add('reveal');
+        el.style.setProperty('--delay', `${(idx % 4) * 60}ms`);
+      }
+      this._scrollObserver.observe(el);
+    });
   },
 
   // D3: Skeleton Loading & D4: Empty State Helpers
@@ -1148,6 +1198,7 @@ const App = window.App = {
     else if (page === 'laporan') this.renderLaporan();
     else if (page === 'profile') this.renderProfile();
     else this.renderDashboard();
+    this.initScrollReveal();
   },
 
   // PAGE RENDERERS

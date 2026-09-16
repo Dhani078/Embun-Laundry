@@ -1009,14 +1009,14 @@ body.no-scroll { overflow: hidden; }
 
 <section id="harga" class="section">
   <div class="container">
-    <div class="promo">
+    <div class="promo reveal">
       <span>🎟️ Promo Spesial</span>
       <span style="color: var(--text-light)">•</span>
       <strong>Diskon 15% Cuci Kering untuk pelanggan baru</strong>
       <button class="btn btn-outline" id="btnPromo">Gunakan Promo</button>
     </div>
 
-    <div class="section-head">
+    <div class="section-head reveal">
       <h2>Harga Layanan</h2>
       <p class="sub">Pilih layanan yang sesuai dengan kebutuhan Anda</p>
     </div>
@@ -1033,13 +1033,13 @@ body.no-scroll { overflow: hidden; }
       <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Memuat harga layanan...</div>
     </div>
 
-    <div class="section-head" style="margin-top:80px; margin-bottom: 40px;">
+    <div class="section-head reveal" style="margin-top:80px; margin-bottom: 40px;">
       <h2>Mengapa Pilih Embun Laundry?</h2>
       <p class="sub">Kami berkomitmen memberikan layanan terbaik dengan kepuasan pelanggan sebagai prioritas utama</p>
     </div>
     
     <div class="features-bento">
-      <div class="bento-cell large">
+      <div class="bento-cell large reveal">
         <div>
           <div class="ic">🚚</div>
           <h4>Pickup &amp; Delivery Cepat</h4>
@@ -1050,14 +1050,14 @@ body.no-scroll { overflow: hidden; }
           <div style="flex: 1; height: 1px; background: var(--accent-border);"></div>
         </div>
       </div>
-      <div class="bento-cell small-1">
+      <div class="bento-cell small-1 reveal" style="--delay:100ms">
         <div>
           <div class="ic">📦</div>
           <h4>Kelola Pesanan Mandiri</h4>
           <p>Sistem manajemen pesanan modern yang terpusat. Anda bisa memantau detail cucian, berat timbangan, hingga proses cuci langsung dari perangkat Anda.</p>
         </div>
       </div>
-      <div class="bento-cell small-2">
+      <div class="bento-cell small-2 reveal" style="--delay:200ms">
         <div>
           <div class="ic">📈</div>
           <h4>Laporan Pembayaran Real-time</h4>
@@ -1267,7 +1267,7 @@ function renderServicesGrid() {
     const isPop = s.is_popular || idx === 0;
     const catBadge = s.category ? `<span class="badge-soft" style="font-size: 0.72rem; padding: 2px 8px; margin-bottom: 8px;">${esc(s.category)}</span>` : '';
     return `
-      <div class="card ${isPop ? 'popular' : ''}">
+      <div class="card ${isPop ? 'popular' : ''} reveal" style="--delay:${idx * 60}ms">
         ${isPop ? '<div class="badge">Paling Populer</div>' : ''}
         ${catBadge}
         <h3 style="margin-top: 4px;">${esc(s.name)}</h3>
@@ -1285,6 +1285,7 @@ function renderServicesGrid() {
       </div>
     `;
   }).join('');
+  if (typeof initReveal === 'function') initReveal();
 }
 
 async function loadServices() {
@@ -1704,6 +1705,35 @@ if (mock && heroImg) {
     heroImg.style.transform = '';
   });
 }
+
+// IntersectionObserver reveal (Task D8)
+function initReveal() {
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cards = document.querySelectorAll('.card, .bento-cell, .section-head, .promo');
+  cards.forEach((el, i) => {
+    if (!el.classList.contains('reveal')) {
+      el.classList.add('reveal');
+      if (!el.style.getPropertyValue('--delay')) {
+        el.style.setProperty('--delay', `${(i % 4) * 60}ms`);
+      }
+    }
+  });
+
+  if (!('IntersectionObserver' in window) || prefersReduced) {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('show'));
+    return;
+  }
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('show');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal:not(.show)').forEach(el => obs.observe(el));
+}
+initReveal();
 
 // Dark mode toggle
 (function() {
