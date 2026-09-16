@@ -27,8 +27,14 @@ const admin = await conn.execute(
 );
 if (admin.length) {
   const stored = String(admin[0].password_hash);
-  const guess = await sha256hex('admin123' + 'dhani-salt');
-  console.log('stored :', stored);
-  console.log('sha256(\'admin123dhani-salt\') :', guess);
-  console.log('COCOK   :', stored === guess);
+  const testPassword = process.env.ADMIN_PASSWORD || '';
+  if (testPassword) {
+    const guess = await sha256hex(testPassword + 'dhani-salt');
+    console.log('stored :', stored);
+    console.log('sha256(password + dhani-salt) :', guess);
+    console.log('COCOK   :', stored === guess);
+  } else {
+    console.log('stored :', stored);
+    console.log('(set ADMIN_PASSWORD untuk uji cocok hash)');
+  }
 }

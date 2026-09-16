@@ -17,13 +17,15 @@ const rows = await conn.execute(
     ORDER BY id`
 );
 
+const testPassword = process.env.ADMIN_PASSWORD || '';
+
 for (const r of rows) {
   const h = String(r.password_hash || '');
   const kind = isPbkdf2Hash(h) ? 'PBKDF2 (BARU)' : (h.startsWith('$2') ? 'bcrypt' : 'LAWAS');
-  const ok = await verifyPassword('admin123', h);
+  const ok = testPassword ? await verifyPassword(testPassword, h) : '(set ADMIN_PASSWORD untuk uji cocok)';
   console.log(String(r.id).padStart(6), (r.email || '').padEnd(20), kind.padEnd(14), h.slice(0, 30) + '…');
   if (r.email === 'admin@gmail.com') {
-    console.log(`        verifyPassword('admin123') -> ${ok}`);
+    console.log(`        verifyPassword(env.ADMIN_PASSWORD) -> ${ok}`);
   }
 }
 

@@ -45,9 +45,10 @@ for (const r of rows) {
 const sample = rows.find(r => String(r.password_hash || '').startsWith('$2'));
 if (sample) {
   const t0 = Date.now();
-  const ok123 = await bcrypt.compare('admin123', sample.password_hash);
+  const testPassword = process.env.ADMIN_PASSWORD || '';
+  const ok123 = testPassword ? await bcrypt.compare(testPassword, sample.password_hash) : '(set ADMIN_PASSWORD)';
   console.log(
-    `bcryptjs.compare('admin123', hash id=${sample.id}) -> ${ok123}  (${Date.now() - t0} ms)`
+    `bcryptjs.compare(env.ADMIN_PASSWORD, hash id=${sample.id}) -> ${ok123}  (${Date.now() - t0} ms)`
   );
 } else {
   console.log('Tidak ada hash bcrypt di 20 baris pertama.');

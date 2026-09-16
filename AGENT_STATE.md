@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:25:00+08:00
-Tick ke: 32
+Terakhir update: 2026-09-16T09:30:00+08:00
+Tick ke: 33
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,15 +44,27 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 32 selesai)
+- ID: — (tidak ada; tick 33 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.4** (Fase 0.4) — Pembersihan Sandi dari `tools/probe_*` & Direktori `.tmp/` (P0) —
+  `123ee5d` (tick 33)
+  - **Menutup celah penyimpanan sandi admin di repo (K12)**: `tools/probe_*.sh`, `probe_api.py`,
+    `probe_b8_live.mjs`, `probe_hash.mjs`, `probe_schema.mjs`, dan folder `.tmp/` sebelumnya memuat sandi admin hardcoded.
+  - Perubahan:
+    - `tools/probe_*.sh`: Menggunakan variabel lingkungan `ADMIN_PASSWORD` dan `ADMIN_IDENTITY`, menolak jalan bila belum diset.
+    - `tools/probe_api.py` & probe JS: Membaca kredensial dari `os.environ` / `process.env`.
+    - `.tmp/`: Dibersihkan dari seluruh file scratch lama, dipastikan tidak pernah terlacak di git (`git ls-files .tmp/` kosong).
+    - `tools/verify_fase0_4.mjs` + `tools/verify_fase0_4_run.mjs`: Harness pengujian baru (14/14 HIJAU).
+    - Uji mutasi ganda: Mengembalikan sandi hardcoded ke skrip probe dan menghapus filter `.tmp/` dari gitignore terbukti ditangkap MERAH (13/14, exit 1).
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 26 verifier (semua HIJAU).
+
 - **0.3** (Fase 0.3) — Keluarkan `db/*.sql` yang Memuat Data Pribadi (PII) dari Git (P0) —
-  `af08836` (tick 32)
+  `2c047ed` (tick 32)
   - **Menutup celah kebocoran data pribadi (K10)**: `db/embun_laundry.sql` dan `db/dhani_laundry.sql`
     sebelumnya terlacak di git dan memuat email nyata, no telepon, hash bcrypt, dan token reset password.
   - Perubahan:
