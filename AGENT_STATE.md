@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:30:00+08:00
-Tick ke: 33
+Terakhir update: 2026-09-16T09:35:00+08:00
+Tick ke: 34
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,12 +44,25 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 33 selesai)
+- ID: — (tidak ada; tick 34 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **0.5** (Fase 0.5) — Audit & Remediasi Kode Rusak `functions/api/notifications.js` (P0) —
+  `42a5ea3` (tick 34)
+  - **Menutup celah fungsi rusak & kontrak salah di notifications.js (K3)**:
+    - Impor salah `getDB` diganti menjadi `getDb`.
+    - Impor salah `rateLimit` (yang tidak pernah diekspor oleh `_ratelimit.js`) diganti menjadi `clientKey, consume`.
+    - Kondisi evaluasi rate limit `rlRes.allowed` diperbaiki menjadi `rlRes.ok`.
+    - Validasi query diselaraskan dengan kontrak `validateOr400(query, spec)`.
+    - Pembacaan kolom DB berbasis indeks array rapuh (`order[3]`, `row[0]`) diganti menjadi named object properties (`order.status`, `row.id`, dsb).
+    - Mempertahankan isolasi routing di `src/index.js` (clean 404 sampai fitur C3 diaktifkan).
+    - `tools/verify_fase0_5.mjs` + `tools/verify_fase0_5_run.mjs`: Harness pengujian baru (20/20 HIJAU).
+    - Uji mutasi: Typo `getDB` dan pembacaan `order[3]` tertangkap MERAH (18/20, exit 1). Dipulihkan kembali HIJAU 20/20.
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 27 verifier (semua HIJAU).
 
 - **0.4** (Fase 0.4) — Pembersihan Sandi dari `tools/probe_*` & Direktori `.tmp/` (P0) —
   `123ee5d` (tick 33)
