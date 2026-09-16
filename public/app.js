@@ -7,8 +7,55 @@ const App = window.App = {
   currentPage: 'dashboard',
 
   async init() {
+    this.initTheme();
     this.checkAuth();
     this.bindEvents();
+  },
+
+  initTheme() {
+    let theme = 'light';
+    try {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      theme = saved || (prefersDark ? 'dark' : 'light');
+    } catch (e) {}
+    this.applyTheme(theme);
+
+    // Cross-tab theme sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'theme' && e.newValue) {
+        this.applyTheme(e.newValue);
+      }
+    });
+  },
+
+  applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+    this.updateThemeIcons(isDark);
+  },
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem('theme', next);
+    } catch (e) {}
+    this.applyTheme(next);
+  },
+
+  updateThemeIcons(isDark) {
+    const icons = document.querySelectorAll('#themeIcon, .theme-icon');
+    icons.forEach(el => {
+      el.textContent = isDark ? '☀️' : '🌙';
+    });
   },
 
   toast(msg, type = 'info') {
@@ -288,6 +335,13 @@ const App = window.App = {
     window.addEventListener('popstate', () => {
       this.route();
     });
+    document.addEventListener('click', (e) => {
+      const toggle = e.target.closest('#themeToggleBtn, .theme-toggle-btn');
+      if (toggle) {
+        e.preventDefault();
+        this.toggleTheme();
+      }
+    });
   },
 
   navigate(path) {
@@ -515,6 +569,9 @@ const App = window.App = {
                 <div class="badge" style="margin-left: 8px;">${esc(this.user.role || this.user.user_role)}</div>
               </div>
               <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+                <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
+                  <span class="theme-icon" id="themeIcon">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</span>
+                </button>
                 <span style="font-size: 14px; font-weight: 600;">Hai, ${esc(this.user.user_name || this.user.name || 'User')}</span>
               </div>
             </div>

@@ -4,6 +4,21 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Dashboard · Embun Laundry</title>
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="/assets/design-tokens.css"/>
@@ -66,6 +81,9 @@
         <div class="h1" id="pageTitle">Dashboard</div>
         <div class="badge" id="roleBadge" style="margin-left:8px">Customer</div>
         <div style="margin-left:auto; display: flex; align-items: center; gap: 12px;">
+          <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
+            <span class="theme-icon" id="themeIcon">🌙</span>
+          </button>
           <span id="userName" style="font-size: 14px; font-weight: 600;">Memuat...</span>
         </div>
       </div>
