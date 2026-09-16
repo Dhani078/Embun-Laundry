@@ -16,7 +16,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | 0.3 | Keluarkan `db/*.sql` data pribadi dari git & repo (K10) | **P0** | [x] | `2c047ed` |
 | 0.4 | Hapus sandi dari `tools/probe_*.sh` dan `.tmp/`, ganti env var (K12) | **P0** | [x] | `123ee5d` |
 | 0.5 | Perbaiki / nonaktifkan `/api/notifications` rusak (K3) | **P0** | [x] | `42a5ea3` |
-| 0.6 | Ganti dasar kepemilikan dari nama jadi `user_id` di orders/pay (K4) | **P0** | [ ] | — |
+| 0.6 | Ganti dasar kepemilikan dari nama jadi `user_id` di orders/pay (K4) | **P0** | [x] | `1d357fa` |
 | 0.7 | Race-safe `POST /api/pay` + `idempotency_key` (K5) | **P0** | [ ] | — |
 | 0.8 | Cabut fallback plaintext & sha256 tanpa salt di `_password.js` (K6) | **P0** | [ ] | — |
 | 0.9 | Pembatalan sesi: `users.session_version` & refresh token (K7) | **P0** | [ ] | — |

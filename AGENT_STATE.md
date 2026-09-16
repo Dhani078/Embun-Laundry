@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:35:00+08:00
-Tick ke: 34
+Terakhir update: 2026-09-16T09:40:00+08:00
+Tick ke: 35
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,15 +44,30 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 34 selesai)
+- ID: — (tidak ada; tick 35 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.6** (Fase 0.6) — Ganti Dasar Kepemilikan dari Nama Jadi `user_id` di orders/pay (P0) —
+  `1d357fa` (tick 35)
+  - **Menutup celah IDOR fatal nama kembar di orders dan pay (K4)**:
+    - Berkas migrasi `db/migrations/0002_add_user_id_to_orders.sql`: menambahkan kolom `user_id INT NULL`, indeks `idx_orders_user_id`, dan backfill data dari `users`.
+    - `functions/api/orders.js`:
+      - `GET /api/orders`: memfilter `o.user_id = ?` untuk pelanggan, dengan fallback aman untuk baris lawas unmigrated.
+      - `create_order`: menyertakan `user_id` akun pembuat pesanan.
+      - `delete_order`: memeriksa kesesuaian `order[0].user_id === user.id`.
+    - `functions/api/pay.js`:
+      - `GET /api/pay`: memeriksa `order.user_id === user.id` untuk sensor data pribadi (telepon/alamat).
+      - `POST /api/pay`: memeriksa `order.user_id === user.id` sebelum memproses pembayaran.
+    - `tools/verify_fase0_6.mjs` + `tools/verify_fase0_6_run.mjs`: Harness pengujian baru (22/22 HIJAU).
+    - Uji mutasi: Mengembalikan pengecekan nama `order.customer_name === user.user_name` terbukti ditangkap MERAH (17/22, exit 1). Dipulihkan kembali HIJAU 22/22.
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 28 verifier (semua HIJAU).
+
 - **0.5** (Fase 0.5) — Audit & Remediasi Kode Rusak `functions/api/notifications.js` (P0) —
-  `42a5ea3` (tick 34)
+  `3d42d2d` (tick 34)
   - **Menutup celah fungsi rusak & kontrak salah di notifications.js (K3)**:
     - Impor salah `getDB` diganti menjadi `getDb`.
     - Impor salah `rateLimit` (yang tidak pernah diekspor oleh `_ratelimit.js`) diganti menjadi `clientKey, consume`.
