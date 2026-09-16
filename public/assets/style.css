@@ -44,6 +44,16 @@
   box-sizing: border-box;
 }
 
+/* Accessible focus system (Task D6) */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -197,6 +207,17 @@ a {
   background: var(--blue-soft);
   color: var(--blue);
   transform: translateX(4px);
+}
+
+.nav a:active,
+.nav-link:active {
+  transform: translateX(2px) scale(0.99);
+}
+
+.nav a:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .nav-link.active {
@@ -528,8 +549,14 @@ a {
   font-weight: 700;
   font-size: 0.9rem;
   font-family: inherit;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.15s ease,
+              border-color 0.15s ease,
+              color 0.15s ease;
   transform: translateZ(0);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover {
@@ -540,7 +567,22 @@ a {
 }
 
 .btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--blue-soft);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .btn-primary {
@@ -554,6 +596,18 @@ a {
   background: linear-gradient(135deg, var(--blue-hover) 0%, var(--blue) 100%);
   color: var(--color-text-inverse, #ffffff);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--blue-soft);
 }
 
 .btn-primary::after {
@@ -580,6 +634,17 @@ a {
   background: var(--blue-soft);
   color: var(--blue);
   border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.btn-ghost:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
 .btn-outline {
@@ -590,6 +655,17 @@ a {
 .btn-outline:hover {
   border-color: var(--blue);
   color: var(--blue);
+  transform: translateY(-1px);
+}
+
+.btn-outline:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn-outline:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
 .btn-icon {
@@ -603,13 +679,28 @@ a {
   background: var(--card);
   color: var(--text);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.15s ease,
+              border-color 0.15s ease,
+              color 0.15s ease;
+  user-select: none;
 }
 
 .btn-icon:hover {
   border-color: var(--blue);
   color: var(--blue);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.btn-icon:active {
+  transform: translateY(1px) scale(0.94);
+}
+
+.btn-icon:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
 .ripple {
@@ -639,13 +730,27 @@ a {
   cursor: pointer;
   font-weight: 700;
   font-size: 0.88rem;
-  transition: all 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.15s ease,
+              color 0.15s ease,
+              background-color 0.15s ease;
+  user-select: none;
 }
 
 .tabbtn:hover {
   border-color: var(--blue);
   color: var(--blue);
   transform: translateY(-1px);
+}
+
+.tabbtn:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.tabbtn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--blue-soft);
 }
 
 .tabbtn.active {
@@ -848,7 +953,14 @@ a {
   font-size: 0.95rem;
   color: var(--text);
   background: var(--card);
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease,
+              box-shadow 0.15s ease,
+              background-color 0.15s ease,
+              color 0.15s ease;
+}
+
+.input:hover, select:hover, textarea:hover {
+  border-color: var(--color-border-default, #cbd5e1);
 }
 
 textarea {
@@ -858,8 +970,22 @@ textarea {
 
 .input:focus, select:focus, textarea:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px var(--blue-soft);
   outline: none;
+}
+
+.input:focus-visible, select:focus-visible, textarea:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-soft);
+  outline: none;
+}
+
+.input:disabled, input:disabled, select:disabled, textarea:disabled {
+  background: var(--bg);
+  border-color: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .actions {
@@ -1247,6 +1373,11 @@ textarea {
 .theme-toggle-btn:active {
   transform: scale(0.95);
 }
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--blue-soft);
+}
 [data-theme="dark"] .theme-toggle-btn, html.dark .theme-toggle-btn {
   background: var(--blue-soft);
   border-color: var(--toggle-track);
@@ -1378,16 +1509,33 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:hover, .btn:active, .btn-primary:hover, .btn-primary:active,
+  .btn-icon:hover, .btn-icon:active, .tabbtn:hover, .tabbtn:active,
+  .tab:hover, .tab:active, .theme-toggle-btn:hover, .theme-toggle-btn:active,
+  .nav a:hover, .nav a:active, .nav-link:hover, .nav-link:active,
+  .table tbody tr:hover, .card:hover, .kcard:hover, .kpi:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
   .skeleton::after {
-    animation: none;
-    background: transparent;
+    animation: none !important;
+    background: transparent !important;
   }
   .skeleton {
-    animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
   }
   @keyframes skeletonPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+  }
+  .ripple {
+    display: none !important;
   }
 }
 
