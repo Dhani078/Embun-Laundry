@@ -1,67 +1,116 @@
-# Panduan Deployment Cloudflare Pages
+# Panduan Deployment Cloudflare — Embun Laundry
 
-Panduan ini memandu proses deploy aplikasi **Embun Laundry** ke **Cloudflare Pages** secara otomatis ataupun manual menggunakan Wrangler CLI.
-
----
-
-## 1. Arsitektur Proyek
-- **Frontend / Static Assets**: Terletak di folder `public/` (berisi HTML, CSS, JS, Gambar, Ikon).
-- **Backend API (Serverless)**: Terletak di folder `functions/` (Cloudflare Pages Functions).
-- **Driver Database**: `@tidbcloud/serverless` untuk koneksi langsung dari Cloudflare Edge ke TiDB Cloud melalui HTTP Fetch.
+Dokumen ini menjelaskan alur deployment aplikasi **Embun Laundry** ke platform **Cloudflare Workers & Static Assets** dengan integrasi database **TiDB Cloud Serverless**.
 
 ---
 
-## 2. Persiapan Environment Variables
-Di Cloudflare Pages Dashboard, buka menu **Settings > Environment Variables**, tambahkan:
+## 1. Arsitektur Deployment
 
-| Variable Name | Contoh Nilai | Keterangan |
-| :--- | :--- | :--- |
-| `TIDB_DATABASE_URL` | `mysql://user:pass@gateway01...` | URL koneksi TiDB Cloud Serverless |
-| `JWT_SECRET` | `secret-kunci-enkripsi-anda` | Kunci tanda tangan token otentikasi session |
-
----
-
-## 3. Deploy via GitHub Integration (Rekomendasi)
-1. Push repository ke GitHub: `https://github.com/Dhani078/Embun-Laundry`
-2. Buka dashboard [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Workers & Pages**.
-3. Klik **Create application** > Tab **Pages** > **Connect to Git**.
-4. Pilih repository `Dhani078/Embun-Laundry`.
-5. Pengaturan Build:
-   - **Framework preset**: `None`
-   - **Build command**: `npm install`
-   - **Build output directory**: `public`
-6. Masukkan Environment Variable `TIDB_DATABASE_URL` dan `JWT_SECRET`.
-7. Klik **Save and Deploy**.
+Aplikasi menggunakan arsitektur Cloudflare Workers modern dengan asset binding:
+- **Frontend / Static Assets**: Terletak di folder `public/` (HTML, CSS, JS Vanilla, p5.js canvas, gambar ilustrasi). Dilayani langsung oleh Cloudflare edge cache.
+- **Worker Dispatcher**: Entrypoint `src/index.js` mengorkestrasi rute API, menyuntikkan security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), serta meneruskan request static asset ke `env.ASSETS`.
+- **Backend API (Serverless)**: Terletak di folder `functions/api/`, dipanggil oleh dispatcher secara modular.
+- **Database**: Terhubung ke **TiDB Cloud Serverless** via protokol stateless HTTP fetch (`@tidbcloud/serverless`), bebas dari masalah koneksi TCP pool di edge.
 
 ---
 
-## 4. Deploy Manual via Wrangler CLI
-Jika ingin melakukan deploy langsung dari terminal komputer:
+## 2. Manajemen Secrets & Environment Variables
+
+> [!IMPORTANT]
+> Sesuai Aturan Keamanan, secret sensitif (`TIDB_DATABASE_URL` dan `JWT_SECRET`) **tidak boleh diletakkan di `wrangler.toml`** dalam bentuk plaintext.
+
+### 2.1 Konfigurasi Produksi / Staging (Cloudflare Secret Store)
+Gunakan Wrangler CLI untuk menyimpan secret secara terenkripsi:
 
 ```bash
-# 1. Pastikan dependencies terpasang
-npm install
+# 1. Simpan URL koneksi TiDB Cloud
+npx wrangler secret put TIDB_DATABASE_URL
+# Masukkan nilai string koneksi (contoh: mysql://user:pass@gateway01.../embun_laundry?ssl={"rejectUnauthorized":true})
 
-# 2. Login ke akun Cloudflare
-npx wrangler login
-
-# 3. Deploy ke Cloudflare Pages
-npx wrangler pages deploy public --project-name dhani-laundry
+# 2. Simpan kunci JWT Secret (minimal 32 karakter acak)
+npx wrangler secret put JWT_SECRET
 ```
 
-Atau jika menggunakan `wrangler.toml`:
+Variabel publik non-sensitif didefinisikan dalam `wrangler.toml`:
+```toml
+[vars]
+TIDB_DATABASE = "embun_laundry"
+```
+
+### 2.2 Konfigurasi Pengembangan Lokal (`.dev.vars`)
+Untuk eksekusi lokal (`npx wrangler dev`), buat file `.dev.vars`:
+```env
+TIDB_DATABASE_URL=mysql://<user>:<password>@<host>/embun_laundry?ssl={"rejectUnauthorized":true}
+JWT_SECRET=rahasia_kunci_jwt_lokal_minimal_32_karakter
+```
+File `.dev.vars` telah diabaikan oleh git (`.gitignore`) guna mencegah kebocoran kredensial.
+
+---
+
+## 3. Alur Verifikasi Sebelum Deploy
+
+Sebelum merilis perubahan ke server produksi, jalankan suite pengujian otomatis untuk memastikan tidak ada regresi fungsional atau kebocoran keamanan:
+
 ```bash
+bash tools/run_all_verifiers.sh
+```
+Pastikan seluruh 43 verification suites berstatus **HIJAU 100% (exit 0)**.
+
+Lakukan validasi bundel dengan dry-run:
+```bash
+npx wrangler deploy --dry-run
+```
+
+---
+
+## 4. Eksekusi Deployment
+
+### Cara 1: Deploy Langsung via Wrangler CLI (Direkomendasikan)
+```bash
+# 1. Login ke akun Cloudflare (jika belum)
+npx wrangler login
+
+# 2. Deploy worker dan seluruh aset statis
 npx wrangler deploy
 ```
 
+Output terminal akan menampilkan URL publik:
+```
+Uploaded 28 files (X.XX sec)
+Total Upload: XX.XX KiB / gzip: XX.XX KiB
+Uploaded embun-laundry (X.XX sec)
+Deployed embun-laundry triggers
+  https://embun-laundry.<subdomain>.workers.dev
+Current Deployment ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+### Cara 2: Integrasi Otomatis via GitHub Actions / Cloudflare Git Connect
+Jika repositori dihubungkan langsung ke Cloudflare:
+1. Hubungkan repository GitHub `Dhani078/Embun-Laundry`.
+2. Pengaturan Environment Variables pada Dashboard Cloudflare:
+   - `TIDB_DATABASE_URL` (Tipe: Encrypted / Secret)
+   - `JWT_SECRET` (Tipe: Encrypted / Secret)
+3. Setiap push ke branch `main` akan memicu build & deploy secara otomatis.
+
 ---
 
-## 5. Mengapa Tidak Muncul Error "Could not detect static files"?
-Pesan error sebelumnya:
-```
-✘ [ERROR] Could not detect a directory containing static files (e.g. html, css and js) for the project
-```
-Terjadi karena repository awal hanya berisi file script PHP tanpa folder keluaran statis. Sekarang aplikasi telah distrukturkan dengan:
-1. `pages_build_output_dir = "public"` pada `wrangler.toml`.
-2. Folder `public/` yang lengkap berisi `index.html`, `app.js`, `pay.html`, aset `style.css`, serta gambar logo.
-3. Pages Functions di folder `functions/` yang secara otomatis dipadukan oleh Cloudflare Pages saat deploy.
+## 5. Pemeriksaan Pasca-Deployment (Post-Deploy Sanity Check)
+
+Verifikasi kesehatan endpoint utama setelah proses deployment selesai:
+
+1. **Liveness Check**:
+   ```bash
+   curl -i https://embun-laundry.<subdomain>.workers.dev/api/health
+   # Respons: HTTP 200 OK {"ok":true,"status":"healthy",...}
+   ```
+2. **Katalog Layanan (Edge Cache Check)**:
+   ```bash
+   curl -i https://embun-laundry.<subdomain>.workers.dev/api/services
+   # Respons: HTTP 200 OK {"ok":true,"services":[...]}
+   # Header: cache-control: public, s-maxage=300
+   ```
+3. **Security Headers Check**:
+   Periksa keberadaan header keamanan pada landing page:
+   - `X-Content-Type-Options: nosniff`
+   - `X-Frame-Options: SAMEORIGIN`
+   - `Referrer-Policy: strict-origin-when-cross-origin`
