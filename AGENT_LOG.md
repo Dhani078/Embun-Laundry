@@ -1199,6 +1199,40 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `f6d59dd`
 - **Status**: **DONE**
 
+---
+
+## Tick 45 — 2026-09-16T11:13:00+08:00 (Task D3 & D4: Skeleton Loading & Empty States)
+
+- **Task**: D3 & D4 (Fase D) — Skeleton loading di semua tabel & Empty state bermakna (P3)
+- **Temuan sebelum perubahan**:
+  - Saat fetching data asinkronus di `public/app.js`, seluruh halaman dashboard hanya menampilkan teks statis mentah `<div>Memuat data...</div>` yang merusak layout dan terasa lambat bagi pengguna.
+  - Saat hasil data tabel kosong (`orders`, `customers`, `services`, `tasks`), antarmuka tidak menampilkan feedback atau petunjuk yang bermakna (hanya tabel kosong tanpa pesan).
+  - Belum ada komponen shimmer loading murni CSS yang adaptif terhadap dark/light mode dan patuh pada preferensi aksesibilitas `prefers-reduced-motion`.
+- **Perubahan**:
+  - Stylesheet (`public/assets/style.css`):
+    - Menambahkan kelas utilitas `.skeleton`, `.skeleton-text`, `.skeleton-title`, `.skeleton-badge`, `.skeleton-btn`, `.skeleton-card`, `.skeleton-table-wrap`, dan `.skeleton-table`.
+    - Menerapkan efek animasi gradien shimmer murni berbasis CSS (`@keyframes skeletonShimmer`) dengan warna adaptif otomatis pada mode terang (`#e2e8f0` -> `#ffffff`) dan gelap (`#1e293b` -> `#334155`).
+    - Menambahkan aturan `@media (prefers-reduced-motion: reduce)` yang menonaktifkan shimmer geser dan menggantinya dengan pulsasi opasitas statis lembut.
+    - Menambahkan styling komponen `.empty-state`, `.empty-state-icon`, `.empty-state-title`, dan `.empty-state-subtitle`.
+  - Aplikasi SPA Frontend (`public/app.js`):
+    - Helper fungsi reusable: `App.renderSkeletonTable({ columns, rows, hasActions })`, `App.renderSkeletonCards(count)`, dan `App.renderEmptyState({ icon, title, subtitle, actionHtml })`.
+    - Mengintegrasikan skeleton shimmer pada seluruh 7 halaman: `renderDashboard()`, `renderPesanan()`, `renderPelanggan()`, `renderLayanan()`, `renderDelivery()`, `renderPromo()`, `renderLaporan()`, dan `renderProfile()`.
+    - Menyematkan render empty state terstruktur saat data bernilai kosong (misal tidak ada pesanan, tidak ada pelanggan, layanan belum ada, tugas kurir kosong).
+  - Harness Pengujian:
+    - Membuat `tools/verify_d3.mjs` dan `tools/verify_d3_run.mjs` (26/26 HIJAU).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_d3_run.mjs` (total 38 verifier).
+    - Verifikasi mutasi: Merusak nama keyframe shimmer memicu kegagalan (MERAH, exit 1). Dipulihkan kembali ke HIJAU 26/26.
+    - Seluruh rangkaian pengujian proyek (38 verifier) 100% HIJAU (0 regresi).
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task D3 dan D4 selesai `[x]` (`1d5feaf`).
+    - `AGENT_STATE.md`: Memperbarui tick ke 45 dan mencatat ringkasan skeleton shimmer & empty state.
+- **Verifikasi**:
+  - `node tools/verify_d3_run.mjs` → **HIJAU 26/26**.
+  - Seluruh rangkaian verifier proyek (38/38) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+- **Commit**: `1d5feaf`
+- **Status**: **DONE**
+
+
 
 
 
