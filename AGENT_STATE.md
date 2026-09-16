@@ -52,7 +52,7 @@ Model: gemini-flash
 ## Task selesai
 
 - **0.9** (Fase 0.9) — Pembatalan Sesi: `users.session_version` & Refresh Token (P0) —
-  `(pending commit)` (tick 38)
+  `bf92626` (tick 38)
   - **Penutupan celah sesi tak terbatas & tidak dapat dibatalkan (K7)**:
     - Skema database: `db/migrations/0004_add_session_version_to_users.sql` menambahkan `ALTER TABLE users ADD COLUMN session_version INT NOT NULL DEFAULT 1 AFTER role`.
     - Masa berlaku token dipersingkat dari 30 hari menjadi 7 hari pada `functions/_db.js`, `login.js`, dan `register.js`.
