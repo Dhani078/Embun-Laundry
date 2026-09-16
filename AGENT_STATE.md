@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T10:15:00+08:00
-Tick ke: 39
-Model: gemini-flash
+Terakhir update: 2026-09-16T10:26:39+08:00
+Tick ke: 40
+Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -39,18 +39,31 @@ Model: gemini-flash
 | `/api/health` | 200 | Liveness OK |
 | `/api/services` | 200 | 4 layanan |
 | `/api/notifications` | 200 / 400 | Query order_code required, rate limited 30 req/5m |
+| `/api/promos` | 200 | Filter q, active, id (?id=); CRUD staf; OPTIONS CORS |
+| `/api/vouchers` | 200 / 401 | Staf query u.full_name, u.email; grant/bulk/delete; OPTIONS CORS |
 | `/assets/design-tokens.css` | **200** | DULU 404 — sudah fix di tick 3 |
 | `/assets/hero-canvas.js` | **200** | DULU 404 — sudah fix di tick 3 |
 | login admin | OK | Sesi tertutup (kredensial default dicabut dari dokumentasi) |
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 39 selesai)
+- ID: — (tidak ada; tick 40 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **C7** (Fase C7) — Manajemen Voucher & Promo - Admin (P2) —
+  `e12c0f9` + `ad6d155` (tick 40)
+  - **Pengelolaan CRUD promo & voucher staf terpadu**:
+    - Backend `functions/api/promos.js`: Menambahkan dukungan filter `?id=...` parameterized, mendukung alias aksi `toggle_active` dan `toggle_promo`, serta mengekspor `onRequestOptions` untuk CORS preflight.
+    - Backend `functions/api/vouchers.js`: Memperkaya query staf dengan `LEFT JOIN users u ON u.id = uv.user_id` (`u.full_name as user_name, u.email as user_email`), pencarian parameterized lintas nama/email, dan ekspor `onRequestOptions`.
+    - Router `src/index.js`: Menambahkan `/api/promos` dan `/api/vouchers` ke `optMap` penanganan preflight OPTIONS.
+    - Frontend `public/app.js`: Menambahkan modal/panel terbitkan voucher pengguna (`grantVoucherWrap`, `openGrantVoucherForm`, `grantVoucher`), daftar voucher dengan detail nama/email pelanggan, tombol cabut/hapus voucher (`deleteVoucher`), serta tombol "Salin Kode" dengan clipboard API pada kartu promo pelanggan.
+    - Harness pengujian: `tools/verify_c7.mjs` + `tools/verify_c7_run.mjs` (39/39 HIJAU).
+    - Uji mutasi: Mematikan validasi persen > 100 di `promos.js` menghasilkan status MERAH 38/39 (exit 1), dipulihkan kembali ke HIJAU 39/39.
+    - Terdaftar di `tools/run_all_verifiers.sh`, seluruh 33 verifier 100% HIJAU (0 regresi).
 
 - **C3** (Fase C3) — Notifikasi Real-Time Status Order via Polling (P2) —
   `c74f133` (tick 39)
