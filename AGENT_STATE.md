@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T10:26:39+08:00
-Tick ke: 40
-Model: kr/auto
+Terakhir update: 2026-09-16T10:35:00+08:00
+Tick ke: 41
+Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -41,18 +41,34 @@ Model: kr/auto
 | `/api/notifications` | 200 / 400 | Query order_code required, rate limited 30 req/5m |
 | `/api/promos` | 200 | Filter q, active, id (?id=); CRUD staf; OPTIONS CORS |
 | `/api/vouchers` | 200 / 401 | Staf query u.full_name, u.email; grant/bulk/delete; OPTIONS CORS |
+| `/api/reports` | 200 / 403 | Staf KPI, chart grouping, daily; Customer 403; OPTIONS CORS |
 | `/assets/design-tokens.css` | **200** | DULU 404 — sudah fix di tick 3 |
 | `/assets/hero-canvas.js` | **200** | DULU 404 — sudah fix di tick 3 |
 | login admin | OK | Sesi tertutup (kredensial default dicabut dari dokumentasi) |
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 40 selesai)
+- ID: — (tidak ada; tick 41 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **C8** (Fase C8) — Laporan Bulanan & Visualisasi Chart Interaktif (P2) —
+  `e697d7f` (tick 41)
+  - **Visualisasi laporan keuangan & kinerja interaktif**:
+    - Backend `functions/api/reports.js`: Mengekspor `onRequestOptions` untuk pra-pemeriksaan CORS standar Worker, mempertahankan isolasi RBAC (403 untuk pelanggan), serta validasi ketat rentang tanggal (`_reportfilter.js`).
+    - Router `src/index.js`: Mendaftarkan `/api/reports` di `optMap` preflight OPTIONS dan percabangan GET/OPTIONS.
+    - Frontend `public/app.js`: Menggantikan tabel statik lama dengan antarmuka analitik eksekutif:
+      - 4 KPI cards (Total Omset, Kas Terbayar, Piutang Belum Lunas, Total Order & Rata-rata Bobot).
+      - Grafik Batang Bertumpuk Responsif (SVG native) yang memvisualisasikan pendapatan terbayar vs piutang per periode (bulan/minggu/hari) dengan grid nominal dan label waktu.
+      - Interaktivitas hover tooltip informatif yang menampilkan rincian terbayar, piutang, dan total nominal per periode.
+      - Kontrol filter rentang tanggal (`start`, `end`), pengelompokan (`group`: bulan, minggu, hari), preset cepat ("Bulan Ini", "30 Hari", "Tahun Ini", "Semua"), serta tombol cetak struk/laporan (`window.print()`).
+      - Tabel rincian harian transaksi terformat rapi dengan status empty state bila tidak ada data.
+    - Harness pengujian: `tools/verify_c8.mjs` + `tools/verify_c8_run.mjs` (33/33 HIJAU).
+    - Uji mutasi: Mematikan proteksi `if (!isStaff)` tertangkap MERAH (31/33, exit 1). Dipulihkan kembali ke HIJAU 33/33.
+    - Terdaftar di `tools/run_all_verifiers.sh`, seluruh 34 verifier 100% HIJAU (0 regresi).
 
 - **C7** (Fase C7) — Manajemen Voucher & Promo - Admin (P2) —
   `e12c0f9` + `ad6d155` (tick 40)

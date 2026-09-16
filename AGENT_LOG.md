@@ -975,6 +975,58 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `503a248`
 - **Status**: **DONE**
 
+---
+
+## Tick 41 — 2026-09-16T10:35:00+08:00 (Task C8: Laporan Bulanan & Visualisasi Chart Interaktif)
+
+- **Task**: C8 (Fase C8) — Laporan bulanan + chart (P2)
+- **Temuan sebelum perubahan**:
+  - `functions/api/reports.js` belum mengekspor fungsi `onRequestOptions` untuk pra-pemeriksaan CORS standar Worker.
+  - `src/index.js` belum mendaftarkan `/api/reports` ke dalam `optMap` penanganan preflight OPTIONS.
+  - Antarmuka laporan staf di `public/app.js` (`renderLaporan()`) sebelumnya hanya berupa pemanggilan API statik tanpa parameter filter tanggal atau pengelompokan, serta sama sekali belum menyajikan visualisasi grafik interaktif (hanya tabel statik 3 KPI dan riwayat harian).
+  - Diperlukan proteksi keamanan RBAC sesuai B11: laporan agregat bisnis hanya boleh diakses staf (Admin/Owner/Staff), pelanggan ditolak 403 Forbidden, dan permintaan tanpa sesi ditolak 401 Unauthorized.
+- **Perubahan**:
+  - Backend API (`functions/api/reports.js`):
+    - Mengekspor `onRequestOptions` untuk menangani preflight CORS `GET, OPTIONS`.
+    - Mempertahankan isolasi data laporan (403 untuk pelanggan), validasi rentang tanggal (`_reportfilter.js`), kamus aman `GROUP_EXPR` (`bulan`, `minggu`, `hari`), dan generic server error.
+  - Cloudflare Worker Router (`src/index.js`):
+    - Menambahkan `'/api/reports': reportsHandler` ke `optMap` penanganan preflight OPTIONS.
+    - Menambahkan penanganan rute eksplisit `GET` dan `OPTIONS` untuk `/api/reports`.
+  - Frontend Admin Dashboard (`public/app.js`):
+    - Memperkaya `renderLaporan()` dengan kontrol filter:
+      - Selektor pengelompokan data (`group`): Bulanan, Mingguan, Harian.
+      - Input rentang tanggal (`start` & `end`).
+      - Tombol preset tanggal cepat: "Bulan Ini", "30 Hari", "Tahun Ini", "Semua".
+      - Tombol "Terapkan Filter" dan integrasi pencetakan nota/laporan (`window.print()`).
+    - Menambahkan 4 KPI Cards ringkasan eksekutif: Total Omset, Kas Terbayar, Piutang Belum Lunas, Total Transaksi & Rata-rata Bobot/Order.
+    - Membangun generator grafik batang bertumpuk interaktif (`buildSvgChart`):
+      - Grafik SVG responsif murni dengan grid nominal sumbu Y dan label waktu sumbu X.
+      - Batang bertumpuk: omset terbayar (biru) vs piutang belum lunas (oranye).
+      - Hover tooltip interaktif mengambang (`#chartTooltip`) yang menampilkan detail periode, nominal terbayar, piutang, dan total omset.
+      - Status empty state elegan bila tidak ada data transaksi pada rentang terpilih.
+    - Tabel rincian harian pesanan terformat rapi dengan status data kosong yang informatif.
+  - Harness Pengujian:
+    - Membuat `tools/verify_c8.mjs` + `tools/verify_c8_run.mjs` (33/33 HIJAU) yang mencakup:
+      1. Audit statik ekspor handler, routing optMap, dan penanganan generic server error.
+      2. Hak akses RBAC (Admin, Owner, Staff dijawab 200; Customer ditolak 403; tanpa sesi ditolak 401).
+      3. Validasi rentang tanggal (format salah -> 400, terbalik -> 400, >3660 hari -> 400, valid -> 200).
+      4. Validasi pengelompokan periode (`bulan`, `minggu`, `hari`, dan fallback aman ke bulan).
+      5. SQL injection defense dengan canary parameter query.
+      6. Audit komponen antarmuka frontend (menu, renderLaporan, SVG chart, filter controls, preset, tooltip hover, print action).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c8_run.mjs`.
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Tandai Task C8 selesai `[x]`.
+    - `AGENT_STATE.md`: Tingkatkan tick ke 41 dan catat baseline `/api/reports`.
+- **Verifikasi**:
+  - `node tools/verify_c8_run.mjs` → **HIJAU 33/33**.
+  - Seluruh rangkaian verifier proyek (34/34) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+  - Uji mutasi:
+    - Menonaktifkan verifikasi RBAC pelanggan (`if (!isStaff) return 403`) menghasilkan status MERAH (31/33, exit 1).
+    - Kode dipulihkan → kembali **HIJAU 33/33** (exit 0).
+- **Commit**: `e697d7f`
+- **Status**: **DONE**
+
+
 
 
 
