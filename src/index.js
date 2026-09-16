@@ -20,6 +20,7 @@ import * as dashboardHandler from '../functions/api/dashboard.js';
 import * as healthHandler from '../functions/api/health.js';
 import { withSecurityHeaders, SECURITY_HEADERS } from '../functions/_db.js';
 import { applyCors } from '../functions/_cors.js';
+import { makeLogger } from '../functions/_logger.js';
 
 function rewriteImagePath(pathname) {
   // Handle case-insensitive image requests - rewrite to actual filenames
@@ -36,6 +37,8 @@ function rewriteImagePath(pathname) {
 
 export default {
   async fetch(request, env, ctx) {
+    const log = makeLogger(env);
+    const t0 = Date.now();
     const url = new URL(request.url);
     let path = url.pathname;
 
@@ -118,12 +121,18 @@ export default {
       // termasuk jalur 404 di bawah. Tanpa ini, respons yang dibuat
       // langsung di sini (bukan lewat handler) tidak akan pernah
       // mendapat header CORS.
-      if (resp) return applyCors(withSecurityHeaders(await resp), request, env);
+      if (resp) {
+        const finalResp = applyCors(withSecurityHeaders(await resp), request, env);
+        log.req(request, finalResp.status, Date.now() - t0);
+        return finalResp;
+      }
 
-      return applyCors(withSecurityHeaders(new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
+      const notFoundResp = applyCors(withSecurityHeaders(new Response(JSON.stringify({ ok: false, msg: 'Endpoint not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       })), request, env);
+      log.req(request, 404, Date.now() - t0);
+      return notFoundResp;
     }
 
     // Serve static assets from public directory
