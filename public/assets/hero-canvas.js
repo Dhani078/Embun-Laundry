@@ -372,20 +372,52 @@ function drawStaticFrame(p) {
 }
 
 // ============================================================================
-// MOUNT / UNMOUNT HELPERS
+// MOUNT / UNMOUNT HELPERS & VIEWPORT INTERSECTION OBSERVER (Task D8)
 // ============================================================================
+
+let heroObserver = null;
+
+function setupHeroVisibilityObserver() {
+  const container = document.getElementById('hero-canvas-container');
+  if (!container || typeof IntersectionObserver === 'undefined') return;
+
+  if (heroObserver) {
+    heroObserver.disconnect();
+  }
+
+  heroObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!heroP5 || prefersReducedMotion) return;
+      if (entry.isIntersecting) {
+        heroP5.loop();
+      } else {
+        heroP5.noLoop();
+      }
+    });
+  }, { threshold: 0.05 });
+
+  heroObserver.observe(container);
+}
 
 function mountHeroCanvas() {
   // Bail unless the container exists and p5 actually loaded — otherwise p5
   // would inject a stray default canvas into <body>.
   if (typeof p5 === 'undefined') return false;
   if (!document.getElementById('hero-canvas-container')) return false;
-  if (heroP5) return true;
+  if (heroP5) {
+    setupHeroVisibilityObserver();
+    return true;
+  }
   heroP5 = new p5(heroSketch);
+  setupHeroVisibilityObserver();
   return true;
 }
 
 function unmountHeroCanvas() {
+  if (heroObserver) {
+    heroObserver.disconnect();
+    heroObserver = null;
+  }
   if (heroP5) {
     heroP5.remove();
     heroP5 = null;
