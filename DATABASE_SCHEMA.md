@@ -1,5 +1,5 @@
 -- Schema Database Embun Laundry untuk TiDB Cloud Serverless
--- Disesuaikan dari MySQL/MariaDB lama agar optimal di Cloudflare Pages & TiDB Serverless
+-- Disesuaikan dari MySQL/MariaDB lama agar optimal di Cloudflare Workers & TiDB Serverless
 
 CREATE DATABASE IF NOT EXISTS embun_laundry;
 USE embun_laundry;
@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `phone` VARCHAR(30) DEFAULT NULL,
   `avatar_path` VARCHAR(255) DEFAULT NULL,
   `role` ENUM('Admin','Owner','Staff','Customer') NOT NULL DEFAULT 'Customer',
+  `session_version` INT NOT NULL DEFAULT 1,
   `password_hash` VARCHAR(255) NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
 -- 4. ORDERS
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT DEFAULT NULL,
   `order_code` VARCHAR(20) NOT NULL UNIQUE,
   `customer_name` VARCHAR(100) NOT NULL,
   `customer_phone` VARCHAR(32) DEFAULT NULL,
@@ -63,6 +65,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `status` ENUM('baru','proses','selesai','batal') NOT NULL DEFAULT 'baru',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `finished_at` DATETIME DEFAULT NULL,
+  INDEX `idx_orders_user_id` (`user_id`),
   INDEX `idx_orders_created` (`created_at`),
   INDEX `idx_orders_status` (`status`)
 );
@@ -138,6 +141,7 @@ CREATE TABLE IF NOT EXISTS `user_vouchers` (
 -- 9. PAYMENTS
 CREATE TABLE IF NOT EXISTS `payments` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `idempotency_key` VARCHAR(64) DEFAULT NULL,
   `order_id` INT NOT NULL,
   `method` ENUM('QRIS','DANA','OVO','GOPAY','TRANSFER','CASH') NOT NULL,
   `provider` VARCHAR(32) DEFAULT 'manual',
@@ -145,8 +149,11 @@ CREATE TABLE IF NOT EXISTS `payments` (
   `amount` INT NOT NULL,
   `status` ENUM('pending','paid','failed','expired','cancelled') NOT NULL DEFAULT 'pending',
   `qr_payload` TEXT DEFAULT NULL,
+  `proof_image` MEDIUMTEXT DEFAULT NULL,
   `created_at` DATETIME NOT NULL,
-  `paid_at` DATETIME DEFAULT NULL
+  `paid_at` DATETIME DEFAULT NULL,
+  UNIQUE INDEX `uq_payments_idempotency_key` (`idempotency_key`),
+  INDEX `idx_payments_order` (`order_id`)
 );
 
 -- 10. DAILY CHECKINS
@@ -157,3 +164,22 @@ CREATE TABLE IF NOT EXISTS `daily_checkins` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY `uniq_user_day` (`user_id`, `day`)
 );
+
+-- 11. NOTIFICATIONS
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_code` VARCHAR(20) NOT NULL,
+  `message` TEXT NOT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'baru',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_notifications_order_code` (`order_code`),
+  INDEX `idx_notifications_created_at` (`created_at`)
+);
+
+-- RIWAYAT MIGRASI (db/migrations/):
+-- 0001_cleanup_debug_accounts.sql     : Hapus akun uji coba dan audit debug
+-- 0002_add_user_id_to_orders.sql      : Tambah kolom user_id & index pada orders
+-- 0003_add_idempotency_key_to_payments.sql: Kolom & unique index idempotency_key pada payments
+-- 0004_add_session_version_to_users.sql   : Kolom session_version INT NOT NULL DEFAULT 1 pada users
+-- 0005_create_notifications_table.sql : Tabel notifications untuk status real-time
+-- 0006_add_proof_image_to_payments.sql: Kolom proof_image MEDIUMTEXT pada payments
