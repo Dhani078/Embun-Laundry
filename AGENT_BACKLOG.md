@@ -89,7 +89,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
 | D1 | Terapkan design token ke seluruh dashboard | P3 | [ ] | — |
-| D2 | Dark mode toggle (localStorage) | P3 | [ ] | — |
+| D2 | Dark mode toggle (localStorage) | P3 | [x] | `f6d59dd` |
 | D3 | Skeleton loading di semua tabel | P3 | [ ] | — |
 | D4 | Empty state bermakna di setiap list | P3 | [ ] | — |
 | D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
@@ -105,8 +105,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
 | E1 | Cache `/api/services` di edge (TTL 5m) | P3 | [x] | `a220f3a` |
-| E2 | Lazy load gambar non-kritis | P3 | [ ] | — |
-| E3 | Preconnect/preload font kritis | P3 | [ ] | — |
+| E2 | Lazy load gambar non-kritis | P3 | [x] | `b9db8c5` |
+| E3 | Preconnect/preload font kritis | P3 | [x] | `b9db8c5` |
 | E4 | Minifikasi CSS/JS saat build | P4 | [ ] | — |
 | E5 | Logging terstruktur (dev only) | P3 | [ ] | — |
 | E6 | Error boundary global SPA | P3 | [ ] | — |
