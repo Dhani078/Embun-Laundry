@@ -58,6 +58,69 @@ const App = window.App = {
     });
   },
 
+  // D3: Skeleton Loading & D4: Empty State Helpers
+  renderSkeletonTable({ columns = 5, rows = 5, hasActions = true } = {}) {
+    const headerCols = Array.from({ length: columns }).map((_, i) =>
+      `<th style="padding: 12px 10px;"><div class="skeleton skeleton-text" style="width: ${i === 0 ? '40px' : (i === columns - 1 ? '60px' : '70%')}; margin: 0;"></div></th>`
+    ).join('');
+
+    const bodyRows = Array.from({ length: rows }).map(() => `
+      <tr style="border-bottom: 1px solid var(--line);">
+        ${Array.from({ length: columns }).map((_, i) => {
+          if (hasActions && i === columns - 1) {
+            return `<td style="padding: 12px 10px; text-align: right;"><div class="skeleton skeleton-btn" style="width: 70px; height: 28px;"></div></td>`;
+          }
+          const widths = ['50px', '85%', '65%', '45%', '75%', '55%'];
+          const w = widths[i % widths.length];
+          return `<td style="padding: 12px 10px;"><div class="skeleton skeleton-text" style="width: ${w}; margin: 0;"></div></td>`;
+        }).join('')}
+      </tr>
+    `).join('');
+
+    return `
+      <div class="skeleton-table-wrap" aria-busy="true" aria-label="Memuat data tabel...">
+        <table class="skeleton-table">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--line);">
+              ${headerCols}
+            </tr>
+          </thead>
+          <tbody>
+            ${bodyRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  },
+
+  renderSkeletonCards(count = 4) {
+    return `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;" aria-busy="true" aria-label="Memuat ringkasan...">
+        ${Array.from({ length: count }).map(() => `
+          <div class="skeleton-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="skeleton skeleton-text" style="width: 45%; height: 12px; margin: 0;"></div>
+              <div class="skeleton" style="width: 28px; height: 28px; border-radius: 8px;"></div>
+            </div>
+            <div class="skeleton skeleton-title" style="width: 60%; height: 26px; margin-bottom: 8px;"></div>
+            <div class="skeleton skeleton-text" style="width: 75%; height: 11px; margin: 0;"></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
+
+  renderEmptyState({ icon = '📦', title = 'Belum Ada Data', subtitle = 'Data yang Anda cari saat ini belum tersedia atau belum dibuat.', actionHtml = '' } = {}) {
+    return `
+      <div class="empty-state" role="status">
+        <div class="empty-state-icon">${esc(icon)}</div>
+        <div class="empty-state-title">${esc(title)}</div>
+        <div class="empty-state-subtitle">${esc(subtitle)}</div>
+        ${actionHtml}
+      </div>
+    `;
+  },
+
   toast(msg, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -982,7 +1045,11 @@ const App = window.App = {
   async renderDashboard() {
     document.getElementById('pageTitle').textContent = 'Dashboard';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat data dashboard...</div>';
+    const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
+    c.innerHTML = `
+      ${this.renderSkeletonCards(isStaff ? 4 : 3)}
+      ${this.renderSkeletonTable({ columns: 7, rows: 5, hasActions: true })}
+    `;
 
     try {
       const res = await fetch('/api/dashboard');
@@ -990,7 +1057,6 @@ const App = window.App = {
       if (!data.ok) return c.innerHTML = '<div class="err">Gagal memuat dashboard</div>';
 
       const s = data.stats;
-      const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
 
       c.innerHTML = `
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
@@ -1035,7 +1101,21 @@ const App = window.App = {
               <tbody>
                 ${(() => {
                   this._recentOrders = data.recent_orders || [];
-                  return (data.recent_orders || []).map(o => `
+                  if (this._recentOrders.length === 0) {
+                    return `
+                      <tr>
+                        <td colspan="7" style="padding: 0; border: none;">
+                          ${this.renderEmptyState({
+                            icon: '🧺',
+                            title: 'Belum Ada Pesanan',
+                            subtitle: 'Belum ada transaksi pesanan laundry yang tercatat baru-baru ini.',
+                            actionHtml: '<button class="btn btn-primary" onclick="App.renderPesanan()">+ Buat Pesanan Sekarang</button>'
+                          })}
+                        </td>
+                      </tr>
+                    `;
+                  }
+                  return this._recentOrders.map(o => `
                   <tr style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
                     <td style="padding: 10px;">${esc(o.customer_name)}</td>
@@ -1067,7 +1147,15 @@ const App = window.App = {
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
     document.getElementById('pageTitle').textContent = isStaff ? 'Manajemen Pesanan' : 'Riwayat Pesanan';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat data pesanan...</div>';
+    c.innerHTML = `
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; opacity: 0.6; pointer-events: none;">
+        <div class="skeleton" style="width: 140px; height: 36px;"></div>
+        <div class="skeleton" style="width: 140px; height: 36px;"></div>
+        <div class="skeleton" style="width: 120px; height: 36px;"></div>
+        <div class="skeleton" style="flex: 1; height: 36px;"></div>
+      </div>
+      ${this.renderSkeletonTable({ columns: 7, rows: 6, hasActions: true })}
+    `;
 
     const start = params.start || '';
     const end = params.end || '';
@@ -1095,7 +1183,6 @@ const App = window.App = {
       const orders = ordData.orders || [];
       this._orders = orders;
       const services = svcData.services || [];
-      const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
 
       c.innerHTML = `
         <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
@@ -1134,7 +1221,22 @@ const App = window.App = {
               </tr>
             </thead>
             <tbody id="ordersTableBody">
-              ${orders.map(o => `
+              ${orders.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="padding: 0; border: none;">
+                    ${this.renderEmptyState({
+                      icon: '🧺',
+                      title: 'Tidak Ada Pesanan Ditemukan',
+                      subtitle: (start || end || q || status)
+                        ? 'Tidak ada pesanan yang sesuai dengan filter pencarian Anda. Coba atur ulang filter.'
+                        : 'Belum ada data pesanan laundry saat ini.',
+                      actionHtml: (start || end || q || status)
+                        ? '<button class="btn btn-sm" onclick="App.renderPesanan()">Reset Filter</button>'
+                        : (isStaff ? '<button class="btn btn-primary" onclick="document.getElementById(\'openNewOrderModal\')?.click()">+ Buat Pesanan Baru</button>' : '')
+                    })}
+                  </td>
+                </tr>
+              ` : orders.map(o => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
                   <td style="padding: 10px;">${esc(o.customer_name)}</td>
@@ -1220,7 +1322,7 @@ const App = window.App = {
   async renderPelanggan() {
     document.getElementById('pageTitle').textContent = 'Data Pelanggan';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat data pelanggan...</div>';
+    c.innerHTML = this.renderSkeletonTable({ columns: 7, rows: 6, hasActions: false });
 
     try {
       const res = await fetch('/api/customers');
@@ -1242,7 +1344,17 @@ const App = window.App = {
               </tr>
             </thead>
             <tbody>
-              ${customers.map(cust => `
+              ${customers.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="padding: 0; border: none;">
+                    ${this.renderEmptyState({
+                      icon: '👥',
+                      title: 'Belum Ada Pelanggan',
+                      subtitle: 'Belum ada data pelanggan yang terdaftar pada sistem saat ini.'
+                    })}
+                  </td>
+                </tr>
+              ` : customers.map(cust => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 10px; font-weight: 600;">${esc(cust.code)}</td>
                   <td style="padding: 10px;">${esc(cust.full_name)}</td>
@@ -1265,12 +1377,35 @@ const App = window.App = {
   async renderLayanan() {
     document.getElementById('pageTitle').textContent = 'Daftar Layanan & Tarif';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat layanan...</div>';
+    c.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;" aria-busy="true" aria-label="Memuat layanan...">
+        ${Array.from({ length: 4 }).map(() => `
+          <div class="skeleton-card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <div class="skeleton skeleton-title" style="width: 50%; height: 18px; margin: 0;"></div>
+              <div class="skeleton skeleton-badge" style="width: 55px; height: 20px;"></div>
+            </div>
+            <div class="skeleton skeleton-title" style="width: 70%; height: 24px; margin-bottom: 8px;"></div>
+            <div class="skeleton skeleton-text" style="width: 40%; height: 12px; margin-bottom: 16px;"></div>
+            <div class="skeleton skeleton-btn" style="width: 100%; height: 34px;"></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
 
     try {
       const res = await fetch('/api/services');
       const data = await res.json();
       const services = data.services || [];
+
+      if (services.length === 0) {
+        c.innerHTML = this.renderEmptyState({
+          icon: '💲',
+          title: 'Belum Ada Layanan',
+          subtitle: 'Daftar paket layanan laundry belum dikonfigurasi.'
+        });
+        return;
+      }
 
       c.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
@@ -1297,7 +1432,7 @@ const App = window.App = {
   async renderDelivery() {
     document.getElementById('pageTitle').textContent = 'Pickup & Antar Jemput';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat tugas delivery...</div>';
+    c.innerHTML = this.renderSkeletonTable({ columns: 7, rows: 5, hasActions: false });
 
     try {
       const res = await fetch('/api/delivery');
@@ -1319,7 +1454,17 @@ const App = window.App = {
               </tr>
             </thead>
             <tbody>
-              ${tasks.map(t => `
+              ${tasks.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="padding: 0; border: none;">
+                    ${this.renderEmptyState({
+                      icon: '🚚',
+                      title: 'Belum Ada Tugas Kurir',
+                      subtitle: 'Tidak ada jadwal penjemputan atau pengantaran laundry saat ini.'
+                    })}
+                  </td>
+                </tr>
+              ` : tasks.map(t => `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 10px; font-weight: 600;">${esc(t.task_code)}</td>
                   <td style="padding: 10px;"><span class="badge">${esc(String(t.type || '').toUpperCase())}</span></td>
@@ -1342,7 +1487,13 @@ const App = window.App = {
   async renderPromo() {
     document.getElementById('pageTitle').textContent = 'Promo & Voucher Diskon';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat promo...</div>';
+    c.innerHTML = `
+      <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        <div class="skeleton skeleton-btn" style="width: 120px; height: 36px;"></div>
+        <div class="skeleton skeleton-btn" style="width: 140px; height: 36px;"></div>
+      </div>
+      ${this.renderSkeletonTable({ columns: 8, rows: 4, hasActions: true })}
+    `;
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user?.role || this.user?.user_role);
 
     try {
@@ -1891,7 +2042,18 @@ const App = window.App = {
   async renderLaporan() {
     document.getElementById('pageTitle').textContent = 'Laporan Keuangan & Kinerja';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px; color: #64748b;">Memuat laporan keuangan & kinerja...</div>';
+    c.innerHTML = `
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; opacity: 0.6; pointer-events: none;">
+        <div class="skeleton" style="width: 130px; height: 36px;"></div>
+        <div class="skeleton" style="width: 130px; height: 36px;"></div>
+        <div class="skeleton" style="width: 130px; height: 36px;"></div>
+      </div>
+      ${this.renderSkeletonCards(4)}
+      <div class="skeleton-card" style="height: 260px; margin-bottom: 24px; display: grid; place-items: center;" aria-busy="true">
+        <div class="skeleton skeleton-title" style="width: 35%; height: 20px;"></div>
+      </div>
+      ${this.renderSkeletonTable({ columns: 4, rows: 5, hasActions: false })}
+    `;
 
     const filter = this._reportFilter || { group: 'bulan', start: '', end: '' };
     const params = new URLSearchParams();
@@ -2088,7 +2250,20 @@ const App = window.App = {
   async renderProfile() {
     document.getElementById('pageTitle').textContent = 'Profil Saya';
     const c = document.getElementById('mainContent');
-    c.innerHTML = '<div style="padding: 20px;">Memuat profil...</div>';
+    c.innerHTML = `
+      <div style="max-width: 600px; margin: 0 auto; display: grid; gap: 20px;" aria-busy="true" aria-label="Memuat profil...">
+        <div class="skeleton-card">
+          <div class="skeleton skeleton-title" style="width: 40%; height: 20px; margin-bottom: 20px;"></div>
+          <div class="skeleton skeleton-text" style="width: 30%; height: 12px; margin-bottom: 6px;"></div>
+          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 16px;"></div>
+          <div class="skeleton skeleton-text" style="width: 25%; height: 12px; margin-bottom: 6px;"></div>
+          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 16px;"></div>
+          <div class="skeleton skeleton-text" style="width: 20%; height: 12px; margin-bottom: 6px;"></div>
+          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 20px;"></div>
+          <div class="skeleton skeleton-btn" style="width: 120px; height: 38px;"></div>
+        </div>
+      </div>
+    `;
 
     try {
       const res = await fetch('/api/profile');
