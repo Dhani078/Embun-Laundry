@@ -172,15 +172,11 @@ export async function verifyPassword(password, stored) {
       }
     }
 
-    // --- 3. Plaintext (seed lawas & baris debug; harus HAPUS, bukan abaikan) ---
-    if (password === stored) return true;
-
-    // --- 4. sha256(password + 'dhani-salt') — format produksi hari ini ---
+    // --- 3. sha256(password + 'dhani-salt') — format transisi ber-salt untuk lazy upgrade ---
     if (await sha256Hex(String(password) + LEGACY_SALT) === stored) return true;
 
-    // --- 5. sha256(password) tanpa salt ---
-    if (await sha256Hex(String(password)) === stored) return true;
-
+    // --- K6: Fallback plaintext dan sha256 tanpa salt TELAH DICABUT ---
+    // Akun dengan hash plaintext atau sha256 tanpa salt ditolak demi keamanan.
     return false;
   } catch (e) {
     return false;

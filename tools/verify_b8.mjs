@@ -51,8 +51,8 @@ async function sha256hex(s) {
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 const legacyNoSalt = await sha256hex('secretpw');
-check('hash lawas SHA-256 TANPA salt masih bisa login', await verifyPassword('secretpw', legacyNoSalt));
-check('baris debug plaintext masih bisa login', await verifyPassword('testhash', 'testhash'));
+check('hash lawas SHA-256 TANPA salt DITOLAK (K6)', !(await verifyPassword('secretpw', legacyNoSalt)));
+check('baris debug plaintext DITOLAK (K6)', !(await verifyPassword('testhash', 'testhash')));
 
 const bcryptHash = await bcrypt.hash('admin123', 4);
 check('hash bcrypt ($2a$) masih bisa login', await verifyPassword('admin123', bcryptHash));
