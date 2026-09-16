@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T10:35:00+08:00
-Tick ke: 41
-Model: gemini-flash
+Terakhir update: 2026-09-16T10:46:23+08:00
+Tick ke: 42
+Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -48,12 +48,36 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 41 selesai)
+- ID: — (tidak ada; tick 42 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **C5 & E1 & D5** (Fase C & D & E) — Invoice PDF & Cetak Struk Kasir + Toast Notification & Optimasi Ringan Edge Caching (P3) —
+  `a220f3a` + `52ea710` (tick 42)
+  - **Invoice PDF & Cetak Struk Kasir Vector Native (Task C5)**:
+    - Frontend SPA `public/app.js`: Menambahkan modul invoice `App.openInvoice(orderIdOrCode)`, `App.switchInvoiceMode(mode)`, dan `App.renderInvoiceModal(order, mode)` dengan dual mode (Struk 80mm thermal dan Invoice Formal A4).
+    - Terintegrasi langsung dengan tombol "🧾 Invoice" pada tabel Pesanan (`renderPesanan`) dan tabel Recent Orders di Dashboard (`renderDashboard`).
+    - Frontend Pelacakan Publik `public/track.html`: Menambahkan tombol "🧾 Cetak / Unduh Invoice" dan dialog modal invoice interaktif yang memungkinkan pelanggan mencetak nota langsung tanpa login.
+    - Stylesheet `public/assets/style.css` & `public/track.html`: Aturan cetak vektor `@media print` lengkap, menyembunyikan elemen antarmuka (topbar, sidebar, modal overlay) dan memformat kertas cetak secara presisi (80mm untuk struk thermal dan 100%/190mm untuk invoice formal A4).
+    - Sanitasi XSS: Seluruh data pelanggan (`customer_name`, `order_code`, `service_name`) dilindungi secara ketat melalui fungsi escaping (`esc()` / `escapeHtml()`).
+    - Vektor QR Code Native: Menggunakan vector SVG inline murni (2KB) tanpa library QR pihak ketiga yang berat.
+  - **Toast Notification & Dialog Modern (Task D5)**:
+    - Menggantikan 34 kemunculan dialog pemblokir browser bawaan (`alert()` / `confirm()`) dengan sistem toast non-blocking `App.toast(msg, type)` dan konfirmasi modal `App.confirm(msg)`.
+    - Animasi CSS smooth fade-in/fade-out dengan varian status (success, error, warning, info).
+  - **Edge Caching & Bundle Optimization (Task E1 & Dead Code Removal)**:
+    - Backend `functions/api/services.js`: Menyertakan header `Cache-Control: public, max-age=300, stale-while-revalidate=60` untuk katalog layanan publik pada permintaan GET.
+    - Konfigurasi Edge `public/_headers`: Menambahkan caching browser & edge untuk direktori `/assets/*` (TTL 1 hari) dan `/img/*` (TTL 7 hari).
+    - Zero-dependency PDF: Menghindari beban 500KB+ library PDF eksternal (jspdf/pdfmake) dengan memanfaatkan native browser vector print to PDF (`window.print()`).
+    - Pembersihan duplikasi 7MB gambar: Menghapus salinan redundant `public/*.png` dan `public/assets/img/*.png` yang menduplikasi file kanonikal di `public/img/`, sementara `src/index.js` tetap merutekan fallback path secara mulus.
+  - Harness Pengujian:
+    - Membuat `tools/verify_c5.mjs` + `tools/verify_c5_run.mjs` (37/37 HIJAU) yang mencakup audit statik invoice, mode cetak, escapeHtml, toast, edge caching, kebersihan bundle, serta simulasi kalkulasi sisa saldo dan ketahanan XSS.
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c5_run.mjs`.
+  - Verifikasi Mutasi:
+    - Mematikan deklarasi `openInvoice` menghasilkan status MERAH (exit 1). Dipulihkan kembali ke HIJAU 37/37.
+    - Seluruh rangkaian pengujian (35 verifier) 100% HIJAU (0 regresi).
 
 - **C8** (Fase C8) — Laporan Bulanan & Visualisasi Chart Interaktif (P2) —
   `e697d7f` (tick 41)
