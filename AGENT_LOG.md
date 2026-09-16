@@ -1026,6 +1026,48 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `e697d7f`
 - **Status**: **DONE**
 
+---
+
+## Tick 42 — 2026-09-16T10:46:00+08:00 (Task C5: Invoice PDF & Struk Kasir + Optimasi Ringan E1/D5)
+
+- **Task**: C5 (Fase C) — Invoice PDF (client-side / print CSS) (P3) + D5 (Toast Notification) + E1 (Edge Caching) + Pembersihan Dead Code
+- **Temuan sebelum perubahan**:
+  - Aplikasi belum memiliki fitur cetak invoice/struk kasir yang dapat langsung digunakan kasir maupun pelanggan (belum ada dual mode 80mm thermal receipt dan A4 formal letterhead invoice).
+  - Penggunaan dialog bawaan browser `alert()` dan `confirm()` yang memblokir render UI dan merusak estetika modern.
+  - Terdapat duplikasi file binary gambar redundant sebesar ~7MB di `public/*.png` dan `public/assets/img/*.png` yang merupakan salinan identik dari `public/img/*.png`.
+  - Belum ada aturan `Cache-Control` edge/browser di `public/_headers` untuk aset statis maupun pada API katalog `/api/services` (Task E1).
+- **Perubahan**:
+  - Frontend SPA & Print Engine (`public/app.js` & `public/assets/style.css`):
+    - Mengembangkan sistem cetak invoice vektor zero-dependency (memanfaatkan native browser `window.print()` dan `@media print` scoped):
+      - Format Thermal 80mm: Struk kasir ringkas dengan lebar 80mm, font monospace/sans rapi, info toko, nomor nota, tabel itemized, rincian pembayaran, status LUNAS/BELUM LUNAS, dan vektor QR code bawaan.
+      - Format Formal A4: Invoice formal ukuran penuh untuk pembukuan atau kwitansi resmi.
+    - Menambahkan modul invoice `App.openInvoice(orderIdOrCode)`, `App.switchInvoiceMode(mode)`, dan `App.renderInvoiceModal(order, mode)`.
+    - Menyediakan tombol akses cepat "🧾 Invoice" pada tabel Pesanan (`renderPesanan`) dan tabel Recent Orders di Dashboard (`renderDashboard`).
+    - Aturan CSS `@media print` lengkap: menyembunyikan navigasi, sidebar, topbar, tombol aksi, dan backdrop modal, hanya mencetak kertas invoice secara presisi.
+  - Frontend Pelacakan Publik (`public/track.html`):
+    - Menambahkan tombol "🧾 Cetak / Unduh Invoice" dan dialog modal invoice interaktif pada hasil pencarian order publik.
+    - Sanitasi ketat XSS pada nama pelanggan, kode nota, dan nama layanan menggunakan `escapeHtml()` / `esc()`.
+  - Sistem Notifikasi Modern & Konfirmasi Modal (`public/app.js`):
+    - Menggantikan 34 kemunculan `alert()` / `confirm()` dengan `App.toast(msg, type)` dan `App.confirm(msg)` berbasis Promise modal dialog.
+    - Transisi CSS halus, status badge warna selaras design token, tanpa memblokir thread JavaScript.
+  - Optimasi Edge Caching & Bundle Cleanup (Task E1 & Dead Code Removal):
+    - Backend `functions/api/services.js`: Mengirimkan header `Cache-Control: public, max-age=300, stale-while-revalidate=60` untuk permintaan publik `GET /api/services`.
+    - `public/_headers`: Menambahkan caching edge & browser untuk `/assets/*` (TTL 24 jam) dan `/img/*` (TTL 7 hari).
+    - Menghapus 7MB file duplikat redundant (`public/3d.png`, `public/Logo.png`, `public/avatar-placeholder.png`, dan seluruh isi `public/assets/img/`).
+  - Harness Pengujian:
+    - Membuat `tools/verify_c5.mjs` + `tools/verify_c5_run.mjs` (37/37 HIJAU).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c5_run.mjs`.
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task C5, D5, dan E1 selesai `[x]`.
+    - `AGENT_STATE.md`: Meningkatkan tick ke 42 dan mencatat baseline invoice & edge caching.
+- **Verifikasi**:
+  - `node tools/verify_c5_run.mjs` → **HIJAU 37/37**.
+  - Seluruh rangkaian verifier proyek (35/35) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+  - Uji mutasi: Mematikan deklarasi `openInvoice` menghasilkan status MERAH (exit 1). Dipulihkan kembali ke HIJAU 37/37.
+- **Commit**: `a220f3a` (code) + `52ea710` (toast)
+- **Status**: **DONE**
+
+
 
 
 

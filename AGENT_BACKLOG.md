@@ -74,7 +74,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C2 | Tracking order publik by kode (tanpa login) | P2 | [x] | `1551773` |
 | C3 | Notifikasi real-time status (polling) | P2 | [x] | `c74f133` |
 | C4 | Upload bukti pembayaran (R2 / base64 kecil) | P3 | [ ] | — |
-| C5 | Invoice PDF (client-side / print CSS) | P3 | [ ] | — |
+| C5 | Invoice PDF (client-side / print CSS) | P3 | [x] | `a220f3a` |
 | C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `824df1d` |
 | C7 | Manajemen voucher & promo (admin) | P2 | [x] | `e12c0f9` `ad6d155` |
 | C8 | Laporan bulanan + chart | P2 | [x] | `e697d7f` |
@@ -92,7 +92,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | D2 | Dark mode toggle (localStorage) | P3 | [ ] | — |
 | D3 | Skeleton loading di semua tabel | P3 | [ ] | — |
 | D4 | Empty state bermakna di setiap list | P3 | [ ] | — |
-| D5 | Toast notification global (ganti alert) | P3 | [ ] | — |
+| D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
 | D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [ ] | — |
 | D7 | Responsive audit 360/768/1024/1440px | P3 | [ ] | — |
 | D8 | Animasi masuk (IntersectionObserver) | P3 | [ ] | — |
@@ -104,7 +104,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 
 | ID | Task | P | Status | Commit |
 |----|------|---|--------|--------|
-| E1 | Cache `/api/services` di edge (TTL 5m) | P3 | [ ] | — |
+| E1 | Cache `/api/services` di edge (TTL 5m) | P3 | [x] | `a220f3a` |
 | E2 | Lazy load gambar non-kritis | P3 | [ ] | — |
 | E3 | Preconnect/preload font kritis | P3 | [ ] | — |
 | E4 | Minifikasi CSS/JS saat build | P4 | [ ] | — |
