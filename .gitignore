@@ -12,5 +12,7 @@ Thumbs.db
 .tmp/
 
 # Dump basis data produksi / data sensitif
+db/*.sql
 db/embun_laundry.sql
 db/dhani_laundry.sql
+!db/init.sql
