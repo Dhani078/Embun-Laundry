@@ -1,3 +1,6 @@
+// HTML escape helper
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 // public/app.js - Embun Laundry Single Page App
 const App = window.App = {
   user: null,
@@ -6,6 +9,210 @@ const App = window.App = {
   async init() {
     this.checkAuth();
     this.bindEvents();
+  },
+
+  toast(msg, type = 'info') {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast-item toast-${type}`;
+    const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : (type === 'warning' ? '⚠️' : 'ℹ️'));
+    toast.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 350);
+    }, 3200);
+  },
+
+  confirm(msg) {
+    return new Promise(resolve => {
+      // remove any existing confirm dialog
+      const old = document.getElementById('_appConfirm');
+      if (old) old.remove();
+      const el = document.createElement('div');
+      el.id = '_appConfirm';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      el.setAttribute('aria-label', msg);
+      el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.55);backdrop-filter:blur(2px)';
+      el.innerHTML = `<div style="background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)">
+        <p style="margin:0 0 20px;font-size:15px;font-weight:600;color:#0f172a;line-height:1.5">${esc(msg)}</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="_confirmNo" style="padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#374151;font-size:13px;font-weight:600;cursor:pointer">Batal</button>
+          <button id="_confirmYes" style="padding:8px 18px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Hapus</button>
+        </div>
+      </div>`;
+      document.body.appendChild(el);
+      const cleanup = ok => { el.remove(); resolve(ok); };
+      el.querySelector('#_confirmYes').onclick = () => cleanup(true);
+      el.querySelector('#_confirmNo').onclick  = () => cleanup(false);
+      el.addEventListener('click', e => { if (e.target === el) cleanup(false); });
+    });
+  },
+
+  // C5: Invoice PDF & Cetak Struk Kasir
+  _currentInvoiceOrder: null,
+  _invoiceMode: 'thermal',
+
+  async openInvoice(orderIdOrCode) {
+    let order = (this._orders || []).find(o => String(o.id) === String(orderIdOrCode) || o.order_code === orderIdOrCode)
+      || (this._recentOrders || []).find(o => String(o.id) === String(orderIdOrCode) || o.order_code === orderIdOrCode);
+
+    if (!order) {
+      try {
+        const res = await fetch(`/api/orders?q=${encodeURIComponent(orderIdOrCode)}`);
+        const data = await res.json();
+        if (data.ok && data.orders && data.orders.length > 0) {
+          order = data.orders.find(o => String(o.id) === String(orderIdOrCode) || o.order_code === orderIdOrCode) || data.orders[0];
+        }
+      } catch (err) {}
+    }
+
+    if (!order) {
+      this.toast('Pesanan tidak ditemukan untuk invoice', 'error');
+      return;
+    }
+
+    this._currentInvoiceOrder = order;
+    this.renderInvoiceModal(order, this._invoiceMode);
+  },
+
+  switchInvoiceMode(mode) {
+    this._invoiceMode = mode;
+    if (this._currentInvoiceOrder) {
+      this.renderInvoiceModal(this._currentInvoiceOrder, mode);
+    }
+  },
+
+  renderInvoiceModal(o, mode = 'thermal') {
+    let modal = document.getElementById('invoiceModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'invoiceModal';
+      modal.className = 'invoice-modal';
+      document.body.appendChild(modal);
+    }
+
+    const total = Number(o.total_amount) || 0;
+    const paid = Number(o.paid_amount) || 0;
+    const remaining = Math.max(0, total - paid);
+    const isPaid = (o.payment_status === 'lunas') || (paid >= total && total > 0);
+    const weight = Number(o.weight_kg) || 0;
+    const unitPrice = weight > 0 ? Math.round(total / weight) : total;
+    const dateStr = o.created_at || new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    const qrSvg = `
+      <svg width="64" height="64" viewBox="0 0 64 64" style="display:block;margin:0 auto;">
+        <rect width="64" height="64" fill="#fff"/>
+        <path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/>
+      </svg>
+    `;
+
+    modal.innerHTML = `
+      <div class="invoice-paper ${mode === 'a4' ? 'a4-mode' : 'thermal-mode'}" style="padding: 24px; position: relative; margin: 20px auto;">
+        <div class="invoice-actions no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-sm" onclick="App.switchInvoiceMode('thermal')" 
+              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'thermal' ? 'background: #2563eb; color: #fff;' : 'background: #f1f5f9; color: #475569;'}">
+              🧾 Struk Kasir (80mm)
+            </button>
+            <button type="button" class="btn btn-sm" onclick="App.switchInvoiceMode('a4')" 
+              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'a4' ? 'background: #2563eb; color: #fff;' : 'background: #f1f5f9; color: #475569;'}">
+              📄 Invoice Formal (A4)
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-sm btn-primary" onclick="window.print()" style="padding: 6px 14px; font-size: 12px; font-weight: 600;">
+              🖨️ Cetak / Simpan PDF
+            </button>
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('invoiceModal').style.display='none'" style="padding: 6px 10px; font-size: 12px; cursor: pointer;">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div id="printableInvoice">
+          <div class="invoice-header-brand">
+            <div style="font-size: 20px; font-weight: 900; letter-spacing: 0.5px; color: #0f172a;">EMBUN LAUNDRY</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Layanan Cuci Bersih, Cepat & Terpercaya</div>
+            <div style="font-size: 11px; color: #64748b;">Jl. Babarsari No. 7, Sleman, Yogyakarta · WA: 0812-3456-7890</div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 12px;">
+            <div>
+              <div style="color: #64748b;">Nomor Nota:</div>
+              <div style="font-weight: 800; font-size: 14px; color: #0f172a;">${esc(o.order_code || '-')}</div>
+              <div style="color: #64748b; margin-top: 4px;">Tanggal: ${esc(dateStr)}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="color: #64748b;">Pelanggan:</div>
+              <div style="font-weight: 700; color: #0f172a;">${esc(o.customer_name || 'Pelanggan')}</div>
+              ${o.customer_phone ? `<div style="color: #64748b;">${esc(o.customer_phone)}</div>` : ''}
+            </div>
+          </div>
+
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Item / Layanan</th>
+                <th style="text-align: center;">Berat/Qty</th>
+                <th style="text-align: right;">Tarif</th>
+                <th style="text-align: right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600; color: #1e293b;">${esc(o.service_name || 'Layanan Laundry')}</td>
+                <td style="text-align: center;">${weight} kg</td>
+                <td style="text-align: right;">Rp ${unitPrice.toLocaleString('id-ID')}</td>
+                <td style="text-align: right; font-weight: 700;">Rp ${total.toLocaleString('id-ID')}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px;">
+              <span>TOTAL TAGIHAN:</span>
+              <span style="font-size: 15px; color: #0f172a;">Rp ${total.toLocaleString('id-ID')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #16a34a; margin-bottom: 4px;">
+              <span>Jumlah Terbayar:</span>
+              <span>Rp ${paid.toLocaleString('id-ID')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: ${remaining > 0 ? '#ea580c' : '#64748b'}; font-weight: 600; margin-bottom: 8px;">
+              <span>Sisa Tagihan:</span>
+              <span>Rp ${remaining.toLocaleString('id-ID')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: ${isPaid ? '#ecfdf5' : '#fffbeb'}; border-radius: 6px; font-size: 12px; font-weight: 800; color: ${isPaid ? '#065f46' : '#92400e'};">
+              <span>STATUS PEMBAYARAN:</span>
+              <span>${isPaid ? '✓ LUNAS' : '⏳ BELUM LUNAS'}</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px dashed #cbd5e1;">
+            <div style="flex: 1; font-size: 10px; color: #64748b; line-height: 1.4; padding-right: 12px;">
+              <strong>Ketentuan:</strong><br>
+              1. Pengambilan cucian wajib membawa struk / nota resmi ini.<br>
+              2. Kelunturan atau kerusakan bawaan harap diinfokan saat check-in.<br>
+              3. Terima kasih telah mempercayakan cucian Anda di Embun Laundry!
+            </div>
+            <div style="text-align: center;">
+              ${qrSvg}
+              <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">Scan Lacak Order</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'grid';
   },
 
   async checkAuth() {
@@ -320,7 +527,7 @@ const App = window.App = {
       // Delete Order
       const btnDel = e.target.closest('.btn-del');
       if (btnDel) {
-        if (!confirm('Hapus pesanan ini?')) return;
+        if (!await this.confirm('Hapus pesanan ini?')) return;
         const id = btnDel.getAttribute('data-id');
         await fetch('/api/orders', {
           method: 'POST',
@@ -372,7 +579,7 @@ const App = window.App = {
 
       const btnDelPromo = e.target.closest('.btn-del-promo');
       if (btnDelPromo) {
-        if (!confirm('Hapus promo ini?')) return;
+        if (!await this.confirm('Hapus promo ini?')) return;
         const id = btnDelPromo.getAttribute('data-id');
         const res = await fetch('/api/promos', {
           method: 'POST',
@@ -383,7 +590,7 @@ const App = window.App = {
         if (d.ok) {
           this.renderPromo();
         } else {
-          alert(d.msg || 'Gagal menghapus promo');
+          this.toast(d.msg || 'Gagal menghapus promo', 'error');
         }
       }
 
@@ -401,7 +608,7 @@ const App = window.App = {
         if (d.ok) {
           this.renderPromo();
         } else {
-          alert(d.msg || 'Gagal mengubah status promo');
+          this.toast(d.msg || 'Gagal mengubah status promo', 'error');
         }
       }
 
@@ -417,7 +624,7 @@ const App = window.App = {
 
       const btnDelVoucher = e.target.closest('.btn-del-voucher');
       if (btnDelVoucher) {
-        if (!confirm('Hapus/cabut voucher ini?')) return;
+        if (!await this.confirm('Hapus/cabut voucher ini?')) return;
         const id = parseInt(btnDelVoucher.getAttribute('data-id'));
         const res = await fetch('/api/vouchers', {
           method: 'POST',
@@ -428,7 +635,7 @@ const App = window.App = {
         if (d.ok) {
           this.renderPromo();
         } else {
-          alert(d.msg || 'Gagal mencabut voucher');
+          this.toast(d.msg || 'Gagal mencabut voucher', 'error');
         }
       }
 
@@ -516,7 +723,7 @@ const App = window.App = {
           if (modal) modal.style.display = 'none';
           this.renderPesanan();
         } else {
-          alert(data.msg || 'Gagal membuat pesanan');
+          this.toast(data.msg || 'Gagal membuat pesanan', 'error');
         }
       }
       
@@ -533,10 +740,10 @@ const App = window.App = {
         if (resData.ok) {
           this.user.user_name = full_name;
           this.user.name = full_name;
-          alert('Profil diperbarui');
+          this.toast('Profil diperbarui', 'success');
           this.renderApp();
         } else {
-          alert(resData.msg || 'Gagal update profil');
+          this.toast(resData.msg || 'Gagal update profil', 'error');
         }
       }
       
@@ -552,10 +759,10 @@ const App = window.App = {
         });
         const resData = await r.json();
         if (resData.ok) {
-          alert('Sandi berhasil diganti');
+          this.toast('Sandi berhasil diganti', 'success');
           document.getElementById('passForm').reset();
         } else {
-          alert(resData.msg || 'Gagal ganti sandi');
+          this.toast(resData.msg || 'Gagal ganti sandi', 'error');
         }
       }
 
@@ -600,7 +807,7 @@ const App = window.App = {
           if (modal) modal.style.display = 'none';
           this.renderPromo();
         } else {
-          alert(data.msg || 'Gagal menyimpan promo');
+          this.toast(data.msg || 'Gagal menyimpan promo', 'error');
         }
       }
 
@@ -620,7 +827,7 @@ const App = window.App = {
         } else {
           const ids = userIdInput.split(',').map(s => parseInt(s.trim())).filter(n => !Number.isNaN(n) && n > 0);
           if (ids.length === 0) {
-            alert('Masukkan minimal satu User ID valid');
+            this.toast('Masukkan minimal satu User ID valid', 'warning');
             return;
           }
           payload = {
@@ -639,10 +846,10 @@ const App = window.App = {
         if (data.ok) {
           const modal = document.getElementById('grantVoucherModal');
           if (modal) modal.style.display = 'none';
-          alert(grantType === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`);
+          this.toast(grantType === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`, 'success');
           this.renderPromo();
         } else {
-          alert(data.msg || 'Gagal menerbitkan voucher');
+          this.toast(data.msg || 'Gagal menerbitkan voucher', 'error');
         }
       }
     });
@@ -712,10 +919,13 @@ const App = window.App = {
                   <th style="padding: 10px;">Berat</th>
                   <th style="padding: 10px;">Total</th>
                   <th style="padding: 10px;">Status</th>
+                  <th style="padding: 10px; text-align: right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                ${(data.recent_orders || []).map(o => `
+                ${(() => {
+                  this._recentOrders = data.recent_orders || [];
+                  return (data.recent_orders || []).map(o => `
                   <tr style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
                     <td style="padding: 10px;">${esc(o.customer_name)}</td>
@@ -723,8 +933,12 @@ const App = window.App = {
                     <td style="padding: 10px;">${esc(o.weight_kg)} kg</td>
                     <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
                     <td style="padding: 10px;"><span class="badge status-${esc(o.status)}">${esc(o.status)}</span></td>
+                    <td style="padding: 10px; text-align: right; white-space: nowrap;">
+                      <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
+                    </td>
                   </tr>
-                `).join('')}
+                `).join('');
+                })()}
               </tbody>
             </table>
           </div>
@@ -769,6 +983,7 @@ const App = window.App = {
       const svcData = await svcRes.json();
 
       const orders = ordData.orders || [];
+      this._orders = orders;
       const services = svcData.services || [];
       const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
 
@@ -826,7 +1041,8 @@ const App = window.App = {
                       </select>
                     ` : `<span class="badge status-${esc(o.status)}">${esc(o.status)}</span>`}
                   </td>
-                  <td style="padding: 10px; text-align: right;">
+                  <td style="padding: 10px; text-align: right; white-space: nowrap;">
+                    <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
                     <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Bayar</a>
                     ${(isStaff || o.status === 'baru') ? `
                       <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border: 1px solid #ef4444; background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
@@ -1309,9 +1525,9 @@ const App = window.App = {
       });
       const data = await res.json();
       if (data.ok) this.renderPromo();
-      else alert(data.msg || 'Gagal menyimpan promo');
+      else this.toast(data.msg || 'Gagal menyimpan promo', 'error');
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
@@ -1324,14 +1540,14 @@ const App = window.App = {
       });
       const data = await res.json();
       if (data.ok) this.renderPromo();
-      else alert(data.msg || 'Gagal mengubah status');
+      else this.toast(data.msg || 'Gagal mengubah status', 'error');
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
   async deletePromo(id) {
-    if (!confirm('Hapus promo ini? Voucher yang sudah diklaim tidak akan terhapus.')) return;
+    if (!await this.confirm('Hapus promo ini? Voucher yang sudah diklaim tidak akan terhapus.')) return;
     try {
       const res = await fetch('/api/promos', {
         method: 'POST',
@@ -1340,9 +1556,9 @@ const App = window.App = {
       });
       const data = await res.json();
       if (data.ok) this.renderPromo();
-      else alert(data.msg || 'Gagal menghapus');
+      else this.toast(data.msg || 'Gagal menghapus', 'error');
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
@@ -1355,13 +1571,13 @@ const App = window.App = {
       });
       const data = await res.json();
       if (data.ok) {
-        alert('Voucher berhasil diklaim!');
+        this.toast('Voucher berhasil diklaim!', 'success');
         this.renderPromo();
       } else {
-        alert(data.msg || 'Gagal klaim');
+        this.toast(data.msg || 'Gagal klaim', 'error');
       }
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
@@ -1379,7 +1595,7 @@ const App = window.App = {
     const rawUser = document.getElementById('gvUserId').value.trim();
 
     if (!promoId || !rawUser) {
-      alert('Pilih promo dan masukkan User ID');
+      this.toast('Pilih promo dan masukkan User ID', 'warning');
       return;
     }
 
@@ -1388,14 +1604,14 @@ const App = window.App = {
       if (type === 'single') {
         const uid = Number(rawUser);
         if (!uid || isNaN(uid)) {
-          alert('User ID harus berupa angka bulat valid');
+          this.toast('User ID harus berupa angka bulat valid', 'warning');
           return;
         }
         payload = { action: 'create_voucher', promo_id: promoId, user_id: uid };
       } else {
         const ids = rawUser.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n) && n > 0);
         if (ids.length === 0) {
-          alert('Masukkan minimal satu User ID valid');
+          this.toast('Masukkan minimal satu User ID valid', 'warning');
           return;
         }
         payload = { action: 'bulk_claim', promo_id: promoId, user_ids: ids };
@@ -1409,18 +1625,18 @@ const App = window.App = {
       const data = await res.json();
       if (data.ok) {
         document.getElementById('grantVoucherWrap').style.display = 'none';
-        alert(type === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`);
+        this.toast(type === 'single' ? 'Voucher berhasil diterbitkan!' : `Berhasil menerbitkan ${data.created || 0} voucher!`, 'success');
         this.renderPromo();
       } else {
-        alert(data.msg || 'Gagal menerbitkan voucher');
+        this.toast(data.msg || 'Gagal menerbitkan voucher', 'error');
       }
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
   async deleteVoucher(id) {
-    if (!confirm('Cabut voucher ini dari pelanggan?')) return;
+    if (!await this.confirm('Cabut voucher ini dari pelanggan?')) return;
     try {
       const res = await fetch('/api/vouchers', {
         method: 'POST',
@@ -1431,10 +1647,10 @@ const App = window.App = {
       if (data.ok) {
         this.renderPromo();
       } else {
-        alert(data.msg || 'Gagal mencabut voucher');
+        this.toast(data.msg || 'Gagal mencabut voucher', 'error');
       }
     } catch (e) {
-      alert('Koneksi gagal');
+      this.toast('Koneksi gagal', 'error');
     }
   },
 
