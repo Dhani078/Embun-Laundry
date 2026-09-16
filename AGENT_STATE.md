@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T14:12:00+08:00
-Tick ke: 49
+Terakhir update: 2026-09-16T14:18:00+08:00
+Tick ke: 50
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,37 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 49 selesai)
+- ID: — (tidak ada; tick 50 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **D9** (Fase D) — Finalisasi p5.js hero (droplet + ripple) (P3) —
+  `21df0ae` (tick 50)
+  - **Simulasi Tetesan Air, Riak Konsentris, & Akselerasi Performa p5.js**:
+    - Optimasi Performa & Kepatuhan Spesifikasi:
+      - Mengaktifkan `p5.disableFriendlyErrors = true` di level modul dan setup instance (AGENT24:699) untuk melewati validasi parameter runtime per-frame, memaksimalkan rendering 60 FPS.
+      - Mempertahankan `pixelDensity(1)` guna mencegah overdraw retina 2x-4x.
+    - Sistem Tetesan Air / Droplet Realistis:
+      - Droplet diinisialisasi dengan target ketinggian permukaan air (`targetY`).
+      - Gerakan jatuh gravitasi dipadu dengan ayunan sine wobble yang alami dan jejak air transparan (`trail`).
+      - Saat tetesan mencapai zona target `targetY`, tetesan memicu riak splash otomatis (`addRipple`) di lokasi benturan dan me-reset tetesan ke atas layar dengan target acak baru.
+      - Desain tetesan berbentuk teardrop aerodinamis (`bezierVertex`) dengan pantulan specular highlight.
+    - Sistem Riak Konsentris Ganda / Ripple:
+      - Riak diperluas dengan interpolasi redaman halus (`0.07 damping`) dan peluruhan transparansi kubik.
+      - Perspektif isometrik elips (`r.radius * 2` x `r.radius * 1.25`) yang memancarkan kedalaman air di layar landing page.
+      - Cincin ganda konsentris: lingkaran luar riak utama dipadukan dengan lingkaran dalam puncak gelombang sekunder.
+      - Bounded FIFO array untuk mencegah kebocoran memori.
+    - Interaktivitas Kursor & Aksesibilitas:
+      - Event listener `pointermove` halus pada elemen `.hero` memicu riak air responsif saat kursor mouse digerakkan.
+      - Aksesibilitas `prefers-reduced-motion: reduce` didukung penuh dengan beralih ke frame statis tanpa CPU redraw loop.
+    - **FASE D (DESAIN & UX) 100% LENGKAP (D1 s/d D9)**.
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d9.mjs` dan `tools/verify_d9_run.mjs` (21/21 HIJAU).
+      - Mendaftarkan `verify_d9_run.mjs` ke `tools/run_all_verifiers.sh` (43/43 verifier proyek HIJAU 100%, 0 regresi).
+      - Uji mutasi memvalidasi deteksi kegagalan (MERAH exit 1); pemulihan kembali 100% HIJAU (exit 0).
 
 - **D8** (Fase D) — Animasi masuk (IntersectionObserver) (P3) —
   `f659c2e` (tick 49)
