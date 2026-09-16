@@ -900,7 +900,7 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
   - Uji mutasi:
     - Melepas validasi kode pesanan di `notifications.js` tertangkap MERAH (28/35, exit 1).
     - Dipulihkan → kembali **HIJAU 35/35**.
-- **Commit**: (tick 39)
+- **Commit**: `c74f133`
 - **Status**: **DONE**
 
 

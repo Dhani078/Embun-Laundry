@@ -53,7 +53,7 @@ Model: gemini-flash
 ## Task selesai
 
 - **C3** (Fase C3) — Notifikasi Real-Time Status Order via Polling (P2) —
-  (tick 39)
+  `c74f133` (tick 39)
   - **Integrasi notifikasi real-time terdistribusi**:
     - Skema database: `db/migrations/0005_create_notifications_table.sql` membuat tabel `notifications` (`id`, `order_code`, `message`, `status`, `created_at`).
     - Modul backend: Mengaktifkan `functions/api/notifications.js` (`GET /api/notifications?order_code=...`) dengan validasi input, limit 20 notifikasi terbaru, rate limiting 30 req/5m per IP, dan generic server error.
