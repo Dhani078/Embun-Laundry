@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T11:30:00+08:00
-Tick ke: 46
+Terakhir update: 2026-09-16T11:42:00+08:00
+Tick ke: 47
 Model: kr/auto
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -48,12 +48,30 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 46 selesai)
+- ID: — (tidak ada; tick 47 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
+
+- **D6** (Fase D) — Micro-interaction konsisten (hover/focus/active) (P3) —
+  `a43dfb7` (tick 47)
+  - **Sistem Micro-Interaction Aksesibel & Efek Ripple Ringan**:
+    - Stylesheet `public/assets/style.css`:
+      - Sistem universal `:focus-visible` high-contrast untuk navigasi keyboard (`2px solid var(--blue)` offset 2px), dan membersihkan outline klik mouse (`:focus:not(:focus-visible)`).
+      - State `:focus-visible` spesifik pada `.btn`, `.btn-primary`, `.btn-icon`, `.tabbtn`, `.tab`, `.theme-toggle-btn`, `.input`, `select`, `textarea`, dan link navigasi `.nav a`.
+      - State `:active` snappy micro-press (`transform: translateY(1px) scale(0.98)`) pada seluruh varian tombol dan link navigasi.
+      - State `:hover` pada form input dengan transisi border halus (`var(--color-border-default)`) dan elevasi hover pada tombol.
+      - State `:disabled` yang konsisten (`opacity: 0.55`, `cursor: not-allowed`, `pointer-events: none`).
+      - Highlight baris tabel `.table tbody tr:hover` dengan warna token brand (`var(--blue-soft)`, `var(--blue-border)`).
+      - Menghormati penuh aksesibilitas `@media (prefers-reduced-motion: reduce)` dengan menonaktifkan transform, scale, dan animasi bagi pengguna sensitif gerak.
+    - Frontend SPA `public/app.js`:
+      - Menambahkan delegator pointerdown ringan `App.initRipple()` yang terikat ke `.btn`, memicu gelombang ripple CSS 60fps tanpa library pihak ketiga (0 dependency).
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d6.mjs` dan `tools/verify_d6_run.mjs` (30/30 HIJAU).
+      - Mendaftarkan `verify_d6_run.mjs` ke `tools/run_all_verifiers.sh` (40/40 verifier proyek HIJAU 100%, 0 regresi).
+      - Uji mutasi: Merusak deklarasi `:active` tombol memicu kegagalan (MERAH, exit 1); pemulihan kembali 100% HIJAU (exit 0).
 
 - **D1** (Fase D) — Terapkan design token ke seluruh dashboard (P3) —
   `312f774` (tick 46)
