@@ -4,6 +4,21 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Embun Laundry · Bersih, Rapi, dan Terpantau</title>
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  })();
+</script>
 
 <!-- SEO -->
 <meta name="description" content="Layanan laundry Banjarmasin dengan pickup & delivery cepat. Cuci kering, setrika, cuci lipat, dry cleaning. Pantau pesanan & pembayaran real-time. Harga mulai Rp 20.000/kg."/>
@@ -59,6 +74,22 @@
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 12px 30px -10px rgba(15, 23, 42, 0.08), 0 4px 12px -5px rgba(15, 23, 42, 0.03);
   --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.12), 0 8px 24px -8px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="dark"], html.dark {
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-soft: #1e293b;
+  --accent-border: #334155;
+  --bg-page: #090d16;
+  --bg-card: #111827;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  --border-light: #1f2937;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
 }
 
 * { box-sizing: border-box; }
@@ -933,6 +964,9 @@ body.no-scroll { overflow: hidden; }
       <div class="brand-text">Embun Laundry</div>
     </div>
     <nav class="nav-actions">
+      <button class="btn btn-ghost theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle dark mode" title="Ubah Tema" style="padding: 8px 12px; font-size: 16px;">
+        <span class="theme-icon" id="themeIcon">🌙</span>
+      </button>
       <button class="btn btn-ghost" id="btnOpenTrack" type="button" aria-label="Lacak Pesanan">🔍 Lacak Pesanan</button>
       <a class="btn btn-ghost" href="/auth/login.html">Masuk</a>
       <a class="btn btn-primary" href="/auth/register.html">Buat Akun</a>
@@ -1670,6 +1704,34 @@ if (mock && heroImg) {
     heroImg.style.transform = '';
   });
 }
+
+// Dark mode toggle
+(function() {
+  var themeBtn = document.getElementById('themeToggleBtn');
+  var themeIcon = document.getElementById('themeIcon');
+  if (themeBtn) {
+    var updateIcon = function() {
+      if (themeIcon) {
+        themeIcon.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+      }
+    };
+    updateIcon();
+    themeBtn.addEventListener('click', function() {
+      var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      var next = isDark ? 'light' : 'dark';
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', next);
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+      updateIcon();
+    });
+  }
+})();
 </script>
 
 <!-- Hero canvas: p5.js (SRI-pinned) + sketch. Deferred, non-blocking, decorative only.
