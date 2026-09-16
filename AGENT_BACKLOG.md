@@ -90,8 +90,8 @@ File ini adalah **working copy** yang diupdate setiap tick.
 |----|------|---|--------|--------|
 | D1 | Terapkan design token ke seluruh dashboard | P3 | [ ] | — |
 | D2 | Dark mode toggle (localStorage) | P3 | [x] | `f6d59dd` |
-| D3 | Skeleton loading di semua tabel | P3 | [ ] | — |
-| D4 | Empty state bermakna di setiap list | P3 | [ ] | — |
+| D3 | Skeleton loading di semua tabel | P3 | [x] | `1d5feaf` |
+| D4 | Empty state bermakna di setiap list | P3 | [x] | `1d5feaf` |
 | D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
 | D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [ ] | — |
 | D7 | Responsive audit 360/768/1024/1440px | P3 | [ ] | — |
