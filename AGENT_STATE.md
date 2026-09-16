@@ -55,6 +55,25 @@ Model: kr/auto
 
 ## Task selesai
 
+- **D2** (Fase D) — Dark mode toggle (localStorage, anti-FOUC script) (P3) —
+  `f6d59dd` (tick 44)
+  - **Dark Mode Modern (Linear/Vercel Dark Slate Aesthetic) & Persistensi**:
+    - Desain & Token Sistem:
+      - `public/assets/design-tokens.css`: Menambahkan rules `[data-theme="dark"], html.dark` dengan palet slate elegan (`#090d16` canvas, `#111827` elevated surface, `#1e293b` border subtle, `#f8fafc` text).
+      - `public/assets/style.css`: Menambahkan dark variables, `.sidebar` diperbarui menggunakan `background: var(--card);` (menghapus hardcode putih), perbaikan warna nav, topbar, cards, inputs, dan tables di tema gelap.
+      - Menambahkan styling tombol `.theme-toggle-btn` dengan efek hover dan transisi micro-interaction halus.
+    - Anti-FOUC (Flash of Unstyled Content):
+      - Menyematkan script sinkronus inline anti-FOUC di `<head>` sebelum CSS di seluruh file HTML (`dashboard.html`, `index.html`, `track.html`, `pay.html`).
+      - Membaca preferensi dari `localStorage.getItem('theme')` dengan fallback cerdas ke `window.matchMedia('(prefers-color-scheme: dark)')`.
+    - Komponen Tombol Toggle & Logika SPA:
+      - `public/app.js`: Mengimplementasikan `App.initTheme()`, `App.applyTheme()`, `App.toggleTheme()`, dan `App.updateThemeIcons()`.
+      - Sinkronisasi multi-tab real-time via event listener `storage`.
+      - Tombol `#themeToggleBtn` di topbar Dashboard SPA, navigasi Landing Page, header Pelacakan (`track.html`), dan halaman Pembayaran (`pay.html`).
+    - Harness & Verifikasi:
+      - Membuat `tools/verify_d2.mjs` dan `tools/verify_d2_run.mjs` (30/30 HIJAU).
+      - Mendaftarkan `verify_d2_run.mjs` ke `tools/run_all_verifiers.sh` (37/37 verifier HIJAU, 0 regresi).
+      - Pengujian mutasi: Merusak key `localStorage` menyebabkan 3 kegagalan (MERAH, exit code 1); pemulihan kembali 100% HIJAU (exit code 0).
+
 - **C4** (Fase C4) — Upload Bukti Pembayaran (Cloudflare R2 / base64 kecil) (P3) —
   `b3a4e0f` (tick 43)
   - **Upload & Verifikasi Bukti Transfer Pembayaran**:
