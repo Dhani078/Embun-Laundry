@@ -4,6 +4,33 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 48 — 2026-09-16T11:51:00+08:00
+
+- Task: **D7** — Responsive audit 360/768/1024/1440px (P3)
+- Perubahan:
+  - `public/assets/style.css`:
+    - Mengganti aturan legacy 1200px (yang sebelumnya menyembunyikan navigasi `.nav { display: none; }`) dengan arsitektur 4-tier responsif.
+    - Tier 1 (>= 1440px): Layout wide monitor `.wrap 280px 1fr`, containment `.main max-width: 1600px`, 4-col KPI grid.
+    - Tier 2 (<= 1024px): Off-canvas mobile drawer `.sidebar` (fixed 280px, translateX(-100%), slide-in `.sidebar.open`), backdrop overlay `.sidebar-overlay`, tombol hamburger `.sidebar-toggle-btn` dan close button `.sidebar-close-btn`, 2-col KPI grid.
+    - Tier 3 (<= 768px): Horizontal touch snap scrolling untuk kanban status pesanan (`scroll-snap-type: x mandatory`, `.kcol min-width: 270px`), tabel horizontal scrolling dengan `-webkit-overflow-scrolling: touch`, dialog modal adaptif 95vw.
+    - Tier 4 (<= 480px / 360px): Stack 1-col KPI, padding konten & topbar kompak (10-12px), responsif typography, toast notifikasi full-width.
+  - `public/app.js` & `public/dashboard.html`:
+    - Markup `#sidebarOverlay`, `#sidebarToggleBtn`, dan `#sidebarCloseBtn` pada statis `dashboard.html` dan dinamis `renderApp()`.
+    - Method `App.initMobileSidebar()`, `App.openMobileSidebar()`, `App.closeMobileSidebar()`, `App.toggleMobileSidebar()`.
+    - Auto-close pada klik tautan navigasi (`window.innerWidth <= 1024`), penekanan tombol `Escape`, dan resize layar ke desktop (> 1024px).
+  - Tools & Verifikasi:
+    - Membuat harness `tools/verify_d7.mjs` dan runner `tools/verify_d7_run.mjs` (33/33 HIJAU).
+    - Menambahkan ke `tools/run_all_verifiers.sh` -> 41/41 verifiers proyek HIJAU 100% (0 regresi).
+    - Uji mutasi memvalidasi deteksi kegagalan (exit 1 MERAH saat mutasi, exit 0 HIJAU saat pulih).
+- Commit: `8240209`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - D8 (IntersectionObserver animasi masuk) — P3
+  - D9 (finalisasi p5.js hero droplet+ripple) — P3
+  - E4 (minifikasi CSS/JS), E5 (logging dev), E6 (error boundary global SPA) — P3/P4
+
+---
+
 ## Tick 47 — 2026-09-16T11:44:13+08:00
 
 - Task: **D6** — Micro-interaction konsisten hover/focus/active (P3)

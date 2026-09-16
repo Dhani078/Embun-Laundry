@@ -94,7 +94,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | D4 | Empty state bermakna di setiap list | P3 | [x] | `1d5feaf` |
 | D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
 | D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [x] | `14f257d` |
-| D7 | Responsive audit 360/768/1024/1440px | P3 | [ ] | — |
+| D7 | Responsive audit 360/768/1024/1440px | P3 | [x] | `8240209` |
 | D8 | Animasi masuk (IntersectionObserver) | P3 | [ ] | — |
 | D9 | Finalisasi p5.js hero (droplet + ripple) | P3 | [ ] | — |
 
