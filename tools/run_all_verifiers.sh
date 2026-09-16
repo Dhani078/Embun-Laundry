@@ -9,7 +9,7 @@ for f in tools/verify_a6_run.mjs tools/verify_fase0_2_run.mjs tools/verify_fase0
          tools/verify_b16_run.mjs tools/verify_b17_run.mjs \
          tools/verify_b18_run.mjs tools/verify_b19_run.mjs tools/verify_b20_run.mjs \
          tools/verify_c1_run.mjs tools/verify_c2_run.mjs tools/verify_c3_run.mjs tools/verify_c_pay_sync_run.mjs \
-         tools/verify_c6.mjs tools/verify_c7_run.mjs tools/verify_c8_run.mjs; do
+         tools/verify_c5_run.mjs tools/verify_c6.mjs tools/verify_c7_run.mjs tools/verify_c8_run.mjs; do
   out=$(node "$f" 2>&1); rc=$?
   last=$(printf '%s' "$out" | grep -oE '[0-9]+/[0-9]+' | tail -1)
   if [ $rc -eq 0 ]; then
