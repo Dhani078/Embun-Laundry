@@ -4,6 +4,31 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 44 — 2026-09-16T11:03:00+08:00
+
+- Task: **E2 + E3 + D2** — Lazy load gambar + preconnect fonts dashboard + Dark mode tokens
+- Perubahan:
+  - `public/index.html`: footer `<img>` tambah `loading="lazy" decoding="async"` (E2)
+  - `public/dashboard.html`: tambah `<link rel="preconnect">` fonts.googleapis + gstatic (E3)
+  - `public/assets/design-tokens.css`: block `[data-theme="dark"], html.dark` — 39 token bg/text/border/brand/status (D2)
+  - `app.js` sudah memiliki `initTheme()`, `applyTheme()`, `toggleTheme()`, cross-tab sync, toggle button `#themeToggleBtn`
+  - `AGENT_BACKLOG.md`: C4, E2, E3, D2 → [x]
+- File: `public/index.html`, `public/dashboard.html`, `public/assets/design-tokens.css`
+- Verifikasi:
+  - Gate 1: `node --check src/index.js public/app.js functions/_db.js` → exit 0
+  - Gate 8: `npx wrangler deploy --dry-run` → exit 0
+  - All verifiers: `bash tools/run_all_verifiers.sh` → **35/35 HIJAU** (0 regresi)
+  - Post-deploy: `/api/health` → `{"ok":true,"status":"healthy"}`
+  - Produksi `/` → 200
+- Commit: `b9db8c5` (E2+E3) + `968a76f` (D2)
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - D1 (token ke dashboard), D3 (skeleton loading), D4 (empty state), D6 (micro-interaction), D7 (responsive), D8 (animasi IntersectionObserver), D9 (p5.js hero)
+  - E5 (logging dev), E6 (error boundary SPA)
+  - C9 (service worker offline dasar), C10 (multi-bahasa, P4)
+
+---
+
 ## Tick 42 — 2026-09-16T10:46:23+08:00
 
 - Task: **D5** — Toast notification global + confirm modal (ganti alert/confirm)
