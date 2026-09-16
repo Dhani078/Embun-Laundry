@@ -151,11 +151,11 @@ const App = window.App = {
       el.setAttribute('aria-modal', 'true');
       el.setAttribute('aria-label', msg);
       el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.55);backdrop-filter:blur(2px)';
-      el.innerHTML = `<div style="background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)">
-        <p style="margin:0 0 20px;font-size:15px;font-weight:600;color:#0f172a;line-height:1.5">${esc(msg)}</p>
+      el.innerHTML = `<div style="background:var(--card);border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:var(--shadow-card);border:1px solid var(--line);">
+        <p style="margin:0 0 20px;font-size:15px;font-weight:600;color:var(--text);line-height:1.5">${esc(msg)}</p>
         <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button id="_confirmNo" style="padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#374151;font-size:13px;font-weight:600;cursor:pointer">Batal</button>
-          <button id="_confirmYes" style="padding:8px 18px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Hapus</button>
+          <button id="_confirmNo" style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer">Batal</button>
+          <button id="_confirmYes" style="padding:8px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Hapus</button>
         </div>
       </div>`;
       document.body.appendChild(el);
@@ -226,14 +226,14 @@ const App = window.App = {
 
     modal.innerHTML = `
       <div class="invoice-paper ${mode === 'a4' ? 'a4-mode' : 'thermal-mode'}" style="padding: 24px; position: relative; margin: 20px auto;">
-        <div class="invoice-actions no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
+        <div class="invoice-actions no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 14px;">
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn btn-sm" onclick="App.switchInvoiceMode('thermal')" 
-              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'thermal' ? 'background: #2563eb; color: #fff;' : 'background: #f1f5f9; color: #475569;'}">
+              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'thermal' ? 'background: var(--blue); color: #fff;' : 'background: var(--bg); color: var(--muted); border: 1px solid var(--line);'}">
               🧾 Struk Kasir (80mm)
             </button>
             <button type="button" class="btn btn-sm" onclick="App.switchInvoiceMode('a4')" 
-              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'a4' ? 'background: #2563eb; color: #fff;' : 'background: #f1f5f9; color: #475569;'}">
+              style="padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; ${mode === 'a4' ? 'background: var(--blue); color: #fff;' : 'background: var(--bg); color: var(--muted); border: 1px solid var(--line);'}">
               📄 Invoice Formal (A4)
             </button>
           </div>
@@ -287,26 +287,26 @@ const App = window.App = {
             </tbody>
           </table>
 
-          <div style="border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 8px;">
+          <div style="border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 8px;">
             <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 6px;">
               <span>TOTAL TAGIHAN:</span>
-              <span style="font-size: 15px; color: #0f172a;">Rp ${total.toLocaleString('id-ID')}</span>
+              <span style="font-size: 15px; color: var(--text);">Rp ${total.toLocaleString('id-ID')}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #16a34a; margin-bottom: 4px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--green); margin-bottom: 4px;">
               <span>Jumlah Terbayar:</span>
               <span>Rp ${paid.toLocaleString('id-ID')}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: ${remaining > 0 ? '#ea580c' : '#64748b'}; font-weight: 600; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: ${remaining > 0 ? 'var(--amber)' : 'var(--muted)'}; font-weight: 600; margin-bottom: 8px;">
               <span>Sisa Tagihan:</span>
               <span>Rp ${remaining.toLocaleString('id-ID')}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: ${isPaid ? '#ecfdf5' : '#fffbeb'}; border-radius: 6px; font-size: 12px; font-weight: 800; color: ${isPaid ? '#065f46' : '#92400e'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: ${isPaid ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'}; border-radius: 6px; font-size: 12px; font-weight: 800; color: ${isPaid ? 'var(--green)' : 'var(--amber)'};">
               <span>STATUS PEMBAYARAN:</span>
               <span>${isPaid ? '✓ LUNAS' : '⏳ BELUM LUNAS'}</span>
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px dashed #cbd5e1;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line);">
             <div style="flex: 1; font-size: 10px; color: #64748b; line-height: 1.4; padding-right: 12px;">
               <strong>Ketentuan:</strong><br>
               1. Pengambilan cucian wajib membawa struk / nota resmi ini.<br>
@@ -344,30 +344,30 @@ const App = window.App = {
       }
       const proofs = payments.filter(p => p.proof_image);
       modal.innerHTML = `
-        <div class="card" style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%;margin:20px auto;position:relative;box-shadow:0 20px 25px -5px rgba(0,0,0,0.15);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:12px;">
+        <div class="card" style="border-radius:var(--radius-md);padding:24px;max-width:480px;width:100%;margin:20px auto;position:relative;box-shadow:var(--shadow-card);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;">
             <div>
-              <h4 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">Bukti Pembayaran</h4>
-              <div style="font-size:12px;color:#64748b;font-weight:600;">Nota: ${esc(orderCode)}</div>
+              <h4 style="margin:0;font-size:16px;font-weight:800;color:var(--text);">Bukti Pembayaran</h4>
+              <div style="font-size:12px;color:var(--muted);font-weight:600;">Nota: ${esc(orderCode)}</div>
             </div>
-            <button type="button" onclick="document.getElementById('proofModal').style.display='none'" style="border:none;background:#f1f5f9;border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
+            <button type="button" onclick="document.getElementById('proofModal').style.display='none'" style="border:none;background:var(--bg);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
           </div>
           ${proofs.length === 0 ? `
-            <div style="text-align:center;padding:30px 10px;color:#64748b;font-size:13px;">
+            <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:13px;">
               <div style="font-size:36px;margin-bottom:8px;">🧾</div>
-              <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">Tidak Ada Lampiran Foto Bukti</div>
-              <span style="font-size:12px;color:#94a3b8;">Pembayaran langsung di kasir (tunai / QRIS) tanpa lampiran struk transfer.</span>
+              <div style="font-weight:700;color:var(--text);margin-bottom:4px;">Tidak Ada Lampiran Foto Bukti</div>
+              <span style="font-size:12px;color:var(--muted);">Pembayaran langsung di kasir (tunai / QRIS) tanpa lampiran struk transfer.</span>
             </div>
           ` : proofs.map(p => `
-            <div style="margin-bottom:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+            <div style="margin-bottom:16px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;">
               <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
-                <span style="font-weight:700;color:#0f172a;">Rp ${Number(p.amount).toLocaleString('id-ID')} (${esc(p.method)})</span>
-                <span style="color:#64748b;">${esc(p.created_at || '')}</span>
+                <span style="font-weight:700;color:var(--text);">Rp ${Number(p.amount).toLocaleString('id-ID')} (${esc(p.method)})</span>
+                <span style="color:var(--muted);">${esc(p.created_at || '')}</span>
               </div>
               <a href="${p.proof_image}" target="_blank" title="Buka gambar penuh" style="display:block;">
-                <img src="${p.proof_image}" alt="Bukti Transfer" style="width:100%;max-height:360px;object-fit:contain;border-radius:6px;background:#fff;border:1px solid #cbd5e1;cursor:zoom-in;">
+                <img src="${p.proof_image}" alt="Bukti Transfer" style="width:100%;max-height:360px;object-fit:contain;border-radius:6px;background:var(--card);border:1px solid var(--line);cursor:zoom-in;">
               </a>
-              <div style="font-size:11px;color:#64748b;margin-top:6px;text-align:right;">Klik gambar untuk memperbesar</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:right;">Klik gambar untuk memperbesar</div>
             </div>
           `).join('')}
         </div>
@@ -426,31 +426,31 @@ const App = window.App = {
 
   renderLogin() {
     document.body.innerHTML = `
-      <div class="auth-wrap" style="min-height: 100vh; display: grid; place-items: center; background: #0f172a; padding: 20px;">
-        <div class="card" style="width: 100%; max-width: 400px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; color: #fff;">
+      <div class="auth-wrap" style="min-height: 100vh; display: grid; place-items: center; background: var(--bg); padding: 20px;">
+        <div class="card" style="width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 28px; color: var(--text);">
           <div style="text-align: center; margin-bottom: 24px;">
             <img src="/img/Logo.png" alt="Logo" style="width: 56px; height: 56px; border-radius: 12px; margin-bottom: 12px;">
-            <h2 style="margin: 0; font-size: 20px; font-weight: 700;">Masuk Embun Laundry</h2>
-            <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Kelola laundry dengan cepat & mudah</p>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text);">Masuk Embun Laundry</h2>
+            <p style="margin: 4px 0 0; color: var(--muted); font-size: 13px;">Kelola laundry dengan cepat & mudah</p>
           </div>
           <form id="loginForm">
             <div style="margin-bottom: 16px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Email / Username / No. HP</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Email / Username / No. HP</label>
               <input type="text" id="loginId" required placeholder="misal: admin atau user@gmail.com" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 20px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Kata Sandi</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Kata Sandi</label>
               <input type="password" id="loginPass" required placeholder="••••••••" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
-            <div id="loginErr" style="display: none; color: #f87171; font-size: 13px; margin-bottom: 14px;"></div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+            <div id="loginErr" style="display: none; color: var(--red); font-size: 13px; margin-bottom: 14px;"></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer;">
               Masuk Sekarang
             </button>
           </form>
-          <div style="margin-top: 20px; text-align: center; font-size: 13px; color: #94a3b8;">
-            Belum punya akun? <a href="#" id="toRegBtn" style="color: #38bdf8; text-decoration: none; font-weight: 600;">Daftar Pelanggan</a>
+          <div style="margin-top: 20px; text-align: center; font-size: 13px; color: var(--muted);">
+            Belum punya akun? <a href="#" id="toRegBtn" style="color: var(--blue); text-decoration: none; font-weight: 600;">Daftar Pelanggan</a>
           </div>
         </div>
       </div>
@@ -531,46 +531,46 @@ const App = window.App = {
 
   renderRegister() {
     document.body.innerHTML = `
-      <div class="auth-wrap" style="min-height: 100vh; display: grid; place-items: center; background: #0f172a; padding: 20px;">
-        <div class="card" style="width: 100%; max-width: 440px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; color: #fff;">
+      <div class="auth-wrap" style="min-height: 100vh; display: grid; place-items: center; background: var(--bg); padding: 20px;">
+        <div class="card" style="width: 100%; max-width: 440px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 28px; color: var(--text);">
           <div style="text-align: center; margin-bottom: 24px;">
             <img src="/img/Logo.png" alt="Logo" style="width: 56px; height: 56px; border-radius: 12px; margin-bottom: 12px;">
-            <h2 style="margin: 0; font-size: 20px; font-weight: 700;">Buat Akun Pelanggan</h2>
-            <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Daftar untuk mulai order & dapatkan promo</p>
+            <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: var(--text);">Buat Akun Pelanggan</h2>
+            <p style="margin: 4px 0 0; color: var(--muted); font-size: 13px;">Daftar untuk mulai order & dapatkan promo</p>
           </div>
           <form id="regForm">
             <div style="margin-bottom: 14px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Nama Lengkap</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Nama Lengkap</label>
               <input type="text" id="regName" required placeholder="Nama Anda" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 14px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Email</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Email</label>
               <input type="email" id="regEmail" required placeholder="nama@email.com" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 14px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">No. Handphone / WhatsApp</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">No. Handphone / WhatsApp</label>
               <input type="tel" id="regPhone" placeholder="08xxxxxxxxxx" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 14px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Kata Sandi</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Kata Sandi</label>
               <input type="password" id="regPass" required placeholder="Minimal 6 karakter" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
             <div style="margin-bottom: 16px;">
-              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #cbd5e1;">Konfirmasi Kata Sandi</label>
+              <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted);">Konfirmasi Kata Sandi</label>
               <input type="password" id="regPass2" required placeholder="Ulangi kata sandi" 
-                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box;">
+                style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
             </div>
-            <div id="regErr" style="display: none; color: #f87171; font-size: 13px; margin-bottom: 14px;"></div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+            <div id="regErr" style="display: none; color: var(--red); font-size: 13px; margin-bottom: 14px;"></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer;">
               Daftar Sekarang
             </button>
           </form>
-          <div style="margin-top: 20px; text-align: center; font-size: 13px; color: #94a3b8;">
-            Sudah punya akun? <a href="#" id="toLogBtn" style="color: #38bdf8; text-decoration: none; font-weight: 600;">Masuk di sini</a>
+          <div style="margin-top: 20px; text-align: center; font-size: 13px; color: var(--muted);">
+            Sudah punya akun? <a href="#" id="toLogBtn" style="color: var(--blue); text-decoration: none; font-weight: 600;">Masuk di sini</a>
           </div>
         </div>
       </div>
@@ -1060,35 +1060,35 @@ const App = window.App = {
 
       c.innerHTML = `
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Total Omset</div>
-            <div style="font-size: 24px; font-weight: 800; color: #0f172a; margin-top: 4px;">Rp ${Number(s.total_revenue).toLocaleString('id-ID')}</div>
+          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
+            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Omset</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--text); margin-top: 4px;">Rp ${Number(s.total_revenue).toLocaleString('id-ID')}</div>
           </div>
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Pesanan Aktif</div>
-            <div style="font-size: 24px; font-weight: 800; color: #2563eb; margin-top: 4px;">${esc(s.active_orders || 0)}</div>
+          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
+            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Pesanan Aktif</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--blue); margin-top: 4px;">${esc(s.active_orders || 0)}</div>
           </div>
-          <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">Selesai Hari Ini</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a; margin-top: 4px;">${esc(s.finished_today || 0)}</div>
+          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
+            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Selesai Hari Ini</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--green); margin-top: 4px;">${esc(s.finished_today || 0)}</div>
           </div>
           ${isStaff ? `
-            <div class="card" style="padding: 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-              <div style="font-size: 13px; color: #64748b; font-weight: 600;">Total Pelanggan</div>
-              <div style="font-size: 24px; font-weight: 800; color: #d97706; margin-top: 4px;">${esc(s.total_customers || 0)}</div>
+            <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
+              <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Pelanggan</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--amber); margin-top: 4px;">${esc(s.total_customers || 0)}</div>
             </div>
           ` : ''}
         </div>
 
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Pesanan Terbaru</h3>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Pesanan Terbaru</h3>
             <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 14px; font-size: 13px;">+ Buat Pesanan</button>
           </div>
           <div style="overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
               <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+                <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                   <th style="padding: 10px;">Kode</th>
                   <th style="padding: 10px;">Pelanggan</th>
                   <th style="padding: 10px;">Layanan</th>
@@ -1116,7 +1116,7 @@ const App = window.App = {
                     `;
                   }
                   return this._recentOrders.map(o => `
-                  <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <tr style="border-bottom: 1px solid var(--line);">
                     <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
                     <td style="padding: 10px;">${esc(o.customer_name)}</td>
                     <td style="padding: 10px;">${esc(o.service_name)}</td>
@@ -1124,7 +1124,7 @@ const App = window.App = {
                     <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
                     <td style="padding: 10px;"><span class="badge status-${esc(o.status)}">${esc(o.status)}</span></td>
                     <td style="padding: 10px; text-align: right; white-space: nowrap;">
-                      <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
+                      <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
                     </td>
                   </tr>
                 `).join('');
@@ -1186,11 +1186,11 @@ const App = window.App = {
 
       c.innerHTML = `
         <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
-          <input type="date" id="filterStart" value="${esc(start)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
-          <span style="color: #64748b; font-size: 13px;">s/d</span>
-          <input type="date" id="filterEnd" value="${esc(end)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+          <input type="date" id="filterStart" value="${esc(start)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
+          <span style="color: var(--muted); font-size: 13px;">s/d</span>
+          <input type="date" id="filterEnd" value="${esc(end)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
           
-          <select id="filterStatus" style="padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+          <select id="filterStatus" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
             <option value="">Semua Status</option>
             <option value="baru" ${status === 'baru' ? 'selected' : ''}>Baru</option>
             <option value="proses" ${status === 'proses' ? 'selected' : ''}>Proses</option>
@@ -1199,18 +1199,18 @@ const App = window.App = {
           </select>
 
           <input type="text" id="ordSearch" value="${esc(q)}" placeholder="Cari kode/pelanggan..." 
-            style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; min-width: 150px;">
+            style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); flex: 1; min-width: 150px;">
           
-          <button class="btn" id="btnFilterOrders" style="padding: 8px 16px; font-size: 13px; background: #e2e8f0;">Filter</button>
-          ${(start || end || q || status) ? `<button class="btn" id="btnResetFilterOrders" style="padding: 8px 16px; font-size: 13px; background: transparent; border: 1px solid #cbd5e1;">Reset</button>` : ''}
+          <button class="btn" id="btnFilterOrders" style="padding: 8px 16px; font-size: 13px; background: var(--line); color: var(--text);">Filter</button>
+          ${(start || end || q || status) ? `<button class="btn" id="btnResetFilterOrders" style="padding: 8px 16px; font-size: 13px; background: transparent; border: 1px solid var(--line); color: var(--muted);">Reset</button>` : ''}
           
           <button class="btn btn-primary" id="openNewOrderModal" style="${!isStaff ? 'display: none;' : ''}">+ Pesanan Baru</button>
         </div>
 
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+              <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                 <th style="padding: 10px;">Kode</th>
                 <th style="padding: 10px;">Pelanggan</th>
                 <th style="padding: 10px;">Layanan</th>
@@ -1237,7 +1237,7 @@ const App = window.App = {
                   </td>
                 </tr>
               ` : orders.map(o => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
+                <tr style="border-bottom: 1px solid var(--line);">
                   <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
                   <td style="padding: 10px;">${esc(o.customer_name)}</td>
                   <td style="padding: 10px;">${esc(o.service_name)}</td>
@@ -1245,7 +1245,7 @@ const App = window.App = {
                   <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
                   <td style="padding: 10px;">
                     ${isStaff ? `
-                      <select class="status-select" data-id="${esc(o.id)}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                      <select class="status-select" data-id="${esc(o.id)}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text);">
                         <option value="baru" ${o.status === 'baru' ? 'selected' : ''}>Baru</option>
                         <option value="proses" ${o.status === 'proses' ? 'selected' : ''}>Proses</option>
                         <option value="selesai" ${o.status === 'selesai' ? 'selected' : ''}>Selesai</option>
@@ -1254,11 +1254,11 @@ const App = window.App = {
                     ` : `<span class="badge status-${esc(o.status)}">${esc(o.status)}</span>`}
                   </td>
                   <td style="padding: 10px; text-align: right; white-space: nowrap;">
-                    <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
-                    <button type="button" class="btn btn-sm btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; cursor: pointer;">🖼️ Bukti</button>
-                    <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Bayar</a>
+                    <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
+                    <button type="button" class="btn btn-sm btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🖼️ Bukti</button>
+                    <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text);">Bayar</a>
                     ${(isStaff || o.status === 'baru') ? `
-                      <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: #ef4444; border: 1px solid #ef4444; background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
+                      <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: var(--red); border: 1px solid var(--red); background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
                     ` : ''}
                   </td>
                 </tr>
@@ -1268,37 +1268,37 @@ const App = window.App = {
         </div>
 
         <!-- Order Modal -->
-        <div id="orderModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); place-items: center; z-index: 999; padding: 20px;">
-          <div class="card" style="width: 100%; max-width: 500px; background: #fff; border-radius: 12px; padding: 24px;">
-            <h3 style="margin-top: 0;">Buat Pesanan Laundry</h3>
+        <div id="orderModal" style="display: none; position: fixed; inset: 0; background: var(--color-bg-overlay, rgba(0,0,0,0.5)); place-items: center; z-index: 999; padding: 20px;">
+          <div class="card" style="width: 100%; max-width: 500px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 24px; color: var(--text);">
+            <h3 style="margin-top: 0; color: var(--text);">Buat Pesanan Laundry</h3>
             <form id="newOrderForm">
               ${isStaff ? `
                 <div style="margin-bottom: 12px;">
-                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Nama Pelanggan</label>
-                  <input type="text" id="ordCustName" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Pelanggan</label>
+                  <input type="text" id="ordCustName" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
                 </div>
               ` : ''}
               <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">No. HP / WA</label>
-                <input type="text" id="ordPhone" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP / WA</label>
+                <input type="text" id="ordPhone" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Alamat</label>
-                <input type="text" id="ordAddress" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Alamat</label>
+                <input type="text" id="ordAddress" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Pilih Layanan</label>
-                <select id="ordService" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Pilih Layanan</label>
+                <select id="ordService" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
                   ${services.map(s => `<option value="${esc(s.id)}" data-price="${esc(s.price)}">${esc(s.name)} (Rp ${Number(s.price).toLocaleString('id-ID')}/${esc(s.unit || 'kg')})</option>`).join('')}
                 </select>
               </div>
               <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Berat (kg)</label>
-                <input type="number" id="ordWeight" min="1" value="1" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Berat (kg)</label>
+                <input type="number" id="ordWeight" min="1" value="1" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Kode Voucher / Diskon (opsional)</label>
-                <input type="text" id="ordVoucher" placeholder="misal: PROMO10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Kode Voucher / Diskon (opsional)</label>
+                <input type="text" id="ordVoucher" placeholder="misal: PROMO10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="display: flex; justify-content: flex-end; gap: 8px;">
                 <button type="button" class="btn" id="closeOrderModalBtn">Batal</button>
@@ -1330,10 +1330,10 @@ const App = window.App = {
       const customers = data.customers || [];
 
       c.innerHTML = `
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+              <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                 <th style="padding: 10px;">Kode</th>
                 <th style="padding: 10px;">Nama</th>
                 <th style="padding: 10px;">No. HP</th>
@@ -1355,14 +1355,14 @@ const App = window.App = {
                   </td>
                 </tr>
               ` : customers.map(cust => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
+                <tr style="border-bottom: 1px solid var(--line);">
                   <td style="padding: 10px; font-weight: 600;">${esc(cust.code)}</td>
                   <td style="padding: 10px;">${esc(cust.full_name)}</td>
                   <td style="padding: 10px;">${esc(cust.phone || '-')}</td>
                   <td style="padding: 10px;">${esc(cust.address || '-')}</td>
                   <td style="padding: 10px;"><span class="badge">${esc(cust.computed_tag || cust.tag)}</span></td>
                   <td style="padding: 10px;">${esc(cust.orders_count || 0)}</td>
-                  <td style="padding: 10px; font-weight: 700;">Rp ${Number(cust.total_spent || 0).toLocaleString('id-ID')}</td>
+                  <td style="padding: 10px; font-weight: 700; color: var(--text);">Rp ${Number(cust.total_spent || 0).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1410,15 +1410,15 @@ const App = window.App = {
       c.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
           ${services.map(s => `
-            <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
+            <div class="card" style="padding: 20px; border-radius: var(--radius-md);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h4 style="margin: 0 0 8px; font-size: 16px;">${esc(s.name)}</h4>
+                <h4 style="margin: 0 0 8px; font-size: 16px; color: var(--text);">${esc(s.name)}</h4>
                 <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}">${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
               </div>
-              <div style="font-size: 20px; font-weight: 800; color: #2563eb; margin-bottom: 8px;">
-                Rp ${Number(s.price).toLocaleString('id-ID')} <span style="font-size: 13px; color: #64748b; font-weight: 500;">/ ${esc(s.unit || 'kg')}</span>
+              <div style="font-size: 20px; font-weight: 800; color: var(--blue); margin-bottom: 8px;">
+                Rp ${Number(s.price).toLocaleString('id-ID')} <span style="font-size: 13px; color: var(--muted); font-weight: 500;">/ ${esc(s.unit || 'kg')}</span>
               </div>
-              <p style="font-size: 13px; color: #64748b; margin: 0 0 12px;">Durasi estimasi: ${esc(s.duration_hours || 24)} Jam</p>
+              <p style="font-size: 13px; color: var(--muted); margin: 0 0 12px;">Durasi estimasi: ${esc(s.duration_hours || 24)} Jam</p>
               <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.renderPesanan()">Pesan Sekarang</button>
             </div>
           `).join('')}
@@ -1440,10 +1440,10 @@ const App = window.App = {
       const tasks = data.tasks || [];
 
       c.innerHTML = `
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b;">
+              <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                 <th style="padding: 10px;">Kode Tugas</th>
                 <th style="padding: 10px;">Tipe</th>
                 <th style="padding: 10px;">Pelanggan</th>
@@ -1465,7 +1465,7 @@ const App = window.App = {
                   </td>
                 </tr>
               ` : tasks.map(t => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
+                <tr style="border-bottom: 1px solid var(--line);">
                   <td style="padding: 10px; font-weight: 600;">${esc(t.task_code)}</td>
                   <td style="padding: 10px;"><span class="badge">${esc(String(t.type || '').toUpperCase())}</span></td>
                   <td style="padding: 10px;">${esc(t.customer_name)}</td>
@@ -1510,42 +1510,42 @@ const App = window.App = {
 
       if (isStaff) {
         c.innerHTML = `
-          <div id="promoFormWrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;" role="region" aria-label="Form promo">
-            <h4 id="promoFormTitle" style="margin:0 0 16px;font-size:16px;font-weight:700;">Tambah Promo</h4>
+          <div id="promoFormWrap" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px;margin-bottom:20px;" role="region" aria-label="Form promo">
+            <h4 id="promoFormTitle" style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text);">Tambah Promo</h4>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label for="pfCode" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Kode</label>
-                <input id="pfCode" type="text" maxlength="32" placeholder="misal: LEBARAN10" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="pfCode" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Kode</label>
+                <input id="pfCode" type="text" maxlength="32" placeholder="misal: LEBARAN10" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
               </div>
               <div>
-                <label for="pfName" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Nama Promo <span aria-hidden="true" style="color:#ef4444">*</span></label>
-                <input id="pfName" type="text" maxlength="120" placeholder="Nama promo" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;" required>
+                <label for="pfName" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Nama Promo <span aria-hidden="true" style="color:var(--red);">*</span></label>
+                <input id="pfName" type="text" maxlength="120" placeholder="Nama promo" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;" required>
               </div>
               <div>
-                <label for="pfType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Tipe</label>
-                <select id="pfType" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="pfType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Tipe</label>
+                <select id="pfType" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
                   <option value="percent">Persen (%)</option>
                   <option value="nominal">Nominal (Rp)</option>
                 </select>
               </div>
               <div>
-                <label for="pfValue" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Nilai</label>
-                <input id="pfValue" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;" aria-label="Nilai promo">
+                <label for="pfValue" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Nilai</label>
+                <input id="pfValue" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;" aria-label="Nilai promo">
               </div>
               <div>
-                <label for="pfMinSpend" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Min. Belanja (Rp)</label>
-                <input id="pfMinSpend" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="pfMinSpend" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Min. Belanja (Rp)</label>
+                <input id="pfMinSpend" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
               </div>
               <div>
-                <label for="pfMaxDiscount" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Maks. Diskon (Rp)</label>
-                <input id="pfMaxDiscount" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="pfMaxDiscount" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Maks. Diskon (Rp)</label>
+                <input id="pfMaxDiscount" type="number" min="0" value="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
               </div>
               <div>
-                <label for="pfExpires" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Kedaluwarsa (opsional)</label>
-                <input id="pfExpires" type="datetime-local" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="pfExpires" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Kedaluwarsa (opsional)</label>
+                <input id="pfExpires" type="datetime-local" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
               </div>
               <div style="display:flex;align-items:flex-end;">
-                <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                <label style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text);">
                   <input id="pfActive" type="checkbox" checked> Aktif
                 </label>
               </div>
@@ -1557,13 +1557,13 @@ const App = window.App = {
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="margin:0;">Daftar Promo</h3>
+            <h3 style="margin:0;color:var(--text);">Daftar Promo</h3>
             <button class="btn btn-primary" onclick="App.openPromoForm()" style="padding:8px 16px;">+ Tambah Promo</button>
           </div>
-          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;margin-bottom:24px;">
+          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;margin-bottom:24px;">
             <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
               <thead>
-                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
                   <th style="padding:10px;">Kode</th>
                   <th style="padding:10px;">Nama</th>
                   <th style="padding:10px;">Tipe</th>
@@ -1576,10 +1576,10 @@ const App = window.App = {
               </thead>
               <tbody>
                 ${promos.length === 0
-                  ? '<tr><td colspan="8" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada promo</td></tr>'
+                  ? '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted);">Belum ada promo</td></tr>'
                   : promos.map(p => `
-                  <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;font-weight:700;color:#2563eb;">${esc(p.code)}</td>
+                  <tr style="border-bottom:1px solid var(--line);">
+                    <td style="padding:10px;font-weight:700;color:var(--blue);">${esc(p.code)}</td>
                     <td style="padding:10px;">${esc(p.name)}</td>
                     <td style="padding:10px;">${p.type === 'percent' ? 'Persen' : 'Nominal'}</td>
                     <td style="padding:10px;">${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')}</td>
@@ -1590,7 +1590,7 @@ const App = window.App = {
                       <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.openPromoForm(${p.id})" aria-label="Edit promo ${esc(p.code)}">Edit</button>
                         <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.togglePromo(${p.id},${p.is_active ? 0 : 1})" aria-label="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo ${esc(p.code)}">${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
-                        <button class="btn" style="padding:4px 10px;font-size:12px;background:#fef2f2;color:#dc2626;" onclick="App.deletePromo(${p.id})" aria-label="Hapus promo ${esc(p.code)}">Hapus</button>
+                        <button class="btn" style="padding:4px 10px;font-size:12px;background:var(--red-soft);color:var(--red);" onclick="App.deletePromo(${p.id})" aria-label="Hapus promo ${esc(p.code)}">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -1600,26 +1600,26 @@ const App = window.App = {
           </div>
 
           <!-- Form Grant Voucher (Staff Only) -->
-          <div id="grantVoucherWrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;" role="region" aria-label="Form terbitkan voucher">
-            <h4 style="margin:0 0 16px;font-size:16px;font-weight:700;">🎁 Terbitkan Voucher ke Pelanggan</h4>
+          <div id="grantVoucherWrap" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px;margin-bottom:20px;" role="region" aria-label="Form terbitkan voucher">
+            <h4 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text);">🎁 Terbitkan Voucher ke Pelanggan</h4>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div>
-                <label for="gvPromoId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Pilih Promo</label>
-                <select id="gvPromoId" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="gvPromoId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Pilih Promo</label>
+                <select id="gvPromoId" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
                   ${promos.filter(p => p.is_active).map(p => `<option value="${p.id}">${esc(p.code)} — ${esc(p.name)} (${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')})</option>`).join('')}
                 </select>
               </div>
               <div>
-                <label for="gvType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Metode</label>
-                <select id="gvType" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
+                <label for="gvType" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">Metode</label>
+                <select id="gvType" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
                   <option value="single">Satu Pelanggan</option>
                   <option value="bulk">Massal (Banyak ID)</option>
                 </select>
               </div>
               <div style="grid-column: 1 / -1;">
-                <label for="gvUserId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">User ID Pelanggan</label>
-                <input id="gvUserId" type="text" placeholder="Contoh: 12 atau untuk massal: 1, 2, 3" style="width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5e1;box-sizing:border-box;">
-                <div style="font-size:11px;color:#64748b;margin-top:4px;">Masukkan ID numerik akun pelanggan terdaftar.</div>
+                <label for="gvUserId" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">User ID Pelanggan</label>
+                <input id="gvUserId" type="text" placeholder="Contoh: 12 atau untuk massal: 1, 2, 3" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);box-sizing:border-box;">
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">Masukkan ID numerik akun pelanggan terdaftar.</div>
               </div>
             </div>
             <div style="margin-top:16px;display:flex;gap:8px;">
@@ -1629,13 +1629,13 @@ const App = window.App = {
           </div>
 
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="margin:0;">Semua Voucher Pengguna</h3>
-            <button class="btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;font-weight:600;border-radius:6px;cursor:pointer;" onclick="App.openGrantVoucherForm()">🎁 Terbitkan Voucher</button>
+            <h3 style="margin:0;color:var(--text);">Semua Voucher Pengguna</h3>
+            <button class="btn btn-primary" onclick="App.openGrantVoucherForm()">🎁 Terbitkan Voucher</button>
           </div>
-          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;">
+          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;">
             <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
               <thead>
-                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
                   <th style="padding:10px;">Kode Voucher</th>
                   <th style="padding:10px;">Nama Promo</th>
                   <th style="padding:10px;">Nilai</th>
@@ -1646,19 +1646,19 @@ const App = window.App = {
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="6" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher diterbitkan</td></tr>'
+                  ? '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Belum ada voucher diterbitkan</td></tr>'
                   : vouchers.map(v => `
-                  <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;font-weight:700;color:#2563eb;font-family:monospace;">${esc(v.code)}</td>
+                  <tr style="border-bottom:1px solid var(--line);">
+                    <td style="padding:10px;font-weight:700;color:var(--blue);font-family:monospace;">${esc(v.code)}</td>
                     <td style="padding:10px;">${esc(v.promo_name || v.name)}</td>
-                    <td style="padding:10px;font-weight:600;color:#059669;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;font-weight:600;color:var(--green);">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
                     <td style="padding:10px;">
                       <div style="font-weight:600;">${esc(v.user_name || 'User #' + v.user_id)}</div>
-                      <div style="font-size:11px;color:#64748b;">${esc(v.user_email || 'ID: ' + v.user_id)}</div>
+                      <div style="font-size:11px;color:var(--muted);">${esc(v.user_email || 'ID: ' + v.user_id)}</div>
                     </td>
                     <td style="padding:10px;"><span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span></td>
                     <td style="padding:10px;text-align:right;">
-                      <button class="btn" style="padding:4px 10px;font-size:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;" onclick="App.deleteVoucher(${v.id})" aria-label="Cabut voucher ${esc(v.code)}">Cabut</button>
+                      <button class="btn" style="padding:4px 10px;font-size:12px;background:var(--red-soft);color:var(--red);border:1px solid var(--red-border);border-radius:4px;cursor:pointer;" onclick="App.deleteVoucher(${v.id})" aria-label="Cabut voucher ${esc(v.code)}">Cabut</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -1668,36 +1668,36 @@ const App = window.App = {
         `;
       } else {
         c.innerHTML = `
-          <h3 style="margin:0 0 16px;">Voucher Tersedia</h3>
+          <h3 style="margin:0 0 16px;color:var(--text);">Voucher Tersedia</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
             ${promos.filter(p => p.is_active).length === 0
-              ? '<div style="color:#94a3b8;padding:20px;">Belum ada promo aktif saat ini.</div>'
+              ? '<div style="color:var(--muted);padding:20px;">Belum ada promo aktif saat ini.</div>'
               : promos.filter(p => p.is_active).map(p => `
-                <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:space-between;">
+                <div class="card" style="padding:20px;border-radius:var(--radius-md);display:flex;flex-direction:column;justify-content:space-between;">
                   <div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-family:monospace;">${esc(p.code || 'PROMO')}</span>
-                      <span style="font-size:11px;color:#64748b;">${p.expires_at ? 'Hingga ' + esc(String(p.expires_at).slice(0, 10)) : 'Aktif'}</span>
+                      <span class="badge" style="background:var(--blue-soft);color:var(--blue);font-weight:700;font-family:monospace;">${esc(p.code || 'PROMO')}</span>
+                      <span style="font-size:11px;color:var(--muted);">${p.expires_at ? 'Hingga ' + esc(String(p.expires_at).slice(0, 10)) : 'Aktif'}</span>
                     </div>
-                    <h4 style="margin:0 0 6px;font-size:16px;">${esc(p.name)}</h4>
-                    <div style="font-size:18px;font-weight:800;color:#059669;margin-bottom:8px;">
+                    <h4 style="margin:0 0 6px;font-size:16px;color:var(--text);">${esc(p.name)}</h4>
+                    <div style="font-size:18px;font-weight:800;color:var(--green);margin-bottom:8px;">
                       ${p.type === 'percent' ? 'Diskon ' + esc(p.value) + '%' : 'Potongan Rp ' + Number(p.value).toLocaleString('id-ID')}
                     </div>
-                    <div style="font-size:12px;color:#64748b;margin:0 0 12px;">
+                    <div style="font-size:12px;color:var(--muted);margin:0 0 12px;">
                       <div>Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</div>
                       ${p.max_discount > 0 ? `<div>Maks. diskon: Rp ${Number(p.max_discount).toLocaleString('id-ID')}</div>` : ''}
                     </div>
                   </div>
-                  <button class="btn btn-copy" style="width:100%;padding:8px;font-size:13px;border:1px dashed #2563eb;background:#eff6ff;color:#2563eb;border-radius:6px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(p.code)}'); this.textContent='✓ Tersalin!'; setTimeout(() => this.textContent='📋 Salin Kode Promo', 2000);">📋 Salin Kode Promo</button>
+                  <button class="btn btn-copy" style="width:100%;padding:8px;font-size:13px;border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(p.code)}'); this.textContent='✓ Tersalin!'; setTimeout(() => this.textContent='📋 Salin Kode Promo', 2000);">📋 Salin Kode Promo</button>
                 </div>
               `).join('')}
           </div>
 
-          <h3 style="margin:0 0 16px;">Voucher Saya</h3>
-          <div class="card" style="padding:20px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;overflow-x:auto;">
+          <h3 style="margin:0 0 16px;color:var(--text);">Voucher Saya</h3>
+          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;">
             <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
               <thead>
-                <tr style="border-bottom:2px solid #e2e8f0;color:#64748b;">
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
                   <th style="padding:10px;">Kode Voucher</th>
                   <th style="padding:10px;">Nama Promo</th>
                   <th style="padding:10px;">Nilai</th>
@@ -1707,18 +1707,18 @@ const App = window.App = {
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:#94a3b8;">Belum ada voucher</td></tr>'
+                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">Belum ada voucher</td></tr>'
                   : vouchers.map(v => `
-                  <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:10px;font-weight:700;color:#2563eb;font-family:monospace;">${esc(v.code)}</td>
+                  <tr style="border-bottom:1px solid var(--line);">
+                    <td style="padding:10px;font-weight:700;color:var(--blue);font-family:monospace;">${esc(v.code)}</td>
                     <td style="padding:10px;">${esc(v.name)}</td>
-                    <td style="padding:10px;font-weight:600;color:#059669;">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
+                    <td style="padding:10px;font-weight:600;color:var(--green);">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
                     <td style="padding:10px;">
                       <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
                     </td>
                     <td style="padding:10px;text-align:right;">
                       ${!v.used_at ? `
-                        <button class="btn" style="padding:4px 8px;font-size:12px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:4px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(v.code)}'); this.textContent='✓ Salin'; setTimeout(() => this.textContent='Salin', 2000);">Salin</button>
+                        <button class="btn" style="padding:4px 8px;font-size:12px;background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-border);border-radius:4px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(v.code)}'); this.textContent='✓ Salin'; setTimeout(() => this.textContent='Salin', 2000);">Salin</button>
                       ` : '-'}
                     </td>
                   </tr>
@@ -1965,10 +1965,10 @@ const App = window.App = {
   buildSvgChart(chartRows) {
     if (!Array.isArray(chartRows) || chartRows.length === 0) {
       return `
-        <div style="text-align: center; padding: 48px 16px; color: #64748b;">
+        <div style="text-align: center; padding: 48px 16px; color: var(--muted);">
           <div style="font-size: 36px; margin-bottom: 8px;">📊</div>
-          <div style="font-weight: 700; font-size: 15px; color: #334155;">Tidak ada data grafik transaksi</div>
-          <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Coba ubah rentang tanggal atau pengelompokan periode di atas.</div>
+          <div style="font-weight: 700; font-size: 15px; color: var(--text);">Tidak ada data grafik transaksi</div>
+          <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">Coba ubah rentang tanggal atau pengelompokan periode di atas.</div>
         </div>
       `;
     }
@@ -1996,8 +1996,8 @@ const App = window.App = {
       const y = padT + plotH - (val / niceMax) * plotH;
       let label = val >= 1000000 ? `${(val / 1000000).toFixed(1)}jt` : (val >= 1000 ? `${Math.round(val / 1000)}rb` : String(val));
       gridLines.push(`
-        <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="${i === 0 ? '0' : '4'}"/>
-        <text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="system-ui, sans-serif">Rp ${label}</text>
+        <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${i === 0 ? '0' : '4'}"/>
+        <text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="system-ui, sans-serif">Rp ${label}</text>
       `);
     }
 
@@ -2020,9 +2020,9 @@ const App = window.App = {
 
       bars.push(`
         <g class="chart-col" data-period="${esc(periodLabel)}" data-paid="${paid}" data-unpaid="${unpaid}" data-total="${total}" style="cursor: pointer;">
-          ${paid > 0 ? `<rect x="${bx}" y="${byPaid}" width="${barW}" height="${paidH}" fill="#2563eb" rx="2" class="bar-paid" style="transition: opacity 0.2s;"/>` : ''}
-          ${unpaid > 0 ? `<rect x="${bx}" y="${byUnpaid}" width="${barW}" height="${unpaidH}" fill="#f59e0b" rx="2" class="bar-unpaid" style="transition: opacity 0.2s;"/>` : ''}
-          <text x="${cx}" y="${padT + plotH + 20}" text-anchor="middle" font-size="11" fill="#64748b" font-weight="500">${esc(shortLabel)}</text>
+          ${paid > 0 ? `<rect x="${bx}" y="${byPaid}" width="${barW}" height="${paidH}" fill="var(--blue)" rx="2" class="bar-paid" style="transition: opacity 0.2s;"/>` : ''}
+          ${unpaid > 0 ? `<rect x="${bx}" y="${byUnpaid}" width="${barW}" height="${unpaidH}" fill="var(--amber)" rx="2" class="bar-unpaid" style="transition: opacity 0.2s;"/>` : ''}
+          <text x="${cx}" y="${padT + plotH + 20}" text-anchor="middle" font-size="11" fill="var(--muted)" font-weight="500">${esc(shortLabel)}</text>
           <rect x="${padL + i * colW}" y="${padT}" width="${colW}" height="${plotH + 30}" fill="transparent" class="bar-hover-hit"/>
         </g>
       `);
@@ -2034,7 +2034,7 @@ const App = window.App = {
           ${gridLines.join('')}
           ${bars.join('')}
         </svg>
-        <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transform: translate(-50%, -100%); margin-top: -8px;"></div>
+        <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff); padding: 8px 12px; border-radius: 8px; font-size: 12px; box-shadow: var(--shadow-card); transform: translate(-50%, -100%); margin-top: -8px;"></div>
       </div>
     `;
   },
@@ -2084,12 +2084,12 @@ const App = window.App = {
 
       c.innerHTML = `
         <!-- FILTER & CONTROLS -->
-        <div class="card" style="padding: 16px 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+        <div class="card" style="padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 20px;">
           <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between;">
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Kelompokkan</label>
-                <select id="reportGroup" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 500; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Kelompokkan</label>
+                <select id="reportGroup" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; background: var(--card); color: var(--text);">
                   <option value="bulan" ${filter.group === 'bulan' ? 'selected' : ''}>Bulanan</option>
                   <option value="minggu" ${filter.group === 'minggu' ? 'selected' : ''}>Mingguan</option>
                   <option value="hari" ${filter.group === 'hari' ? 'selected' : ''}>Harian</option>
@@ -2097,13 +2097,13 @@ const App = window.App = {
               </div>
 
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Dari Tanggal</label>
-                <input type="date" id="reportStart" value="${esc(filter.start || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Dari Tanggal</label>
+                <input type="date" id="reportStart" value="${esc(filter.start || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; background: var(--card); color: var(--text);">
               </div>
 
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Sampai Tanggal</label>
-                <input type="date" id="reportEnd" value="${esc(filter.end || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Sampai Tanggal</label>
+                <input type="date" id="reportEnd" value="${esc(filter.end || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; background: var(--card); color: var(--text);">
               </div>
 
               <button type="button" class="btn btn-primary" onclick="App.applyReportFilter()" style="padding: 8px 16px; font-size: 13px; font-weight: 600;">
@@ -2116,50 +2116,50 @@ const App = window.App = {
               <button type="button" class="btn btn-sm" onclick="App.setReportPreset('30days')" style="padding: 5px 10px; font-size: 12px;">30 Hari</button>
               <button type="button" class="btn btn-sm" onclick="App.setReportPreset('year')" style="padding: 5px 10px; font-size: 12px;">Tahun Ini</button>
               <button type="button" class="btn btn-sm" onclick="App.setReportPreset('all')" style="padding: 5px 10px; font-size: 12px;">Semua</button>
-              <button type="button" class="btn btn-sm" onclick="window.print()" style="padding: 5px 10px; font-size: 12px; background: #0f172a; color: #fff;">🖨️ Cetak</button>
+              <button type="button" class="btn btn-sm" onclick="window.print()" style="padding: 5px 10px; font-size: 12px; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff);">🖨️ Cetak</button>
             </div>
           </div>
         </div>
 
         <!-- EXECUTIVE KPI CARDS -->
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Omset</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
-            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Seluruh pendapatan kotor</div>
+          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
+            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Omset</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Seluruh pendapatan kotor</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb;">
-            <div style="font-size: 12px; color: #2563eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kas Terbayar</div>
-            <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin-top: 4px;">Rp ${Number(totalPaid || kpi.rev || 0).toLocaleString('id-ID')}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pembayaran lunas diterima</div>
+          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--blue);">
+            <div style="font-size: 12px; color: var(--blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kas Terbayar</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--blue); margin-top: 4px;">Rp ${Number(totalPaid || kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Pembayaran lunas diterima</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b;">
-            <div style="font-size: 12px; color: #d97706; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Piutang / Belum Lunas</div>
-            <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 4px;">Rp ${Number(totalUnpaid).toLocaleString('id-ID')}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Sisa tagihan pelanggan</div>
+          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--amber);">
+            <div style="font-size: 12px; color: var(--amber); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Piutang / Belum Lunas</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--amber); margin-top: 4px;">Rp ${Number(totalUnpaid).toLocaleString('id-ID')}</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Sisa tagihan pelanggan</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order & Bobot</div>
-            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">${kpi.ord || 0} <span style="font-size: 14px; font-weight: 600; color: #64748b;">order</span></div>
-            <div style="font-size: 11px; color: #16a34a; font-weight: 600; margin-top: 2px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
+          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
+            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order & Bobot</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px;">${kpi.ord || 0} <span style="font-size: 14px; font-weight: 600; color: var(--muted);">order</span></div>
+            <div style="font-size: 11px; color: var(--green); font-weight: 600; margin-top: 2px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
           </div>
         </div>
 
         <!-- INTERACTIVE CHART -->
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md); margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div>
-              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Grafik Perkembangan Pendapatan</h4>
-              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Visualisasi omset terbayar vs piutang berdasarkan periode terpilih</div>
+              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Grafik Perkembangan Pendapatan</h4>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Visualisasi omset terbayar vs piutang berdasarkan periode terpilih</div>
             </div>
             <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; font-weight: 600;">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; background: #2563eb; border-radius: 2px; display: inline-block;"></span>
-                <span>Terbayar</span>
+                <span style="width: 12px; height: 12px; background: var(--blue); border-radius: 2px; display: inline-block;"></span>
+                <span style="color: var(--text);">Terbayar</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; display: inline-block;"></span>
-                <span>Piutang</span>
+                <span style="width: 12px; height: 12px; background: var(--amber); border-radius: 2px; display: inline-block;"></span>
+                <span style="color: var(--text);">Piutang</span>
               </div>
             </div>
           </div>
@@ -2170,20 +2170,20 @@ const App = window.App = {
         </div>
 
         <!-- DAILY BREAKDOWN TABLE -->
-        <div class="card" style="padding: 20px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; overflow-x: auto;">
+        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div>
-              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Rincian Harian Transaksi</h4>
-              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Daftar rekapan pesanan per hari dalam rentang periode</div>
+              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Rincian Harian Transaksi</h4>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Daftar rekapan pesanan per hari dalam rentang periode</div>
             </div>
-            <div style="font-size: 13px; color: #64748b; font-weight: 600;">
+            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">
               Total: ${daily.length} hari
             </div>
           </div>
 
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
-              <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 13px;">
+              <tr style="border-bottom: 2px solid var(--line); color: var(--muted); font-size: 13px;">
                 <th style="padding: 10px 12px;">Tanggal</th>
                 <th style="padding: 10px 12px;">Jumlah Order</th>
                 <th style="padding: 10px 12px;">Total Berat</th>
@@ -2193,14 +2193,14 @@ const App = window.App = {
             <tbody>
               ${daily.length === 0 ? `
                 <tr>
-                  <td colspan="4" style="padding: 24px; text-align: center; color: #94a3b8;">Tidak ada data harian pada rentang ini.</td>
+                  <td colspan="4" style="padding: 24px; text-align: center; color: var(--muted);">Tidak ada data harian pada rentang ini.</td>
                 </tr>
               ` : daily.map(d => `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                  <td style="padding: 10px 12px; font-weight: 600; color: #334155;">${esc(d.d)}</td>
-                  <td style="padding: 10px 12px; color: #2563eb; font-weight: 600;">${esc(d.orders)} order</td>
-                  <td style="padding: 10px 12px; color: #16a34a; font-weight: 600;">${esc(d.weight)} kg</td>
-                  <td style="padding: 10px 12px; font-weight: 700; color: #0f172a;">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
+                <tr style="border-bottom: 1px solid var(--line);">
+                  <td style="padding: 10px 12px; font-weight: 600; color: var(--text);">${esc(d.d)}</td>
+                  <td style="padding: 10px 12px; color: var(--blue); font-weight: 600;">${esc(d.orders)} order</td>
+                  <td style="padding: 10px 12px; color: var(--green); font-weight: 600;">${esc(d.weight)} kg</td>
+                  <td style="padding: 10px 12px; font-weight: 700; color: var(--text);">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -2272,45 +2272,45 @@ const App = window.App = {
 
       c.innerHTML = `
         <div style="max-width: 600px; margin: 0 auto; display: grid; gap: 20px;">
-          <div class="card" style="padding: 24px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <h3 style="margin-top: 0; font-size: 16px;">Informasi Pribadi</h3>
+          <div class="card" style="padding: 24px; border-radius: var(--radius-md);">
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Informasi Pribadi</h3>
             <form id="profileForm">
               <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Nama Lengkap</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Lengkap</label>
                 <input type="text" id="profName" value="${esc(u.full_name || u.name || '')}" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Email</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Email</label>
                 <input type="email" value="${esc(u.email || '')}" disabled  
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 18px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">No. HP</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP</label>
                 <input type="text" id="profPhone" value="${esc(u.phone || '')}" 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <button type="submit" class="btn btn-primary">Simpan Profil</button>
             </form>
           </div>
 
-          <div class="card" style="padding: 24px; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0;">
-            <h3 style="margin-top: 0; font-size: 16px;">Ganti Sandi</h3>
+          <div class="card" style="padding: 24px; border-radius: var(--radius-md);">
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Ganti Sandi</h3>
             <form id="passForm">
               <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Sandi Lama</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Sandi Lama</label>
                 <input type="password" id="oldPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Sandi Baru</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Sandi Baru</label>
                 <input type="password" id="newPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <div style="margin-bottom: 18px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Konfirmasi Sandi Baru</label>
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Konfirmasi Sandi Baru</label>
                 <input type="password" id="repPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
               </div>
               <button type="submit" class="btn btn-primary">Ganti Sandi</button>
             </form>
