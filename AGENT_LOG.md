@@ -790,6 +790,34 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
   - Uji mutasi:
     - Menonaktifkan evaluasi `affectedRows === 0` tertangkap MERAH (16/19, exit 1).
     - Dipulihkan → kembali **HIJAU 19/19**.
-- **Commit**: `23a5690`
+- **Commit**: `5946446`
 - **Status**: **DONE**
+
+---
+
+## Tick 37 — 2026-09-16T09:51:00+08:00 (Fase 0.8: Cabut Fallback Plaintext & SHA-256 Tanpa Salt di _password.js)
+
+- **Task**: 0.8 (Fase 0.8) — Cabut fallback plaintext & sha256 tanpa salt di `_password.js` (K6)
+- **Temuan sebelum perubahan**:
+  - `functions/_password.js` memiliki fallback autentikasi tidak aman: `if (password === stored) return true;` (plaintext) dan `if (await sha256Hex(String(password)) === stored) return true;` (SHA-256 tanpa salt).
+  - Celah ini memungkinkan akun dengan kata sandi plaintext atau hash tanpa salt yang rentan terhadap rainbow table dapat login secara bypass tanpa enkripsi kuat.
+- **Perubahan**:
+  - `functions/_password.js`:
+    - Menghapus fallback plaintext dan sha256 tanpa salt dari fungsi `verifyPassword()`.
+    - Mempertahankan format PBKDF2 standar baru dan format transisi ber-salt (`dhani-salt`) yang diperlukan untuk mekanisme lazy upgrade saat pengguna yang sah melakukan login.
+  - `tools/verify_b8.mjs`:
+    - Menyesuaikan asersi pengujian agar memverifikasi penolakan (return `false`) terhadap masukan plaintext maupun hash SHA-256 tanpa salt.
+  - `tools/verify_fase0_8.mjs` + `tools/verify_fase0_8_run.mjs`: Harness pengujian baru (16/16 HIJAU) mencakup audit kode statik ketiadaan fallback tidak aman, verifikasi runtime penolakan plaintext & unsalted hash, serta simulasi login gagal (HTTP 401) jika hash akun di DB masih berformat usang.
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_8_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai 0.8 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 37.
+- **Verifikasi**:
+  - `node tools/verify_fase0_8_run.mjs` → **HIJAU 16/16**.
+  - Seluruh rangkaian verifier proyek (30/30) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Menghidupkan kembali pengecekan plaintext tertangkap MERAH (11/16, exit 1).
+    - Dipulihkan → kembali **HIJAU 16/16**.
+- **Commit**: `4d6273d`
+- **Status**: **DONE**
+
 

@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:46:00+08:00
-Tick ke: 36
+Terakhir update: 2026-09-16T09:51:00+08:00
+Tick ke: 37
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,15 +44,26 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 36 selesai)
+- ID: — (tidak ada; tick 37 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.8** (Fase 0.8) — Cabut Fallback Plaintext & SHA-256 Tanpa Salt di `_password.js` (P0) —
+  `4d6273d` (tick 37)
+  - **Menutup celah legacy auth bypass (K6)**:
+    - Menghapus pengecekan plaintext `if (password === stored) return true;` di `functions/_password.js`.
+    - Menghapus pengecekan SHA-256 tanpa salt `if (await sha256Hex(String(password)) === stored) return true;` di `functions/_password.js`.
+    - Mempertahankan verifikasi PBKDF2 standar baru dan format transisi ber-salt (`dhani-salt`) untuk lazy upgrade saat login sah.
+    - Menyesuaikan asersi `tools/verify_b8.mjs` agar memverifikasi penolakan plaintext dan SHA-256 tanpa salt.
+    - `tools/verify_fase0_8.mjs` + `tools/verify_fase0_8_run.mjs`: Harness pengujian baru (16/16 HIJAU).
+    - Uji mutasi: Menghidupkan kembali pengecekan plaintext terbukti ditangkap MERAH (11/16, exit 1). Dipulihkan kembali HIJAU 16/16.
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 30 verifier (semua HIJAU).
+
 - **0.7** (Fase 0.7) — Race-Safe `POST /api/pay` + `idempotency_key` (P0) —
-  `23a5690` (tick 36)
+  `5946446` (tick 36)
   - **Menutup celah race condition pembayaran & overpayment (K5)**:
     - Berkas migrasi `db/migrations/0003_add_idempotency_key_to_payments.sql`: menambahkan kolom `idempotency_key VARCHAR(64) NULL` dan indeks unik `uq_payments_idempotency_key`.
     - `functions/api/pay.js`:
