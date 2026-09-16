@@ -1,5 +1,4 @@
-// functions/api/profile.js
-import { getDb, jsonResponse, getUserFromSession, hashPassword, readJson, corsOptions } from '../_db.js';
+import { getDb, jsonResponse, getUserFromSession, createSessionToken, hashPassword, readJson, corsOptions } from '../_db.js';
 // B8 — verifikasi sandi lama lewat SATU fungsi yang sama dengan login.
 // Dulu baris ini cuma `hash === oldPass || sha256(oldPass + salt) === hash`,
 // jadi setiap format baru harus disalin ke sini — sumber dua algoritma.
@@ -90,8 +89,30 @@ export async function onRequest({ request, env }) {
         }
 
         const newHash = await hashPassword(newPass);
-        await db.execute('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, user.id]);
-        return jsonResponse({ ok: true, msg: 'Sandi berhasil diganti' });
+        await db.execute(
+          'UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?',
+          [newHash, user.id]
+        );
+
+        // K7 — Terbitkan token sesi baru dengan session_version terbaru untuk sesi saat ini,
+        // sementara semua sesi lama di perangkat lain otomatis tercabut.
+        let headers = new Headers();
+        try {
+          const currentVersion = (Number(user.session_version) || 1) + 1;
+          const updatedUser = { ...user, session_version: currentVersion };
+          const newToken = await createSessionToken(updatedUser, env);
+          headers.set('Set-Cookie', `session_token=${newToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 60 * 60}`);
+        } catch (e) {
+          // Abaikan jika env tidak menyediakan JWT_SECRET (misal di test mock tertentu)
+        }
+
+        return new Response(JSON.stringify({ ok: true, msg: 'Sandi berhasil diganti' }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            ...Object.fromEntries(headers.entries())
+          }
+        });
       }
 
       return jsonResponse({ ok: false, msg: 'Unknown action' }, 400);

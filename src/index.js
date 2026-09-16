@@ -2,6 +2,7 @@
 import * as loginHandler from '../functions/api/auth/login.js';
 import * as registerHandler from '../functions/api/auth/register.js';
 import * as logoutHandler from '../functions/api/auth/logout.js';
+import * as refreshHandler from '../functions/api/auth/refresh.js';
 import * as meHandler from '../functions/api/me.js';
 import * as ordersHandler from '../functions/api/orders.js';
 import * as customersHandler from '../functions/api/customers.js';
@@ -57,6 +58,7 @@ export default {
           '/api/auth/login': loginHandler,
           '/api/auth/register': registerHandler,
           '/api/auth/logout': logoutHandler,
+          '/api/auth/refresh': refreshHandler,
           '/api/health': healthHandler,
           '/api/me': meHandler
         };
@@ -80,6 +82,10 @@ export default {
       else if (path === '/api/auth/logout') {
         if (request.method === 'POST') resp = logoutHandler.onRequestPost(context);
         else if (request.method === 'OPTIONS') resp = logoutHandler.onRequestOptions(context);
+      }
+      else if (path === '/api/auth/refresh') {
+        if (request.method === 'POST') resp = refreshHandler.onRequestPost(context);
+        else if (request.method === 'OPTIONS') resp = refreshHandler.onRequestOptions(context);
       }
       else if (path === '/api/me') resp = meHandler.onRequestGet(context);
       else if (path === '/api/health') resp = healthHandler.onRequestGet(context);

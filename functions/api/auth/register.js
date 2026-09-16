@@ -61,7 +61,7 @@ export async function onRequestPost({ request, env }) {
 
     // Fetch newly created user
     const newlyCreated = await db.query(
-      `SELECT id, full_name, email, role FROM users WHERE email = ? LIMIT 1`,
+      `SELECT id, full_name, email, role, session_version FROM users WHERE email = ? LIMIT 1`,
       [email]
     );
 
@@ -70,6 +70,7 @@ export async function onRequestPost({ request, env }) {
     }
 
     const user = newlyCreated[0];
+    user.session_version = user.session_version || 1;
     const userId = user.id;
 
     // Create customer record if customers table exists
@@ -88,7 +89,7 @@ export async function onRequestPost({ request, env }) {
     const token = await createSessionToken(user, env);
 
     const headers = new Headers();
-    headers.set('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${30 * 24 * 60 * 60}`);
+    headers.set('Set-Cookie', `session_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${7 * 24 * 60 * 60}`);
 
     return new Response(JSON.stringify({
       ok: true,
