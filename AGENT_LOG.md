@@ -4,6 +4,31 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 40 — 2026-09-16T10:26:39+08:00
+
+- Task: **C7** — Manajemen Voucher & Promo Admin (P2)
+- Perubahan:
+  - `public/app.js`: `renderPromo()` branch `isStaff` — admin dapat tambah/edit/toggle/hapus promo via form inline; form grant voucher single/bulk; tabel semua voucher pengguna. Customer hanya lihat promo aktif + klaim.
+  - `public/app.js`: fungsi baru `openPromoForm`, `savePromo`, `togglePromo`, `deletePromo`, `grantVoucher`, `deleteVoucher`.
+  - `src/index.js`: `/api/promos` & `/api/vouchers` ditambah ke `optMap` CORS preflight.
+  - `tools/verify_c7.mjs` + `verify_c7_run.mjs`: harness baru 39/39 HIJAU.
+  - `tools/run_all_verifiers.sh`: `verify_c7_run.mjs` terdaftar.
+  - `AGENT_BACKLOG.md`: C7 → [x].
+- File: `public/app.js`, `src/index.js`, `functions/api/promos.js`, `functions/api/vouchers.js`, `tools/verify_c7.mjs`, `tools/verify_c7_run.mjs`
+- Verifikasi:
+  - Gate 1: `node --check` semua file JS → exit 0
+  - Gate 8: `npx wrangler deploy --dry-run` → exit 0, 161.61 KiB
+  - Harness: `node tools/verify_c7_run.mjs` → **39/39 HIJAU**
+  - Login prod: `admin@gmail.com` → ok=True role=Admin
+  - Post-deploy: `api/health` → 200 OK; DB endpoints `ok=false` pre-existing (TIDB_DATABASE_URL secret belum di-set di CF dashboard — bukan regresi, sama sebelum commit)
+- Commit: `e12c0f9` + `ad6d155`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - C8 (Laporan bulanan + chart, P2) adalah task P2 berikutnya. Backend `/api/reports` sudah ada; perlu UI chart di dashboard.
+  - DB `ok=false` di prod = secret CF belum di-set (A6 blokir lama). Tidak ada yang bisa dilakukan tanpa CF API token.
+
+---
+
 ## Tick 19 — 2026-09-10T17:50:00+08:00 (housekeeping MD + aturan keras baru)
 
 Bukan task fitur — sesi ini menata ulang dokumen loop dan menambal dua
