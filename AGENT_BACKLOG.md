@@ -76,7 +76,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C4 | Upload bukti pembayaran (R2 / base64 kecil) | P3 | [ ] | — |
 | C5 | Invoice PDF (client-side / print CSS) | P3 | [ ] | — |
 | C6 | Riwayat order pelanggan + filter tanggal | P2 | [x] | `824df1d` |
-| C7 | Manajemen voucher & promo (admin) | P2 | [x] | `503a248` |
+| C7 | Manajemen voucher & promo (admin) | P2 | [x] | `e12c0f9` `ad6d155` |
 | C8 | Laporan bulanan + chart | P2 | [ ] | — |
 | C9 | Service worker (offline dasar) | P3 | [ ] | — |
 | C10 | Multi-bahasa ID/EN | P4 | [ ] | — |
