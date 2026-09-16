@@ -4,6 +4,30 @@ Riwayat tick (append-only).
 
 ---
 
+## Tick 46 — 2026-09-16T11:28:00+08:00
+
+- Task: **D1** — Migrasi hardcoded hex → CSS token di `style.css` (P3)
+- Perubahan:
+  - `public/assets/style.css`: tambah 9 token baru ke `:root` (`--white`, `--bg-subtle`, `--bg-deep`, `--cyan`, `--cyan-soft`, `--cyan-border`, `--toggle-track`, `--toggle-on`, `--blue-light`)
+  - `background:#ffffff/#fff` → `var(--card)`, `color:#ffffff/#fff` → `var(--white)`
+  - `background:#f8fafc` → `var(--bg)`, `#f1f5f9` → `var(--bg-subtle)`
+  - `.bd-oft/.bd-as` → `var(--cyan-*)`, `.fx-orbs` → `var(--*-border)`, `.toggle` → `var(--toggle-*)`, `.toast-*` → `var(--bg-deep)` + border vars
+  - Dark mode explicit rules → token vars
+  - `tools/verify_d3.mjs`: token-aware check `var(--blue-soft) || #1e293b`
+- File: `public/assets/style.css`, `tools/verify_d3.mjs`
+- Verifikasi:
+  - Gate 1: `node --check` → exit 0
+  - Gate 8: `npx wrangler deploy --dry-run` → 163.51 KiB, exit 0
+  - All verifiers: `bash tools/run_all_verifiers.sh` → **26/26 HIJAU** (0 regresi)
+  - Post-deploy: `/api/health` → `{"ok":true}`, `/` → 200
+- Commit: `f0b39d8`
+- Status: **SUKSES**
+- Catatan untuk tick berikutnya:
+  - D6 (micro-interaction), D7 (responsive audit), D8 (IntersectionObserver), D9 (p5.js hero) — P3
+  - E5 (logging dev), E6 (error boundary), C9 (SW offline), C10 (i18n), F1-F4 (docs) — P3/P4
+
+---
+
 ## Tick 44 — 2026-09-16T11:03:00+08:00
 
 - Task: **E2 + E3 + D2** — Lazy load gambar + preconnect fonts dashboard + Dark mode tokens
