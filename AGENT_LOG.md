@@ -1289,6 +1289,43 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `312f774`
 - **Status**: **DONE**
 
+---
+
+## Tick 47 — 2026-09-16T11:42:00+08:00 (Task D6: Micro-interaction konsisten hover/focus/active)
+
+- **Task**: D6 (Fase D) — Micro-interaction konsisten (hover/focus/active) (P3)
+- **Temuan sebelum perubahan**:
+  - Interaksi tombol, link navigasi, dan input belum memiliki sistem `:focus-visible` yang terstandarisasi untuk aksesibilitas WCAG (keyboard navigation).
+  - Beberapa tombol (`.btn-icon`, `.tabbtn`, `.tab`, `.theme-toggle-btn`) belum memiliki state `:active` snappy tactile feedback saat ditekan.
+  - Form input (`.input`, `select`, `textarea`) belum memiliki state `:hover` dengan transisi halus.
+  - Efek CSS `.ripple` dan keyframe sudah ada di `style.css` tetapi belum dihubungkan ke event handler pointer di `public/app.js`.
+  - Blok `@media (prefers-reduced-motion: reduce)` sebelumnya hanya meng-override `.skeleton`, belum menonaktifkan transform dan animasi interaktif untuk pengguna sensitif gerak.
+- **Perubahan**:
+  - Stylesheet (`public/assets/style.css`):
+    - Menerapkan universal `:focus-visible` (2px solid outline dengan offset 2px) dan `:focus:not(:focus-visible)` (membersihkan outline pada klik mouse).
+    - Menambahkan `:focus-visible` ring bertema brand pada `.btn`, `.btn-primary`, `.btn-icon`, `.tabbtn`, `.tab`, `.theme-toggle-btn`, `.input`, `select`, `textarea`, dan link navigasi `.nav a`.
+    - Menambahkan state `:active` mikro (`transform: translateY(1px) scale(0.98)` atau `scale(0.94)`) pada seluruh varian tombol dan link navigasi untuk umpan balik sentuh instan.
+    - Menambahkan state `:hover` dan transisi border pada form input, serta penanganan state `:disabled` yang konsisten.
+    - Menambahkan highlight baris tabel `.table tbody tr:hover` dengan warna token brand (`var(--blue-soft)` dan `var(--blue-border)`).
+    - Memperluas `@media (prefers-reduced-motion: reduce)` agar menonaktifkan seluruh animasi transform, shadow, dan ripple pada elemen interaktif bagi pengguna preferensi reduced motion.
+  - Aplikasi Frontend SPA (`public/app.js`):
+    - Mengimplementasikan `App.initRipple()` menggunakan event delegation `pointerdown` ringan (tanpa dependensi eksternal / 0 dependency) yang secara otomatis memicu gelombang ripple CSS pada tombol dan membersihkan elemen setelah animasi selesai.
+    - Memanggil `this.initRipple()` saat inisialisasi aplikasi di `App.init()`.
+  - Harness Pengujian:
+    - Membuat `tools/verify_d6.mjs` dan `tools/verify_d6_run.mjs` (30/30 pemeriksaan HIJAU 100%).
+    - Uji Mutasi: Merusak deklarasi `:active` tombol memicu kegagalan (MERAH, exit code 1). Dipulihkan kembali ke 100% HIJAU (exit code 0).
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_d6_run.mjs` (total 40 suite pengujian).
+    - Seluruh 40 verifier suite proyek berjalan 100% HIJAU (0 regresi).
+  - Dokumen Loop:
+    - `AGENT_BACKLOG.md`: Menandai Task D6 selesai `[x]` (`a43dfb7`).
+    - `AGENT_STATE.md`: Memperbarui status ke Tick 47 dan mencatat ringkasan Task D6.
+- **Verifikasi**:
+  - `node tools/verify_d6_run.mjs` → **HIJAU 30/30**.
+  - Seluruh rangkaian pengujian proyek (40/40) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+- **Commit**: `a43dfb7`
+- **Status**: **DONE**
+
+
 
 
 

@@ -93,7 +93,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | D3 | Skeleton loading di semua tabel | P3 | [x] | `1d5feaf` |
 | D4 | Empty state bermakna di setiap list | P3 | [x] | `1d5feaf` |
 | D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
-| D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [ ] | — |
+| D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [x] | `a43dfb7` |
 | D7 | Responsive audit 360/768/1024/1440px | P3 | [ ] | — |
 | D8 | Animasi masuk (IntersectionObserver) | P3 | [ ] | — |
 | D9 | Finalisasi p5.js hero (droplet + ripple) | P3 | [ ] | — |
