@@ -755,5 +755,41 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
     - Mutasi 1: Mengembalikan `isOwner` di `pay.js` ke `order.customer_name === user.user_name` → sensor PII bocor, tertangkap runtime (20/22 MERAH, exit 1).
     - Mutasi 2: Mengembalikan `payIsOwner` di `pay.js` ke `order.customer_name === user.user_name` → tertangkap statik dan runtime (17/22 MERAH, exit 1).
     - Dipulihkan → kembali **HIJAU 22/22**.
-- **Commit**: `1d357fa`
+- **Commit**: `f21a40b`
 - **Status**: **DONE**
+
+---
+
+## Tick 36 — 2026-09-16T09:46:00+08:00 (Fase 0.7: Race-Safe POST /api/pay & Idempotency Key)
+
+- **Task**: 0.7 (Fase 0.7) — Race-safe `POST /api/pay` + `idempotency_key` (K5)
+- **Temuan sebelum perubahan**:
+  - `POST /api/pay` membaca `paid_amount` ke dalam memori aplikasi sebelum melakukan kalkulasi dan menimpa dengan `UPDATE orders SET paid_amount = ?, payment_status = ?`.
+  - Jika terjadi dua permintaan pembayaran bersamaan (concurrency race), kedua transaksi membaca saldo awal yang sama dan mengakibatkan inkonsistensi data (lost updates atau overpayment melampaui `total_amount`).
+  - Tidak ada proteksi idempotensi: pengiriman ulang permintaan pembayaran yang sama dapat menyebabkan pembayaran ganda tercatat.
+  - Tabel `payments` belum memiliki kolom unik untuk `idempotency_key`.
+- **Perubahan**:
+  - Berkas migrasi database `db/migrations/0003_add_idempotency_key_to_payments.sql`:
+    - `ALTER TABLE payments ADD COLUMN idempotency_key VARCHAR(64) NULL AFTER id;`
+    - `ALTER TABLE payments ADD UNIQUE INDEX uq_payments_idempotency_key (idempotency_key);`
+    - Dilengkapi petunjuk rollback.
+  - `functions/api/pay.js`:
+    - Validasi parameter `idempotency_key` (maks 64 karakter) dari body atau header `Idempotency-Key`.
+    - Pengecekan idempotensi awal: jika `idempotency_key` yang sama sudah pernah diproses, respons sukses sebelumnya langsung dikembalikan tanpa menulis ulang atau menambah saldo.
+    - Pembaruan atomik: `UPDATE orders SET paid_amount = paid_amount + ?, payment_status = ? WHERE id = ? AND paid_amount + ? <= total_amount`.
+    - Evaluasi fail-closed: jika `affectedRows === 0` (atau `rowsAffected === 0`), permintaan ditolak dengan HTTP 400 (`Jumlah bayar melebihi sisa tagihan atau tagihan sudah lunas`).
+    - Penyimpanan kolom `idempotency_key` pada kueri `INSERT INTO payments` dengan urutan parameter posisi yang kompatibel terhadap verifier B17 & B20.
+  - `tools/verify_c_pay_sync.mjs`: Mendukung pembacaan akumulatif maupun penambahan atomik per transaksi.
+  - `tools/verify_fase0_7.mjs` + `tools/verify_fase0_7_run.mjs`: Harness pengujian baru (19/19 HIJAU) mencakup audit migrasi, audit statik kueri atomic, pengujian runtime idempotensi muatan berulang, dan simulasi penolakan race condition via row-level guard.
+  - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_fase0_7_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai 0.7 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 36.
+- **Verifikasi**:
+  - `node tools/verify_fase0_7_run.mjs` → **HIJAU 19/19**.
+  - Seluruh rangkaian verifier proyek (29/29) **HIJAU**, nol regresi.
+  - Uji mutasi:
+    - Menonaktifkan evaluasi `affectedRows === 0` tertangkap MERAH (16/19, exit 1).
+    - Dipulihkan → kembali **HIJAU 19/19**.
+- **Commit**: `23a5690`
+- **Status**: **DONE**
+

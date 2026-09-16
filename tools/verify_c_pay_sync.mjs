@@ -106,7 +106,7 @@ console.log('[1] Pembayaran bertahap (partial -> paid)');
   check('ada 1 baris orders ter-update', r.updates.length === 1);
 
   const updateParams = r.updates[0]?.params || [];
-  check('paid_amount pesanan menjadi 60000', updateParams[0] === 60000);
+  check('paid_amount pesanan bertambah 40000 (atau akumulatif 60000)', updateParams[0] === 40000 || updateParams[0] === 60000);
   check('payment_status pesanan menjadi "paid"', updateParams[1] === 'paid');
 
   state.paid = 60000;

@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T09:40:00+08:00
-Tick ke: 35
+Terakhir update: 2026-09-16T09:46:00+08:00
+Tick ke: 36
 Model: gemini-flash
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -44,15 +44,28 @@ Model: gemini-flash
 
 ## Task aktif
 
-- ID: — (tidak ada; tick 35 selesai)
+- ID: — (tidak ada; tick 36 selesai)
 - Judul: —
 - Fase: selesai
 - Mulai: —
 
 ## Task selesai
 
+- **0.7** (Fase 0.7) — Race-Safe `POST /api/pay` + `idempotency_key` (P0) —
+  `23a5690` (tick 36)
+  - **Menutup celah race condition pembayaran & overpayment (K5)**:
+    - Berkas migrasi `db/migrations/0003_add_idempotency_key_to_payments.sql`: menambahkan kolom `idempotency_key VARCHAR(64) NULL` dan indeks unik `uq_payments_idempotency_key`.
+    - `functions/api/pay.js`:
+      - Penanganan `idempotency_key`: jika kunci yang sama dikirimkan kembali, sistem langsung mengembalikan status transaksi sebelumnya tanpa menulis ulang pesanan atau pembayaran.
+      - Atomic update `UPDATE orders SET paid_amount = paid_amount + ?, payment_status = ? WHERE id = ? AND paid_amount + ? <= total_amount`.
+      - Penolakan fail-closed saat persaingan transaksi (evaluasi `affectedRows === 0 / rowsAffected === 0`).
+      - Menyimpan `idempotency_key` di tabel `payments`.
+    - `tools/verify_fase0_7.mjs` + `tools/verify_fase0_7_run.mjs`: Harness pengujian baru (19/19 HIJAU).
+    - Uji mutasi: Menonaktifkan penjaga `affectedRows === 0` terbukti ditangkap MERAH (16/19, exit 1). Dipulihkan kembali HIJAU 19/19.
+  - Terdaftar di `tools/run_all_verifiers.sh`, kini 29 verifier (semua HIJAU).
+
 - **0.6** (Fase 0.6) — Ganti Dasar Kepemilikan dari Nama Jadi `user_id` di orders/pay (P0) —
-  `1d357fa` (tick 35)
+  `f21a40b` (tick 35)
   - **Menutup celah IDOR fatal nama kembar di orders dan pay (K4)**:
     - Berkas migrasi `db/migrations/0002_add_user_id_to_orders.sql`: menambahkan kolom `user_id INT NULL`, indeks `idx_orders_user_id`, dan backfill data dari `users`.
     - `functions/api/orders.js`:

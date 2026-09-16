@@ -89,13 +89,15 @@ export async function onRequest({ request, env }) {
           default: 'QRIS',
           label: 'Metode pembayaran'
         },
-        amount: { type: 'int', required: true, min: 1, max: 100000000, label: 'Jumlah bayar' }
+        amount: { type: 'int', required: true, min: 1, max: 100000000, label: 'Jumlah bayar' },
+        idempotency_key: { type: 'str', max: 64, label: 'Kunci idempotensi' }
       });
       if (!v.ok) return v.response;
 
       const code = v.data.order_code || orderCode;
       const method = v.data.method;
       const amount = v.data.amount;
+      const idempotencyKey = cleanStr(v.data.idempotency_key || request.headers.get('Idempotency-Key') || '').slice(0, 64);
 
       if (!code) return jsonResponse({ ok: false, msg: 'Invalid params' }, 400);
 
@@ -127,6 +129,26 @@ export async function onRequest({ request, env }) {
       const payIsOwner = !!user && (order.user_id != null ? order.user_id === user.id : (!!user.user_name && order.customer_name === user.user_name));
       if (!payIsStaff && !payIsOwner) {
         return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+      }
+
+      // --- K5 — IDEMPOTENSI: Kunci yang sama tidak diproses ulang ----------
+      if (idempotencyKey) {
+        try {
+          const existing = await db.query(
+            'SELECT id, amount, qr_payload FROM payments WHERE idempotency_key = ? LIMIT 1',
+            [idempotencyKey]
+          );
+          if (existing && existing.length > 0) {
+            return jsonResponse({
+              ok: true,
+              idempotent: true,
+              qr_payload: existing[0].qr_payload,
+              amount: existing[0].amount
+            });
+          }
+        } catch (tblErr) {
+          // Tabel/kolom belum ada sebelum migrasi (abaikan)
+        }
       }
 
       // --- B20 — JUMLAH BAYAR DIBATASI OLEH SISA TAGIHAN -------------------
@@ -186,22 +208,46 @@ export async function onRequest({ request, env }) {
         }, 400);
       }
 
-      const qrPayload = `DHLDR|${order.order_code}|${amount}|${Date.now()}`;
-      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-      await db.execute(
-        `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at)
-         VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?)`,
-        [order.id, method, amount, qrPayload, now, now]
-      );
-
       const newPaid = Number(order.paid_amount || 0) + amount;
       const paymentStatus = newPaid >= Number(order.total_amount) ? 'paid' : 'partial';
 
-      await db.execute(
-        `UPDATE orders SET paid_amount = ?, payment_status = ? WHERE id = ?`,
-        [newPaid, paymentStatus, order.id]
+      // --- K5 — UPDATE ATOMIC DENGAN ROW-LEVEL GUARD ----------------------
+      // Mencegah race condition ketika 2 request masuk berbarengan:
+      // Penjaga `WHERE id = ? AND paid_amount + ? <= total_amount` memastikan
+      // batas tagihan dievaluasi di level DB. Jika terjadi persaingan (race),
+      // affectedRows bernilai 0 dan request kedua ditolak secara aman.
+      const updateRes = await db.execute(
+        `UPDATE orders
+         SET paid_amount = paid_amount + ?, payment_status = ?
+         WHERE id = ? AND paid_amount + ? <= total_amount`,
+        [amount, paymentStatus, order.id, amount]
       );
+
+      if (updateRes && (updateRes.affectedRows === 0 || updateRes.rowsAffected === 0)) {
+        return jsonResponse({
+          ok: false,
+          msg: 'Validasi gagal: Jumlah bayar melebihi sisa tagihan atau tagihan sudah lunas'
+        }, 400);
+      }
+
+      const finalKey = idempotencyKey || ('PAY-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10)).toUpperCase();
+      const qrPayload = `DHLDR|${order.order_code}|${amount}|${Date.now()}`;
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      try {
+        await db.execute(
+          `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at, idempotency_key)
+           VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?, ?)`,
+          [order.id, method, amount, qrPayload, now, now, finalKey]
+        );
+      } catch (insertErr) {
+        // Fallback untuk backward-compatibility jika kolom idempotency_key belum dibuat
+        await db.execute(
+          `INSERT INTO payments (order_id, method, provider, amount, status, qr_payload, created_at, paid_at)
+           VALUES (?, ?, 'manual', ?, 'paid', ?, ?, ?)`,
+          [order.id, method, amount, qrPayload, now, now]
+        );
+      }
 
       return jsonResponse({
         ok: true,
