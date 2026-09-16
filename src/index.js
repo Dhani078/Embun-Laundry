@@ -64,7 +64,8 @@ export default {
           '/api/me': meHandler,
           '/api/notifications': notificationsHandler,
           '/api/promos': promosHandler,
-          '/api/vouchers': vouchersHandler
+          '/api/vouchers': vouchersHandler,
+          '/api/reports': reportsHandler
         };
         const h = optMap[path];
         if (h?.onRequestOptions) {
@@ -100,7 +101,10 @@ export default {
       else if (path === '/api/delivery') resp = deliveryHandler.onRequest(context);
       else if (path === '/api/promos') resp = promosHandler.onRequest(context);
       else if (path === '/api/vouchers') resp = vouchersHandler.onRequest(context);
-      else if (path === '/api/reports') resp = reportsHandler.onRequestGet(context);
+      else if (path === '/api/reports') {
+        if (request.method === 'GET') resp = reportsHandler.onRequestGet(context);
+        else if (request.method === 'OPTIONS') resp = reportsHandler.onRequestOptions(context);
+      }
       else if (path === '/api/profile') resp = profileHandler.onRequest(context);
       else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
       else if (path === '/api/pay') resp = payHandler.onRequest(context);
