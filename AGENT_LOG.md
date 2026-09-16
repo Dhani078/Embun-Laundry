@@ -860,4 +860,48 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 - **Commit**: `bf92626`
 - **Status**: **DONE**
 
+---
+
+## Tick 39 — 2026-09-16T10:15:00+08:00 (Task C3: Notifikasi Real-Time Status Order via Polling)
+
+- **Task**: C3 (Fase C3) — Notifikasi real-time status (polling) (P2)
+- **Temuan sebelum perubahan**:
+  - Tabel `notifications` belum ada di skema database TiDB, sehingga tidak ada persistensi riwayat notifikasi event order.
+  - Handler `functions/api/notifications.js` dinonaktifkan / mengembalikan 404 sejak Fase 0.5 (K3).
+  - Rute `/api/notifications` belum terdaftar di router Cloudflare Worker `src/index.js`.
+  - Mutasi status pesanan di `orders.js` (`create_order`, `move_status`) dan `pay.js` (verifikasi pembayaran lunas) belum memicu pencatatan event notifikasi.
+  - Antarmuka pelacakan pesanan (`public/track.html` dan modal pelacakan di `public/index.html`) tidak memiliki linimasa notifikasi dan polling berkala.
+- **Perubahan**:
+  - Skema database `db/migrations/0005_create_notifications_table.sql`:
+    - Membuat tabel `notifications` (`id BIGINT AUTO_INCREMENT PRIMARY KEY`, `order_code VARCHAR(32) NOT NULL`, `message VARCHAR(255) NOT NULL`, `status VARCHAR(50) DEFAULT NULL`, `created_at DATETIME DEFAULT CURRENT_TIMESTAMP`, `INDEX idx_order_code (order_code)`).
+    - Dilengkapi petunjuk rollback.
+  - Backend API:
+    - Mengaktifkan `functions/api/notifications.js` (`GET /api/notifications?order_code=...`) dengan validasi input sanitasi kode order, batasan 20 notifikasi terbaru, rate limiting 30 req/5m per IP, dan penanganan error generik tanpa membocorkan rincian koneksi internal.
+    - Menambahkan ekspor `onRequestOptions` untuk pra-pemeriksaan CORS.
+  - Router Worker (`src/index.js`):
+    - Mendaftarkan rute `GET /api/notifications` ke `notificationsHandler`.
+    - Mendaftarkan rute di tabel preflight CORS `optMap`.
+  - Event Dispatch:
+    - `functions/api/orders.js`: Menyisipkan notifikasi ke tabel `notifications` saat pesanan dibuat (`create_order`) dan saat status pesanan diperbarui (`move_status`).
+    - `functions/api/pay.js`: Menyisipkan notifikasi pembayaran terverifikasi secara parameterized SQL `[order.order_code, notifMsg, 'dibayar']`.
+  - Frontend UI & Polling:
+    - `public/track.html`: Menambahkan elemen linimasa notifikasi (`#notificationTimeline`), indikator live, pembaruan badge status otomatis, dan siklus polling 10 detik. Polling otomatis dihentikan saat pesanan berstatus terminal (`selesai` atau `batal`).
+    - `public/index.html`: Menambahkan linimasa notifikasi ke modal tracking pelanggan publik dengan siklus polling yang dimulai saat modal dibuka dan dibersihkan saat modal ditutup.
+  - Penyesuaian Kompatibilitas Warisan:
+    - `tools/verify_fase0_5.mjs`: Melonggarkan asersi status rute aktif dari 404 mutlak menjadi `workerRes.status === 404 || workerRes.status === 200` karena C3 telah diaktifkan secara resmi.
+  - Harness Pengujian:
+    - `tools/verify_c3.mjs` + `tools/verify_c3_run.mjs` (35/35 HIJAU) mencakup pengujian migrasi SQL, validasi input sanitasi, rate limiting, SQL injection defense, alur integrasi event trigger (orders + pay), endpoint Worker, integrasi antarmuka DOM, serta auto-stop polling.
+    - `tools/run_all_verifiers.sh`: Mendaftarkan `verify_c3_run.mjs`.
+  - `AGENT_BACKLOG.md`: Tandai C3 selesai.
+  - `AGENT_STATE.md`: Catat baseline tick 39.
+- **Verifikasi**:
+  - `node tools/verify_c3_run.mjs` → **HIJAU 35/35**.
+  - Seluruh rangkaian verifier proyek (32/32) **HIJAU**, nol regresi (`tools/run_all_verifiers.sh`).
+  - Uji mutasi:
+    - Melepas validasi kode pesanan di `notifications.js` tertangkap MERAH (28/35, exit 1).
+    - Dipulihkan → kembali **HIJAU 35/35**.
+- **Commit**: (tick 39)
+- **Status**: **DONE**
+
+
 

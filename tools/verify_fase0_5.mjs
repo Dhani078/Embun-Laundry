@@ -178,7 +178,7 @@ check('rate limit terpicu (HTTP 429) saat permintaan berlebih', lastStatus === 4
 console.log('\n# Bagian 4 — Uji Integrasi Worker Entrypoint');
 const workerReq = new Request('https://embun-laundry.dhanisepeda.workers.dev/api/notifications?order_code=ORD-100');
 const workerRes = await worker.fetch(workerReq, mockEnv);
-check('worker entrypoint tidak crash pada /api/notifications (clean 404 hingga C3 diaktifkan)', workerRes.status === 404);
+check('worker entrypoint merespons /api/notifications secara aman (404 sebelum C3 / 200 setelah C3)', workerRes.status === 404 || workerRes.status === 200);
 
 // ---------------------------------------------------------------------------
 // Ringkasan

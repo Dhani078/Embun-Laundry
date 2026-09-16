@@ -243,6 +243,16 @@ export async function onRequest({ request, env }) {
           );
         }
 
+        // C3 — Catat notifikasi pesanan baru untuk polling status
+        try {
+          await db.execute(
+            `INSERT INTO notifications (order_code, message, status, created_at) VALUES (?, ?, ?, NOW())`,
+            [code, `Pesanan ${code} berhasil dibuat dengan status ${status}`, status]
+          );
+        } catch (notifErr) {
+          // Abaikan kegagalan notifikasi agar alur order utama tidak terganggu
+        }
+
         return jsonResponse({ ok: true, order: newOrder[0] });
       }
 
@@ -259,6 +269,22 @@ export async function onRequest({ request, env }) {
           `UPDATE orders SET status = ?, finished_at = IF(? = 'selesai', IFNULL(finished_at, ?), finished_at) WHERE id = ?`,
           [newStatus, newStatus, now, id]
         );
+
+        // C3 — Catat notifikasi perubahan status untuk real-time polling
+        try {
+          const ordRows = await db.query('SELECT order_code FROM orders WHERE id = ? LIMIT 1', [id]);
+          if (ordRows && ordRows.length > 0) {
+            const code = ordRows[0].order_code;
+            const notifMsg = `Status pesanan ${code} diperbarui menjadi: ${newStatus}`;
+            await db.execute(
+              `INSERT INTO notifications (order_code, message, status, created_at) VALUES (?, ?, ?, NOW())`,
+              [code, notifMsg, newStatus]
+            );
+          }
+        } catch (notifErr) {
+          // Abaikan kegagalan notifikasi agar alur order utama tidak terganggu
+        }
+
         return jsonResponse({ ok: true });
       }
 

@@ -249,6 +249,17 @@ export async function onRequest({ request, env }) {
         );
       }
 
+      // C3 — Catat notifikasi pembayaran berhasil untuk real-time polling
+      try {
+        const notifMsg = `Pembayaran sebesar Rp ${Number(amount).toLocaleString('id-ID')} diterima (${method})`;
+        await db.execute(
+          `INSERT INTO notifications (order_code, message, status, created_at) VALUES (?, ?, ?, NOW())`,
+          [order.order_code, notifMsg, 'dibayar']
+        );
+      } catch (notifErr) {
+        // Gagal mencatat notifikasi tidak membatalkan respons pembayaran
+      }
+
       return jsonResponse({
         ok: true,
         qr_payload: qrPayload,
