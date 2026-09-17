@@ -10,6 +10,7 @@ for f in tools/verify_a6_run.mjs tools/verify_fase0_2_run.mjs tools/verify_fase0
          tools/verify_b18_run.mjs tools/verify_b19_run.mjs tools/verify_b20_run.mjs \
          tools/verify_c1_run.mjs tools/verify_c2_run.mjs tools/verify_c3_run.mjs tools/verify_c4_run.mjs tools/verify_c_pay_sync_run.mjs \
          tools/verify_c5_run.mjs tools/verify_c6.mjs tools/verify_c7_run.mjs tools/verify_c8_run.mjs \
+         tools/verify_c9.mjs \
          tools/verify_d1_run.mjs tools/verify_d2_run.mjs tools/verify_d3_run.mjs \
          tools/verify_d6_run.mjs tools/verify_d7_run.mjs tools/verify_d8_run.mjs tools/verify_d9_run.mjs \
          tools/verify_e5_run.mjs tools/verify_e6_run.mjs; do

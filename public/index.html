@@ -1774,5 +1774,14 @@ initReveal();
   defer
 ></script>
 <script src="/assets/hero-canvas.js" defer></script>
+<script>
+  // C9: daftarkan service worker untuk mode offline dasar.
+  // Pendaftaran dijadwalkan setelah load agar tidak menahan navigasi.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
