@@ -11,7 +11,7 @@
 // naikkan ke IndexedDB + background sync — jangan memperluas cache ini.
 
 const APP_SHELL = '/sw.js'; // marker: precache versi ini
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `embun-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `embun-assets-${CACHE_VERSION}`;
 

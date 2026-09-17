@@ -1960,34 +1960,7 @@ const App = window.App = {
             </div>
             `;
           }).join('')}
-        </div>`;
-
-      // Live category tab & search filtering for services
-      const filterServices = () => {
-        const activeTab = document.querySelector('#svcCategoryTabs .cat-tab.active')?.getAttribute('data-cat') || 'all';
-        const searchVal = document.getElementById('svcSearchInput')?.value.toLowerCase().trim() || '';
-        const items = document.querySelectorAll('.svc-item');
-        items.forEach(item => {
-          const itemCat = item.getAttribute('data-cat') || '';
-          const itemName = item.getAttribute('data-name') || '';
-          const matchesCat = activeTab === 'all' || itemCat.includes(activeTab);
-          const matchesSearch = !searchVal || itemName.includes(searchVal);
-          item.style.display = (matchesCat && matchesSearch) ? 'flex' : 'none';
-        });
-      };
-
-      document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(tab => {
-        tab.addEventListener('click', (e) => {
-          document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(t => t.classList.remove('active'));
-          e.currentTarget.classList.add('active');
-          filterServices();
-        });
-      });
-
-      const svcSearchInput = document.getElementById('svcSearchInput');
-      if (svcSearchInput) {
-        svcSearchInput.addEventListener('input', filterServices);
-      }
+        </div>
 
         <!-- Service Modal -->
         <div id="serviceModal" class="modal-backdrop" style="display: none;">
@@ -2054,6 +2027,33 @@ const App = window.App = {
           </div>
         </div>
       `;
+
+      // Live category tab & search filtering for services
+      const filterServices = () => {
+        const activeTab = document.querySelector('#svcCategoryTabs .cat-tab.active')?.getAttribute('data-cat') || 'all';
+        const searchVal = document.getElementById('svcSearchInput')?.value.toLowerCase().trim() || '';
+        const items = document.querySelectorAll('.svc-item');
+        items.forEach(item => {
+          const itemCat = item.getAttribute('data-cat') || '';
+          const itemName = item.getAttribute('data-name') || '';
+          const matchesCat = activeTab === 'all' || itemCat.includes(activeTab);
+          const matchesSearch = !searchVal || itemName.includes(searchVal);
+          item.style.display = (matchesCat && matchesSearch) ? 'flex' : 'none';
+        });
+      };
+
+      document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(t => t.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          filterServices();
+        });
+      });
+
+      const svcSearchInput = document.getElementById('svcSearchInput');
+      if (svcSearchInput) {
+        svcSearchInput.addEventListener('input', filterServices);
+      }
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat layanan</div>';
     }
@@ -2319,41 +2319,88 @@ const App = window.App = {
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="margin:0;color:var(--text);">Daftar Promo</h3>
-            <button class="btn btn-primary" onclick="App.openPromoForm()" style="padding:8px 16px;">+ Tambah Promo</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h3 style="margin:0;color:var(--text);font-size:18px;font-weight:800;">Daftar Promo &amp; Diskon</h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Kelola kode promo potongan harga dan kupon diskon pelanggan</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <input type="text" id="promoSearchInput" placeholder="🔍 Cari kode atau nama promo..." style="padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13px;width:220px;" oninput="
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#promoTableBody tr').forEach(r => {
+                  const t = r.textContent.toLowerCase();
+                  r.style.display = t.includes(q) ? '' : 'none';
+                });
+              ">
+              <button class="btn btn-primary" onclick="App.openPromoForm()" style="padding:8px 16px;font-weight:700;">+ Tambah Promo</button>
+            </div>
           </div>
-          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;margin-bottom:24px;">
-            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+          <div class="card" style="padding:0;border-radius:var(--radius-md);overflow-x:auto;margin-bottom:28px;">
+            <table class="table" style="width:100%;min-width:840px;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:13px;">
+              <colgroup>
+                <col style="width:140px;">
+                <col style="width:230px;">
+                <col style="width:90px;">
+                <col style="width:110px;">
+                <col style="width:110px;">
+                <col style="width:110px;">
+                <col style="width:95px;">
+                <col style="width:140px;">
+              </colgroup>
               <thead>
-                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
-                  <th style="padding:10px;">Kode</th>
-                  <th style="padding:10px;">Nama</th>
-                  <th style="padding:10px;">Tipe</th>
-                  <th style="padding:10px;">Nilai</th>
-                  <th style="padding:10px;">Min. Belanja</th>
-                  <th style="padding:10px;">Kedaluwarsa</th>
-                  <th style="padding:10px;">Status</th>
-                  <th style="padding:10px;">Aksi</th>
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);background:var(--bg-subtle);">
+                  <th style="padding:12px 14px;">Kode</th>
+                  <th style="padding:12px 14px;">Nama</th>
+                  <th style="padding:12px 14px;">Tipe</th>
+                  <th style="padding:12px 14px;">Nilai</th>
+                  <th style="padding:12px 14px;">Min. Belanja</th>
+                  <th style="padding:12px 14px;">Kedaluwarsa</th>
+                  <th style="padding:12px 14px;">Status</th>
+                  <th style="padding:12px 14px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="promoTableBody">
                 ${promos.length === 0
-                  ? '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted);">Belum ada promo</td></tr>'
+                  ? '<tr><td colspan="8" style="padding:28px;text-align:center;color:var(--muted);">Belum ada promo terdaftar. Klik "+ Tambah Promo" di atas.</td></tr>'
                   : promos.map(p => `
-                  <tr style="border-bottom:1px solid var(--line);">
-                    <td style="padding:10px;font-weight:700;color:var(--blue);">${esc(p.code)}</td>
-                    <td style="padding:10px;">${esc(p.name)}</td>
-                    <td style="padding:10px;">${p.type === 'percent' ? 'Persen' : 'Nominal'}</td>
-                    <td style="padding:10px;">${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')}</td>
-                    <td style="padding:10px;">Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</td>
-                    <td style="padding:10px;">${p.expires_at ? esc(String(p.expires_at).slice(0, 10)) : '—'}</td>
-                    <td style="padding:10px;"><span class="badge ${p.is_active ? 'status-selesai' : 'status-batal'}">${p.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td style="padding:10px;">
-                      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.openPromoForm(${p.id})" aria-label="Edit promo ${esc(p.code)}">Edit</button>
-                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="App.togglePromo(${p.id},${p.is_active ? 0 : 1})" aria-label="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo ${esc(p.code)}">${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
-                        <button class="btn" style="padding:4px 10px;font-size:12px;background:var(--red-soft);color:var(--red);" onclick="App.deletePromo(${p.id})" aria-label="Hapus promo ${esc(p.code)}">Hapus</button>
+                  <tr style="border-bottom:1px solid var(--line);transition:background 0.15s ease;">
+                    <td style="padding:10px 14px;">
+                      <span class="ticket-code-pill" style="cursor:pointer;max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Klik untuk salin: ${esc(p.code)}" onclick="navigator.clipboard.writeText('${esc(p.code)}'); App.toast('Kode ${esc(p.code)} disalin!','success');">
+                        🏷️ ${esc(p.code)}
+                      </span>
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <div style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:215px;" title="${esc(p.name)}">
+                        ${esc(p.name)}
+                      </div>
+                      <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:215px;">
+                        ${p.type === 'percent' ? `Diskon ${esc(p.value)}%` : `Potongan Rp ${Number(p.value).toLocaleString('id-ID')}`}
+                      </div>
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <span class="badge" style="font-size:11px;background:var(--bg-subtle);">${p.type === 'percent' ? 'Persen' : 'Nominal'}</span>
+                    </td>
+                    <td style="padding:10px 14px;font-weight:800;color:var(--green);">
+                      ${p.type === 'percent' ? esc(p.value) + '%' : 'Rp ' + Number(p.value).toLocaleString('id-ID')}
+                    </td>
+                    <td style="padding:10px 14px;color:var(--muted);font-variant-numeric:tabular-nums;">
+                      Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}
+                    </td>
+                    <td style="padding:10px 14px;font-size:12px;color:var(--muted);">
+                      ${p.expires_at ? esc(String(p.expires_at).slice(0, 10)) : '—'}
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <span class="badge ${p.is_active ? 'status-selesai' : 'status-batal'}">
+                        ${p.is_active ? '● Aktif' : '○ Nonaktif'}
+                      </span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
+                      <div class="action-btn-group" style="justify-content:flex-end;">
+                        <button class="action-btn" onclick="App.openPromoForm(${p.id})" aria-label="Edit promo ${esc(p.code)}" title="Edit Promo">✏️</button>
+                        <button class="action-btn" onclick="App.togglePromo(${p.id},${p.is_active ? 0 : 1})" aria-label="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'} promo ${esc(p.code)}" title="${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                          ${p.is_active ? '⏸️' : '▶️'}
+                        </button>
+                        <button class="action-btn action-btn-danger" onclick="App.deletePromo(${p.id})" aria-label="Hapus promo ${esc(p.code)}" title="Hapus Promo">🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -2391,37 +2438,66 @@ const App = window.App = {
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="margin:0;color:var(--text);">Semua Voucher Pengguna</h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h3 style="margin:0;color:var(--text);font-size:18px;font-weight:800;">Semua Voucher Pengguna</h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Daftar voucher individual yang diklaim atau diterbitkan khusus untuk pelanggan</div>
+            </div>
             <button class="btn btn-primary" onclick="App.openGrantVoucherForm()">🎁 Terbitkan Voucher</button>
           </div>
-          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;">
-            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+          <div class="card" style="padding:0;border-radius:var(--radius-md);overflow-x:auto;">
+            <table class="table" style="width:100%;min-width:800px;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:13px;">
+              <colgroup>
+                <col style="width:150px;">
+                <col style="width:200px;">
+                <col style="width:110px;">
+                <col style="width:180px;">
+                <col style="width:110px;">
+                <col style="width:90px;">
+              </colgroup>
               <thead>
-                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
-                  <th style="padding:10px;">Kode Voucher</th>
-                  <th style="padding:10px;">Nama Promo</th>
-                  <th style="padding:10px;">Nilai</th>
-                  <th style="padding:10px;">Penerima / User</th>
-                  <th style="padding:10px;">Status</th>
-                  <th style="padding:10px;text-align:right;">Aksi</th>
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);background:var(--bg-subtle);">
+                  <th style="padding:12px 14px;">Kode Voucher</th>
+                  <th style="padding:12px 14px;">Nama Promo</th>
+                  <th style="padding:12px 14px;">Nilai</th>
+                  <th style="padding:12px 14px;">Penerima / User</th>
+                  <th style="padding:12px 14px;">Status</th>
+                  <th style="padding:12px 14px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Belum ada voucher diterbitkan</td></tr>'
+                  ? '<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--muted);">Belum ada voucher yang diterbitkan.</td></tr>'
                   : vouchers.map(v => `
-                  <tr style="border-bottom:1px solid var(--line);">
-                    <td style="padding:10px;font-weight:700;color:var(--blue);font-family:monospace;">${esc(v.code)}</td>
-                    <td style="padding:10px;">${esc(v.promo_name || v.name)}</td>
-                    <td style="padding:10px;font-weight:600;color:var(--green);">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
-                    <td style="padding:10px;">
-                      <div style="font-weight:600;">${esc(v.user_name || 'User #' + v.user_id)}</div>
-                      <div style="font-size:11px;color:var(--muted);">${esc(v.user_email || 'ID: ' + v.user_id)}</div>
+                  <tr style="border-bottom:1px solid var(--line);transition:background 0.15s ease;">
+                    <td style="padding:10px 14px;">
+                      <span class="ticket-code-pill" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.code)}">
+                        🎁 ${esc(v.code)}
+                      </span>
                     </td>
-                    <td style="padding:10px;"><span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span></td>
-                    <td style="padding:10px;text-align:right;">
-                      <button class="btn" style="padding:4px 10px;font-size:12px;background:var(--red-soft);color:var(--red);border:1px solid var(--red-border);border-radius:4px;cursor:pointer;" onclick="App.deleteVoucher(${v.id})" aria-label="Cabut voucher ${esc(v.code)}">Cabut</button>
+                    <td style="padding:10px 14px;">
+                      <div style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px;" title="${esc(v.promo_name || v.name)}">
+                        ${esc(v.promo_name || v.name)}
+                      </div>
+                    </td>
+                    <td style="padding:10px 14px;font-weight:800;color:var(--green);">
+                      ${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <div style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;" title="${esc(v.user_name || 'User #' + v.user_id)}">
+                        ${esc(v.user_name || 'User #' + v.user_id)}
+                      </div>
+                      <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">
+                        ${esc(v.user_email || 'ID: ' + v.user_id)}
+                      </div>
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">
+                        ${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}
+                      </span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
+                      <button class="action-btn action-btn-danger" onclick="App.deleteVoucher(${v.id})" aria-label="Cabut voucher ${esc(v.code)}">Cabut</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -2431,58 +2507,87 @@ const App = window.App = {
         `;
       } else {
         c.innerHTML = `
-          <h3 style="margin:0 0 16px;color:var(--text);">Voucher Tersedia</h3>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;">
+          <div style="margin-bottom:24px;">
+            <h3 style="margin:0 0 4px;color:var(--text);font-size:20px;font-weight:800;">🏷️ Kupon &amp; Promo Spesial</h3>
+            <div style="font-size:13px;color:var(--muted);">Gunakan kode promo saat melakukan pemesanan untuk mendapatkan potongan harga spesial!</div>
+          </div>
+
+          <div class="ticket-grid">
             ${promos.filter(p => p.is_active).length === 0
-              ? '<div style="color:var(--muted);padding:20px;">Belum ada promo aktif saat ini.</div>'
+              ? '<div class="card" style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted);">Saat ini belum ada promo yang sedang aktif. Nantikan promo menarik berikutnya!</div>'
               : promos.filter(p => p.is_active).map(p => `
-                <div class="card" style="padding:20px;border-radius:var(--radius-md);display:flex;flex-direction:column;justify-content:space-between;">
-                  <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <span class="badge" style="background:var(--blue-soft);color:var(--blue);font-weight:700;font-family:monospace;">${esc(p.code || 'PROMO')}</span>
-                      <span style="font-size:11px;color:var(--muted);">${p.expires_at ? 'Hingga ' + esc(String(p.expires_at).slice(0, 10)) : 'Aktif'}</span>
-                    </div>
-                    <h4 style="margin:0 0 6px;font-size:16px;color:var(--text);">${esc(p.name)}</h4>
-                    <div style="font-size:18px;font-weight:800;color:var(--green);margin-bottom:8px;">
-                      ${p.type === 'percent' ? 'Diskon ' + esc(p.value) + '%' : 'Potongan Rp ' + Number(p.value).toLocaleString('id-ID')}
-                    </div>
-                    <div style="font-size:12px;color:var(--muted);margin:0 0 12px;">
-                      <div>Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</div>
-                      ${p.max_discount > 0 ? `<div>Maks. diskon: Rp ${Number(p.max_discount).toLocaleString('id-ID')}</div>` : ''}
-                    </div>
+                <div class="ticket-card">
+                  <div class="ticket-left">
+                    <div class="ticket-discount-val">${p.type === 'percent' ? esc(p.value) + '%' : (p.value >= 1000 ? Math.round(p.value/1000) + 'k' : p.value)}</div>
+                    <div class="ticket-discount-type">POTONGAN</div>
                   </div>
-                  <button class="btn btn-copy" style="width:100%;padding:8px;font-size:13px;border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(p.code)}'); this.textContent='✓ Tersalin!'; setTimeout(() => this.textContent='📋 Salin Kode Promo', 2000);">📋 Salin Kode Promo</button>
+                  <div class="ticket-right">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <span class="ticket-code-pill">🏷️ ${esc(p.code || 'PROMO')}</span>
+                        <span style="font-size:11px;color:var(--muted);font-weight:600;">${p.expires_at ? 's/d ' + esc(String(p.expires_at).slice(0, 10)) : 'Aktif'}</span>
+                      </div>
+                      <h4 style="margin:6px 0 4px;font-size:15px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.name)}">${esc(p.name)}</h4>
+                      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+                        <div>Min. belanja: Rp ${Number(p.min_spend || 0).toLocaleString('id-ID')}</div>
+                        ${p.max_discount > 0 ? `<div>Maks. diskon: Rp ${Number(p.max_discount).toLocaleString('id-ID')}</div>` : ''}
+                      </div>
+                    </div>
+                    <button class="btn btn-copy" style="width:100%;padding:8px;font-size:12px;border:1px dashed var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;cursor:pointer;font-weight:700;transition:all 0.2s;" onclick="navigator.clipboard.writeText('${esc(p.code)}'); this.textContent='✓ Kode Tersalin!'; setTimeout(() => this.textContent='📋 Salin Kode Promo', 2000);">📋 Salin Kode Promo</button>
+                  </div>
                 </div>
               `).join('')}
           </div>
 
-          <h3 style="margin:0 0 16px;color:var(--text);">Voucher Saya</h3>
-          <div class="card" style="padding:20px;border-radius:var(--radius-md);overflow-x:auto;">
-            <table class="table" style="width:100%;border-collapse:collapse;text-align:left;font-size:14px;">
+          <div style="margin-bottom:16px;">
+            <h3 style="margin:0 0 4px;color:var(--text);font-size:18px;font-weight:800;">🎁 Voucher Saya</h3>
+            <div style="font-size:13px;color:var(--muted);">Koleksi voucher diskon pribadi Anda yang siap digunakan</div>
+          </div>
+          <div class="card" style="padding:0;border-radius:var(--radius-md);overflow-x:auto;">
+            <table class="table" style="width:100%;min-width:680px;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:13px;">
+              <colgroup>
+                <col style="width:160px;">
+                <col style="width:240px;">
+                <col style="width:130px;">
+                <col style="width:120px;">
+                <col style="width:90px;">
+              </colgroup>
               <thead>
-                <tr style="border-bottom:2px solid var(--line);color:var(--muted);">
-                  <th style="padding:10px;">Kode Voucher</th>
-                  <th style="padding:10px;">Nama Promo</th>
-                  <th style="padding:10px;">Nilai</th>
-                  <th style="padding:10px;">Status</th>
-                  <th style="padding:10px;text-align:right;">Aksi</th>
+                <tr style="border-bottom:2px solid var(--line);color:var(--muted);background:var(--bg-subtle);">
+                  <th style="padding:12px 14px;">Kode Voucher</th>
+                  <th style="padding:12px 14px;">Nama Promo</th>
+                  <th style="padding:12px 14px;">Nilai</th>
+                  <th style="padding:12px 14px;">Status</th>
+                  <th style="padding:12px 14px;text-align:right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 ${vouchers.length === 0
-                  ? '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">Belum ada voucher</td></tr>'
+                  ? '<tr><td colspan="5" style="padding:28px;text-align:center;color:var(--muted);">Belum ada voucher di akun Anda.</td></tr>'
                   : vouchers.map(v => `
-                  <tr style="border-bottom:1px solid var(--line);">
-                    <td style="padding:10px;font-weight:700;color:var(--blue);font-family:monospace;">${esc(v.code)}</td>
-                    <td style="padding:10px;">${esc(v.name)}</td>
-                    <td style="padding:10px;font-weight:600;color:var(--green);">${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}</td>
-                    <td style="padding:10px;">
-                      <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}</span>
+                  <tr style="border-bottom:1px solid var(--line);transition:background 0.15s ease;">
+                    <td style="padding:10px 14px;">
+                      <span class="ticket-code-pill" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.code)}">
+                        🎁 ${esc(v.code)}
+                      </span>
                     </td>
-                    <td style="padding:10px;text-align:right;">
+                    <td style="padding:10px 14px;">
+                      <div style="font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;" title="${esc(v.name)}">
+                        ${esc(v.name)}
+                      </div>
+                    </td>
+                    <td style="padding:10px 14px;font-weight:800;color:var(--green);">
+                      ${v.type === 'percent' ? esc(v.value) + '%' : 'Rp ' + Number(v.value).toLocaleString('id-ID')}
+                    </td>
+                    <td style="padding:10px 14px;">
+                      <span class="badge ${v.used_at ? 'status-batal' : 'status-selesai'}">
+                        ${v.used_at ? 'Sudah Dipakai' : 'Siap Pakai'}
+                      </span>
+                    </td>
+                    <td style="padding:10px 14px;text-align:right;">
                       ${!v.used_at ? `
-                        <button class="btn" style="padding:4px 8px;font-size:12px;background:var(--blue-soft);color:var(--blue);border:1px solid var(--blue-border);border-radius:4px;cursor:pointer;" onclick="navigator.clipboard.writeText('${esc(v.code)}'); this.textContent='✓ Salin'; setTimeout(() => this.textContent='Salin', 2000);">Salin</button>
-                      ` : '-'}
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('${esc(v.code)}'); this.textContent='✓ Salin'; setTimeout(() => this.textContent='Salin', 2000);">Salin</button>
+                      ` : '<span style="color:var(--muted);font-size:12px;">—</span>'}
                     </td>
                   </tr>
                 `).join('')}
@@ -2845,7 +2950,7 @@ const App = window.App = {
 
     const svgWidth = 760;
     const svgHeight = 280;
-    const padL = 75;
+    const padL = 85;
     const padR = 25;
     const padT = 25;
     const padB = 45;
@@ -2854,7 +2959,7 @@ const App = window.App = {
 
     const n = chartRows.length;
     const colW = plotW / n;
-    const barW = Math.max(8, Math.min(44, colW * 0.65));
+    const barW = Math.max(12, Math.min(48, colW * (n === 1 ? 0.35 : 0.65)));
 
     const gridLines = [];
     const ticks = 4;
@@ -2864,7 +2969,7 @@ const App = window.App = {
       let label = val >= 1000000 ? `${(val / 1000000).toFixed(1)}jt` : (val >= 1000 ? `${Math.round(val / 1000)}rb` : String(val));
       gridLines.push(`
         <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${i === 0 ? '0' : '4'}"/>
-        <text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="system-ui, sans-serif">Rp ${label}</text>
+        <text x="${padL - 12}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="system-ui, sans-serif" font-weight="500">Rp ${label}</text>
       `);
     }
 
@@ -2887,9 +2992,10 @@ const App = window.App = {
 
       bars.push(`
         <g class="chart-col" data-period="${esc(periodLabel)}" data-paid="${paid}" data-unpaid="${unpaid}" data-total="${total}" style="cursor: pointer;">
-          ${paid > 0 ? `<rect x="${bx}" y="${byPaid}" width="${barW}" height="${paidH}" fill="var(--blue)" rx="2" class="bar-paid" style="transition: opacity 0.2s;"/>` : ''}
-          ${unpaid > 0 ? `<rect x="${bx}" y="${byUnpaid}" width="${barW}" height="${unpaidH}" fill="var(--amber)" rx="2" class="bar-unpaid" style="transition: opacity 0.2s;"/>` : ''}
-          <text x="${cx}" y="${padT + plotH + 20}" text-anchor="middle" font-size="11" fill="var(--muted)" font-weight="500">${esc(shortLabel)}</text>
+          <rect x="${cx - barW / 2 - 4}" y="${padT}" width="${barW + 8}" height="${plotH}" fill="transparent" rx="6" class="col-hover-track" style="transition: fill 0.2s;" />
+          ${paid > 0 ? `<rect x="${bx}" y="${byPaid}" width="${barW}" height="${paidH}" fill="var(--blue)" rx="4" class="bar-paid" style="transition: opacity 0.2s;"/>` : ''}
+          ${unpaid > 0 ? `<rect x="${bx}" y="${byUnpaid}" width="${barW}" height="${unpaidH}" fill="var(--amber)" rx="4" class="bar-unpaid" style="transition: opacity 0.2s;"/>` : ''}
+          <text x="${cx}" y="${padT + plotH + 22}" text-anchor="middle" font-size="11" fill="var(--muted)" font-weight="600">${esc(shortLabel)}</text>
           <rect x="${padL + i * colW}" y="${padT}" width="${colW}" height="${plotH + 30}" fill="transparent" class="bar-hover-hit"/>
         </g>
       `);
@@ -2897,11 +3003,11 @@ const App = window.App = {
 
     return `
       <div style="position: relative; width: 100%; overflow-x: auto;">
-        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; min-width: 600px; height: 280px; display: block;" preserveAspectRatio="xMidYMid meet" id="reportSvgChart">
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width: 100%; min-width: 620px; height: 280px; display: block;" preserveAspectRatio="xMidYMid meet" id="reportSvgChart">
           ${gridLines.join('')}
           ${bars.join('')}
         </svg>
-        <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff); padding: 8px 12px; border-radius: 8px; font-size: 12px; box-shadow: var(--shadow-card); transform: translate(-50%, -100%); margin-top: -8px;"></div>
+        <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff); padding: 10px 14px; border-radius: 8px; font-size: 12px; box-shadow: var(--shadow-card); transform: translate(-50%, -100%); margin-top: -8px; border: 1px solid rgba(255,255,255,0.1);"></div>
       </div>
     `;
   },
@@ -2951,12 +3057,12 @@ const App = window.App = {
 
       c.innerHTML = `
         <!-- FILTER & CONTROLS -->
-        <div class="card" style="padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 20px;">
+        <div class="card" style="padding: 18px 22px; border-radius: var(--radius-md); margin-bottom: 24px;">
           <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; justify-content: space-between;">
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Kelompokkan</label>
-                <select id="reportGroup" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; background: var(--card); color: var(--text);">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px;">Kelompokkan</label>
+                <select id="reportGroup" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; background: var(--card); color: var(--text);">
                   <option value="bulan" ${filter.group === 'bulan' ? 'selected' : ''}>Bulanan</option>
                   <option value="minggu" ${filter.group === 'minggu' ? 'selected' : ''}>Mingguan</option>
                   <option value="hari" ${filter.group === 'hari' ? 'selected' : ''}>Harian</option>
@@ -2964,69 +3070,69 @@ const App = window.App = {
               </div>
 
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Dari Tanggal</label>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px;">Dari Tanggal</label>
                 <input type="date" id="reportStart" value="${esc(filter.start || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; background: var(--card); color: var(--text);">
               </div>
 
               <div>
-                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">Sampai Tanggal</label>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px;">Sampai Tanggal</label>
                 <input type="date" id="reportEnd" value="${esc(filter.end || '')}" style="padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; background: var(--card); color: var(--text);">
               </div>
 
-              <button type="button" class="btn btn-primary" onclick="App.applyReportFilter()" style="padding: 8px 16px; font-size: 13px; font-weight: 600;">
+              <button type="button" class="btn btn-primary" onclick="App.applyReportFilter()" style="padding: 8px 18px; font-size: 13px; font-weight: 700;">
                 🔍 Terapkan Filter
               </button>
             </div>
 
             <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('month')" style="padding: 5px 10px; font-size: 12px;">Bulan Ini</button>
-              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('30days')" style="padding: 5px 10px; font-size: 12px;">30 Hari</button>
-              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('year')" style="padding: 5px 10px; font-size: 12px;">Tahun Ini</button>
-              <button type="button" class="btn btn-sm" onclick="App.setReportPreset('all')" style="padding: 5px 10px; font-size: 12px;">Semua</button>
-              <button type="button" class="btn btn-sm" onclick="window.print()" style="padding: 5px 10px; font-size: 12px; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff);">🖨️ Cetak</button>
+              <button type="button" class="cat-tab" onclick="App.setReportPreset('month')" style="padding: 6px 14px; font-size: 12px;">Bulan Ini</button>
+              <button type="button" class="cat-tab" onclick="App.setReportPreset('30days')" style="padding: 6px 14px; font-size: 12px;">30 Hari</button>
+              <button type="button" class="cat-tab" onclick="App.setReportPreset('year')" style="padding: 6px 14px; font-size: 12px;">Tahun Ini</button>
+              <button type="button" class="cat-tab" onclick="App.setReportPreset('all')" style="padding: 6px 14px; font-size: 12px;">Semua</button>
+              <button type="button" class="btn btn-sm" onclick="window.print()" style="padding: 6px 14px; font-size: 12px; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff); border-radius: 99px; font-weight: 600;">🖨️ Cetak</button>
             </div>
           </div>
         </div>
 
         <!-- EXECUTIVE KPI CARDS -->
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Omset</div>
-            <div class="kpi-value" data-count="${Number(kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
-            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Seluruh pendapatan kotor</div>
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="card" style="padding: 20px 22px; border-radius: var(--radius-md); position: relative; overflow: hidden;">
+            <div style="font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Total Omset</div>
+            <div class="kpi-value" data-count="${Number(kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 26px; font-weight: 800; color: var(--text); margin-top: 6px; font-variant-numeric: tabular-nums;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Seluruh pendapatan kotor periode</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--blue);">
-            <div style="font-size: 12px; color: var(--blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kas Terbayar</div>
-            <div class="kpi-value" data-count="${Number(totalPaid || kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--blue); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
-            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Pembayaran lunas diterima</div>
+          <div class="card" style="padding: 20px 22px; border-radius: var(--radius-md); border-left: 4px solid var(--blue); position: relative; overflow: hidden;">
+            <div style="font-size: 12px; color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Kas Terbayar</div>
+            <div class="kpi-value" data-count="${Number(totalPaid || kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 26px; font-weight: 800; color: var(--blue); margin-top: 6px; font-variant-numeric: tabular-nums;">Rp ${Number(totalPaid || kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Pembayaran lunas diterima</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--amber);">
-            <div style="font-size: 12px; color: var(--amber); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Piutang / Belum Lunas</div>
-            <div class="kpi-value" data-count="${Number(totalUnpaid)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--amber); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
-            <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Sisa tagihan pelanggan</div>
+          <div class="card" style="padding: 20px 22px; border-radius: var(--radius-md); border-left: 4px solid var(--amber); position: relative; overflow: hidden;">
+            <div style="font-size: 12px; color: var(--amber); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Piutang / Belum Lunas</div>
+            <div class="kpi-value" data-count="${Number(totalUnpaid)}" data-currency="1" data-lang="id" style="font-size: 26px; font-weight: 800; color: var(--amber); margin-top: 6px; font-variant-numeric: tabular-nums;">Rp ${Number(totalUnpaid).toLocaleString('id-ID')}</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Sisa tagihan pelanggan</div>
           </div>
-          <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order &amp; Bobot</div>
-            <div class="kpi-value" data-count="${Number(kpi.ord || 0)}" style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums;">0 <span style="font-size: 14px; font-weight: 600; color: var(--muted);">order</span></div>
-            <div style="font-size: 11px; color: var(--green); font-weight: 600; margin-top: 2px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
+          <div class="card" style="padding: 20px 22px; border-radius: var(--radius-md); border-left: 4px solid var(--green); position: relative; overflow: hidden;">
+            <div style="font-size: 12px; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Total Order &amp; Bobot</div>
+            <div class="kpi-value" data-count="${Number(kpi.ord || 0)}" style="font-size: 26px; font-weight: 800; color: var(--text); margin-top: 6px; font-variant-numeric: tabular-nums;">${Number(kpi.ord || 0)} <span style="font-size: 14px; font-weight: 600; color: var(--muted);">order</span></div>
+            <div style="font-size: 12px; color: var(--green); font-weight: 600; margin-top: 4px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
           </div>
         </div>
 
         <!-- INTERACTIVE CHART -->
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md); margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="card" style="padding: 22px 24px; border-radius: var(--radius-md); margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Grafik Perkembangan Pendapatan</h4>
-              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Visualisasi omset terbayar vs piutang berdasarkan periode terpilih</div>
+              <h4 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text);">Grafik Perkembangan Pendapatan</h4>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Visualisasi perbandingan omset terbayar vs piutang berdasarkan periode terpilih</div>
             </div>
-            <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; font-weight: 600;">
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; font-weight: 600;">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; background: var(--blue); border-radius: 2px; display: inline-block;"></span>
-                <span style="color: var(--text);">Terbayar</span>
+                <span style="width: 12px; height: 12px; background: var(--blue); border-radius: 3px; display: inline-block;"></span>
+                <span style="color: var(--text);">Terbayar Lunas</span>
               </div>
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 12px; height: 12px; background: var(--amber); border-radius: 2px; display: inline-block;"></span>
-                <span style="color: var(--text);">Piutang</span>
+                <span style="width: 12px; height: 12px; background: var(--amber); border-radius: 3px; display: inline-block;"></span>
+                <span style="color: var(--text);">Piutang Belum Lunas</span>
               </div>
             </div>
           </div>
@@ -3037,43 +3143,52 @@ const App = window.App = {
         </div>
 
         <!-- DAILY BREAKDOWN TABLE -->
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div class="card" style="padding: 0; border-radius: var(--radius-md); overflow-x: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line);">
             <div>
-              <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Rincian Harian Transaksi</h4>
+              <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text);">Rincian Harian Transaksi</h4>
               <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Daftar rekapan pesanan per hari dalam rentang periode</div>
             </div>
-            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">
-              Total: ${daily.length} hari
+            <div style="font-size: 12px; font-weight: 700; color: var(--blue); background: var(--blue-soft); padding: 4px 12px; border-radius: 99px;">
+              ${daily.length} Hari Aktif
             </div>
           </div>
 
-          <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+          <table class="table" style="width: 100%; min-width: 680px; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <colgroup>
+              <col style="width: 170px;">
+              <col style="width: 140px;">
+              <col style="width: 140px;">
+              <col style="width: 230px;">
+            </colgroup>
             <thead>
-              <tr style="border-bottom: 2px solid var(--line); color: var(--muted); font-size: 13px;">
-                <th style="padding: 10px 12px;">Tanggal</th>
-                <th style="padding: 10px 12px;">Jumlah Order</th>
-                <th style="padding: 10px 12px;">Total Berat</th>
-                <th style="padding: 10px 12px;">Total Pendapatan</th>
+              <tr style="border-bottom: 2px solid var(--line); color: var(--muted); background: var(--bg-subtle);">
+                <th style="padding: 12px 16px;">Tanggal</th>
+                <th style="padding: 12px 16px;">Jumlah Order</th>
+                <th style="padding: 12px 16px;">Total Berat</th>
+                <th style="padding: 12px 16px;">Total Pendapatan</th>
               </tr>
             </thead>
             <tbody>
               ${daily.length === 0 ? `
                 <tr>
-                  <td colspan="4" style="padding: 24px; text-align: center; color: var(--muted);">Tidak ada data harian pada rentang ini.</td>
+                  <td colspan="4" style="padding: 28px; text-align: center; color: var(--muted);">Tidak ada data transaksi harian pada rentang filter ini.</td>
                 </tr>
               ` : daily.map(d => `
-                <tr style="border-bottom: 1px solid var(--line);">
-                  <td style="padding: 10px 12px; font-weight: 600; color: var(--text);">${esc(d.d)}</td>
-                  <td style="padding: 10px 12px; color: var(--blue); font-weight: 600;">${esc(d.orders)} order</td>
-                  <td style="padding: 10px 12px; color: var(--green); font-weight: 600;">${esc(d.weight)} kg</td>
-                  <td style="padding: 10px 12px; font-weight: 700; color: var(--text);">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
+                <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
+                  <td style="padding: 12px 16px; font-weight: 700; color: var(--text);">📅 ${esc(d.d)}</td>
+                  <td style="padding: 12px 16px; color: var(--blue); font-weight: 700;">${esc(d.orders)} order</td>
+                  <td style="padding: 12px 16px; color: var(--green); font-weight: 700;">${esc(d.weight)} kg</td>
+                  <td style="padding: 12px 16px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums;">Rp ${Number(d.revenue).toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
       `;
+
+      // Animate KPIs explicitly after setting c.innerHTML to guarantee numbers count up
+      this.animateKpis(c);
 
       // Attach Chart Tooltip Event Listeners
       const svg = document.getElementById('reportSvgChart');
@@ -3087,10 +3202,10 @@ const App = window.App = {
             const total = Number(col.getAttribute('data-total')) || 0;
 
             tooltip.innerHTML = `
-              <div style="font-weight: 700; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 4px;">Periode: ${esc(period)}</div>
-              <div style="color: #60a5fa;">Terbayar: Rp ${paid.toLocaleString('id-ID')}</div>
-              <div style="color: #fbbf24;">Piutang: Rp ${unpaid.toLocaleString('id-ID')}</div>
-              <div style="font-weight: 700; margin-top: 4px; border-top: 1px solid #334155; padding-top: 4px;">Total: Rp ${total.toLocaleString('id-ID')}</div>
+              <div style="font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 6px; font-size: 13px;">Periode: ${esc(period)}</div>
+              <div style="color: #60a5fa; display: flex; justify-content: space-between; gap: 12px;"><span>Terbayar:</span> <strong>Rp ${paid.toLocaleString('id-ID')}</strong></div>
+              <div style="color: #fbbf24; display: flex; justify-content: space-between; gap: 12px; margin-top: 2px;"><span>Piutang:</span> <strong>Rp ${unpaid.toLocaleString('id-ID')}</strong></div>
+              <div style="font-weight: 800; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; display: flex; justify-content: space-between; gap: 12px;"><span>Total:</span> <strong>Rp ${total.toLocaleString('id-ID')}</strong></div>
             `;
             tooltip.style.display = 'block';
           });
@@ -3113,21 +3228,15 @@ const App = window.App = {
     }
   },
 
-
   async renderProfile() {
     document.getElementById('pageTitle').textContent = 'Profil Saya';
     const c = document.getElementById('mainContent');
     c.innerHTML = `
-      <div style="max-width: 600px; margin: 0 auto; display: grid; gap: 20px;" aria-busy="true" aria-label="Memuat profil...">
-        <div class="skeleton-card">
-          <div class="skeleton skeleton-title" style="width: 40%; height: 20px; margin-bottom: 20px;"></div>
-          <div class="skeleton skeleton-text" style="width: 30%; height: 12px; margin-bottom: 6px;"></div>
-          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 16px;"></div>
-          <div class="skeleton skeleton-text" style="width: 25%; height: 12px; margin-bottom: 6px;"></div>
-          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 16px;"></div>
-          <div class="skeleton skeleton-text" style="width: 20%; height: 12px; margin-bottom: 6px;"></div>
-          <div class="skeleton skeleton-btn" style="width: 100%; height: 38px; margin-bottom: 20px;"></div>
-          <div class="skeleton skeleton-btn" style="width: 120px; height: 38px;"></div>
+      <div style="max-width: 900px; margin: 0 auto; display: grid; gap: 20px;" aria-busy="true" aria-label="Memuat profil...">
+        <div class="skeleton-card" style="height: 120px; border-radius: var(--radius-md);"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="skeleton-card" style="height: 320px; border-radius: var(--radius-md);"></div>
+          <div class="skeleton-card" style="height: 320px; border-radius: var(--radius-md);"></div>
         </div>
       </div>
     `;
@@ -3135,74 +3244,135 @@ const App = window.App = {
     try {
       const res = await fetch('/api/profile');
       const data = await res.json();
-      const u = data.user || this.user;
+      const u = data.user || this.user || {};
 
-      const initials = (u.full_name || u.name || 'U').charAt(0).toUpperCase();
+      const fullName = u.full_name || u.name || 'Pengguna';
+      const role = u.role || u.user_role || 'Customer';
+      const initials = fullName.charAt(0).toUpperCase();
+      const email = u.email || '';
+      const phone = u.phone || '';
+      const userId = u.id || u.user_id || 1;
 
       c.innerHTML = `
-        <div style="max-width: 680px; margin: 0 auto; display: grid; gap: 24px;">
-          <div class="card glass-panel" style="padding: 26px; border-radius: var(--radius-md);">
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line);">
-              <div class="user-avatar">${esc(initials)}</div>
+        <div style="max-width: 960px; margin: 0 auto;">
+          <!-- PROFILE HERO BANNER -->
+          <div class="profile-hero-card">
+            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+              <div class="profile-avatar-xl">${esc(initials)}</div>
               <div>
-                <div style="font-size: 18px; font-weight: 700; color: var(--text);">${esc(u.full_name || u.name || 'Pengguna')}</div>
-                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                  <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border);">${esc(u.role || u.user_role || 'Customer')}</span>
-                  <span style="font-size: 12px; color: var(--muted);">${esc(u.email || '')}</span>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: var(--text);">${esc(fullName)}</h2>
+                  <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border); font-size: 12px; font-weight: 700; padding: 3px 10px;">
+                    🛡️ ${esc(role)} Terverifikasi
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--muted); flex-wrap: wrap;">
+                  <span>✉️ ${esc(email)}</span>
+                  <span>🆔 ID Akun: #${esc(String(userId))}</span>
+                  <span>⚡ Hak Akses: Penuh</span>
                 </div>
               </div>
             </div>
 
-            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Informasi Pribadi</h3>
-            <form id="profileForm">
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Nama Lengkap</label>
-                <input type="text" id="profName" class="input-control" value="${esc(u.full_name || u.name || '')}" required style="width: 100%;">
+            <div class="profile-stats-ribbon">
+              <div class="profile-stat-box">
+                <div class="profile-stat-num">Aktif</div>
+                <div class="profile-stat-lbl">Status Akun</div>
               </div>
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Email Akun (Permanen)</label>
-                <input type="email" class="input-control" value="${esc(u.email || '')}" disabled style="width: 100%; opacity: 0.7; background: var(--bg-subtle);">
+              <div class="profile-stat-box">
+                <div class="profile-stat-num" style="color: var(--blue);">${esc(role)}</div>
+                <div class="profile-stat-lbl">Tingkat Peran</div>
               </div>
-              <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">No. Handphone / WhatsApp</label>
-                <input type="text" id="profPhone" class="input-control" value="${esc(u.phone || '')}" style="width: 100%;" placeholder="08xxxxxxxx">
+              <div class="profile-stat-box">
+                <div class="profile-stat-num" style="color: var(--green);">Terlindungi 🔒</div>
+                <div class="profile-stat-lbl">Keamanan</div>
               </div>
-              <button type="submit" class="btn btn-primary" style="padding: 9px 22px;">💾 Simpan Profil</button>
-            </form>
+            </div>
           </div>
 
-          <div class="card glass-panel" style="padding: 26px; border-radius: var(--radius-md);">
-            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Keamanan & Ganti Sandi</h3>
-            <form id="passForm">
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Sandi Lama</label>
-                <div style="position: relative;">
-                  <input type="password" id="oldPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Masukkan sandi saat ini">
-                  <button type="button" onclick="const i=document.getElementById('oldPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
-                </div>
+          <!-- 2-COLUMN BENTO GRID -->
+          <div class="profile-grid-layout">
+            <!-- LEFT COLUMN: PERSONAL INFO -->
+            <div class="card" style="padding: 26px 28px; border-radius: var(--radius-md);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 20px;">👤</span>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text);">Informasi Pribadi</h3>
               </div>
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Sandi Baru</label>
-                <div style="position: relative;">
-                  <input type="password" id="newPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Minimal 6 karakter">
-                  <button type="button" onclick="const i=document.getElementById('newPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
+              <p style="margin: 0 0 20px; font-size: 13px; color: var(--muted);">Perbarui identitas profil dan kontak komunikasi Anda.</p>
+
+              <form id="profileForm">
+                <div style="margin-bottom: 16px;">
+                  <label for="profName" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">Nama Lengkap</label>
+                  <input type="text" id="profName" class="input-control" value="${esc(fullName)}" required style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;">
                 </div>
-              </div>
-              <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Konfirmasi Sandi Baru</label>
-                <div style="position: relative;">
-                  <input type="password" id="repPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Ulangi sandi baru">
-                  <button type="button" onclick="const i=document.getElementById('repPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
+
+                <div style="margin-bottom: 16px;">
+                  <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">Email Akun (Terkunci)</label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="email" class="input-control" value="${esc(email)}" disabled style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-subtle); color: var(--muted); font-size: 14px; cursor: not-allowed;">
+                    <span style="position: absolute; right: 12px; font-size: 12px; color: var(--muted);">🔒 Permanen</span>
+                  </div>
                 </div>
+
+                <div style="margin-bottom: 22px;">
+                  <label for="profPhone" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">No. WhatsApp / Handphone</label>
+                  <input type="text" id="profPhone" class="input-control" value="${esc(phone)}" placeholder="Contoh: 081234567890" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;">
+                  <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Digunakan untuk notifikasi status pesanan &amp; struk WhatsApp.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 13px; font-weight: 700; border-radius: 8px;">
+                  💾 Simpan Perubahan Profil
+                </button>
+              </form>
+            </div>
+
+            <!-- RIGHT COLUMN: SECURITY & PASSWORD -->
+            <div class="card" style="padding: 26px 28px; border-radius: var(--radius-md);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 20px;">🔐</span>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--text);">Keamanan &amp; Kata Sandi</h3>
               </div>
-              <button type="submit" class="btn btn-primary" style="padding: 9px 22px;">🔑 Perbarui Sandi</button>
-            </form>
+              <p style="margin: 0 0 20px; font-size: 13px; color: var(--muted);">Ubah kata sandi secara berkala untuk menjaga keamanan akun Anda.</p>
+
+              <form id="passForm">
+                <div style="margin-bottom: 16px;">
+                  <label for="oldPass" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">Kata Sandi Lama</label>
+                  <div class="pass-input-wrap">
+                    <input type="password" id="oldPass" class="input-control" required placeholder="Masukkan kata sandi saat ini" style="box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;">
+                    <button type="button" class="pass-toggle-btn" onclick="const i=document.getElementById('oldPass'); const isP=i.type==='password'; i.type=isP?'text':'password'; this.textContent=isP?'🙈':'👁️';" title="Lihat kata sandi">👁️</button>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <label for="newPass" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">Kata Sandi Baru</label>
+                  <div class="pass-input-wrap">
+                    <input type="password" id="newPass" class="input-control" required placeholder="Minimal 6 karakter" style="box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;">
+                    <button type="button" class="pass-toggle-btn" onclick="const i=document.getElementById('newPass'); const isP=i.type==='password'; i.type=isP?'text':'password'; this.textContent=isP?'🙈':'👁️';" title="Lihat kata sandi">👁️</button>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 18px;">
+                  <label for="repPass" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text);">Konfirmasi Kata Sandi Baru</label>
+                  <div class="pass-input-wrap">
+                    <input type="password" id="repPass" class="input-control" required placeholder="Ulangi kata sandi baru" style="box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;">
+                    <button type="button" class="pass-toggle-btn" onclick="const i=document.getElementById('repPass'); const isP=i.type==='password'; i.type=isP?'text':'password'; this.textContent=isP?'🙈':'👁️';" title="Lihat kata sandi">👁️</button>
+                  </div>
+                </div>
+
+                <div style="background: var(--bg-subtle); border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: var(--muted); border: 1px solid var(--line);">
+                  <div style="font-weight: 700; margin-bottom: 4px; color: var(--text);">Ketentuan Keamanan:</div>
+                  <div>&bull; Panjang minimal 6 karakter</div>
+                  <div>&bull; Disarankan kombinasi huruf kapital, angka, &amp; simbol</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-size: 13px; font-weight: 700; border-radius: 8px;">
+                  🔑 Perbarui Kata Sandi
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       `;
-
-      // Update profile and pass forms handled by global submit delegation
-
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat profil</div>';
     }
