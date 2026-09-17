@@ -1,5 +1,5 @@
-// HTML escape helper
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+// HTML escape helper: use global esc() from /assets/escape.js (loaded first;
+// it also maps null/undefined -> '' instead of printing "null").
 
 // public/app.js - Embun Laundry Single Page App
 const App = window.App = {
