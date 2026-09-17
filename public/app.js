@@ -366,12 +366,9 @@ const App = window.App = {
     const unitPrice = weight > 0 ? Math.round(total / weight) : total;
     const dateStr = o.created_at || new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-    const qrSvg = `
-      <svg width="64" height="64" viewBox="0 0 64 64" style="display:block;margin:0 auto;">
-        <rect width="64" height="64" fill="#fff"/>
-        <path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/>
-      </svg>
-    `;
+    const qrSvg = (typeof QRCode !== 'undefined' && QRCode.svg)
+      ? QRCode.svg(String(o.order_code || o.id || ''), { level: 'M', scale: 4, border: 2 })
+      : '';
 
     modal.innerHTML = `
       <div class="invoice-paper ${mode === 'a4' ? 'a4-mode' : 'thermal-mode'}" style="padding: 24px; position: relative; margin: 20px auto;">
