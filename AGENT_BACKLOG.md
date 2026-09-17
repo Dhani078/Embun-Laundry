@@ -181,6 +181,96 @@ File ini adalah **working copy** yang diupdate setiap tick.
     mengirim `msg: e.message` → connection string bisa bocor. Periksa ulang
     dengan `node tools/verify_b13_run.mjs` (HASIL: HIJAU 66/66). Jangan
     dikerjakan ulang.
+---
+
+## Sesi 2026-09-17 — Audit UI/UX + Remediasi (sumber: UI_UX_AUDIT.md)
+
+7 commit `f5233d2..a25ed07` (branch `main`, ter-push ke GitHub Dhani078/Embun-Laundry).
+app.js: 2556 → 2398 baris.
+
+### Selesai — 6 dari 8 kekurangan kritis audit
+
+| Audit # | Masalah | Fix | Commit |
+|---|---|---|---|
+| #1 🔴 | Badge status tak terwarnai (`app.js` render `status-${s}`, `style.css` 0 definisi) | `.status-baru/proses/selesai/batal/diantar` pakai design token + dark override | `baf85ac` |
+| #2 🔴 | Spinner `pay.html` tak berputar (`@keyframes spin` hanya di `track.html`) | `spin` keyframes + `.btn-sm` (dipakai 13×) pindah ke `style.css` | `243f826` |
+| #3 🔴 | Dead link "Lupa Password?" → `lupasandi.html` 404 | Halaman baru `public/auth/lupasandi.html` (174 baris, kontak WA admin) | `baf85ac` |
+| #4 🔴 | `esc()` didefinisikan 2× (`app.js:2` vs `escape.js:51`) | Hapus shadow `const esc`; pakai global `escape.js` (null/undefined → `''` bukan `"null"`) | `6e2f5ee` |
+| #5 🟠 | 6 token CSS tak terdefinisi: `--primary`, `--color-primary`, `--bg-surface`, `--border-color`, `--text-small`, `--color-surface-subtle` | Petakan ke token asli: `--color-brand-primary`, `--color-bg-elevated`, `--color-bg-tertiary`, `--color-border-subtle`, `--text-caption` (index.html 3 tempat, track.html 3 tempat) | `6e2f5ee` |
+| #6 🟠 | ~230 baris dead-code promo/voucher | Hapus 158 baris handler C7 (app.js 903–1060): 15/15 elemen tujuan **0 markup refs** (`promoForm`, `promoModal`, `grantVoucherModal`, `btn-edit/del/toggle-promo`, `tabBtnPromos`, `tabBtnVouchers`, `btnSearchPromo`, `promoSearchInput`). `savePromo` live utuh. | `a25ed07` |
+
+### QR code — FIX total (bukan audit, cacat nyata)
+
+Generator tangan dibuang total. Penyebab kegagalan tak pernah terisolasi
+(RS ✓, formatBits ✓, TABLE ✓, bitStream ✓ — tapi matrix diff 140/625,
+cv2 decode 0/3). **Diganti `qrcodejs` (Kazuhiko Arase, public domain),
+di-host lokal** — bukan CDN, jadi tidak ada request eksternal dan tetap
+service-worker friendly.
+
+- `public/assets/qrcode-lib.js` (lib, 19.9KB) + `public/assets/qrcode.js` (SVG wrapper, 75 baris)
+- API publik dipertahankan: `QRCode.encode(text, level)` → `{size, matrix}`, `QRCode.svg(text, opts)` → string
+- **Verifikasi: cv2.QRCodeDetector decode 3/3 exact match**
+  ('EMBUN-LND-2026-0917-0042', track URL, 'Halo Embun! @#\$% 123')
+- Commit `4f47b01`. Sebelumnya commit tahap `f5233d2`.
+
+### Fitur tambahan sesi ini
+
+| Fitur | Detail | Commit |
+|---|---|---|
+| KPI count-up | 4 KPI card (`data-count`, `data-currency`), rAF ease-out 700ms, hormati `prefers-reduced-motion`, `tabular-nums` | `573aa30` |
+| Copy toast | `pay.html` 4 tombol `alert()` blocking → `copyText()` non-blocking + clipboard fallback | `573aa30` |
+| SPA back/forward | nav click `history.pushState`; `renderPage` sync active class; back/forward jalan (popstate app.js:544) | `32bf433` |
+| Esc tutup modal | Esc tutup semua modal visible + sidebar (sebelumnya cuma sidebar) | `32bf433` |
+| Confirm per-aksi | `App.confirm(msg, {okLabel, okClass})` — voucher revoke "Cabut" biru, bukan "Hapus" merah | `32bf433` |
+| a11y | `aria-label` tombol ✕ invoiceModal + proofModal | `32bf433` |
+| Hapus double-onload | `window.onload` duplikat dashboard.html dibuang | `243f826` |
+
+### Sengaja TIDAK dikerjakan (risiko > manfaat)
+
+- **Ghost CSS ~60% `style.css`** — deteksi menemukan 96 kelas "mati", tapi
+  regex miss concatenation dinamis (`status-${s}`, skeleton via
+  `classList.add`). Hapus CSS = risiko break UI. **Meninggalkan.**
+- **B1 (lama) dead-code promo markup** — berbeda dari #6, butuh telusur
+  `promoFormWrap`/`savePromo`. Backlog.
+- **B5 dark mode auth pages**, **C10 multi-bahasa ID/EN (P4)**, **E4 minifikasi** — backlog.
+
+### 🔴 BLOCKER — butuh user, bukan kode
+
+1. **Secret CF belum diset** → 10 API production 500 `{"ok":false,"msg":"Database not configured"}`.
+   Bukan bug kode — `functions/_db.js:11` sudah baca `env.TIDB_DATABASE_URL`.
+   Deploy CF Workers → `embun-laundry` → Settings → Variables and Secrets:
+   ```
+   TIDB_DATABASE_URL  mysql://nkLgGwz1mobWK3U.root:***@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/embun_laundry?ssl={"rejectUnauthorized":true}
+   JWT_SECRET         embun-laundry-jwt-2026-9f3a7b1c5e8d2a4b6c0f8e7d5a3b9c1e
+   ```
+   Lalu Save and Deploy.
+2. **Password TiDB DITOLAK** — `Error 1045 (28000): Access denied for user
+   'nkLgGwz1mobWK3U.root'@'10.0.114.45' (using password: YES)`. Awalnya
+   valid (19 services + 10 tabel terbaca), lalu ditolak. Password
+   di-rotate/expired sisi TiDB. **User cek TiDB Cloud console.**
+3. **`npx wrangler deploy` butuh login CF** — tidak ada token lokal
+   (`wrangler whoami` = not logged in). Push GitHub sukses, tapi Workers
+   tidak auto-deploy. **User login atau sediakan `CLOUDFLARE_API_TOKEN`.**
+
+### Produksi saat ini
+
+`https://embun-laundry.dhanisepeda.workers.dev` — `/` 200, `/dashboard` 200,
+`/api/health` 200, `/api/me` 401 (auth required, benar),
+**10 API lainnya 500** "Database not configured".
+
+### Catatan subagent (jangan ulangi)
+
+- `deleg_cd816787` (QR debug) — 71 API call, 30m, **tidak menemukan akar**.
+  Klaim "placeFinder salah" **TIDAK benar** — reference `setup_position_probe_pattern`
+  pakai set `{0,6}` ≡ kita `(j===0||j===6)`. Jangan percaya klaim subagent
+  tanpa verifikasi ulang (Aturan 1: verifikasi di atas klaim).
+- `deleg_ef3527f0` (QR port 1:1) — interrupted 44 API call, 21m, **tidak
+  selesai**. Tidak perlu re-dispatch: QR sudah fix total via qrcodejs.
+- `deleg_598c2952` (audit) — 24 API call, 19m, output `UI_UX_AUDIT.md` 29.9KB.
+  Semua 6 item kritisnya sudah dikerjakan di sesi ini.
+
+---
+
 - **B15 — validasi input `/api/delivery` + jadwal bawaan Asia/Jakarta (P1) —
   SELESAI `abc9922`** (tick 23). `delivery.js` adalah satu-satunya modul yang
   TIDAK ikut dipasangi `validateOr400()` pada B2. Tiga defek nyata, semua
