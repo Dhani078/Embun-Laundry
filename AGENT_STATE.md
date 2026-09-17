@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-16T14:27:00+08:00
-Tick ke: 51
-Model: kr/auto
+Terakhir update: 2026-09-17T08:58:00+08:00
+Tick ke: 52
+Model: atria/Atria-Dawn-Preview
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -48,12 +48,34 @@ Model: kr/auto
 
 ## Task aktif
 
-- ID: E6
-- Judul: Error boundary global SPA
-- Fase: plan
-- Mulai: 2026-09-16T14:35:00+08:00
+- ID: —
+- Judul: Tidak ada task P0/P1/P2 tersisa (Fase A–F tuntas). Sisa: C10 (P4), E4 (P4).
+- Fase: idle
+- Mulai: —
 
 ## Task selesai
+
+- **C9** (Fase C) — Service worker offline dasar (P3) — `7541ece` (tick 52)
+  - `public/sw.js` baru: app-shell precache eksplisit (14 URL), SWR untuk aset
+    statis, network-first untuk `/api/*` GET, **non-GET (POST/PUT/DELETE)
+    pass-through murni — tidak pernah di-cache** (mencegah data basi /
+    pembayaran dobel), navigasi offline fallback ke app shell, respons 503
+    JSON terstruktur saat API offline, cleanup cache versi lama pada
+    `activate`, hanya melayani origin sendiri (CDN p5.js dilewati).
+  - `index.html`, `dashboard.html`, `track.html`, `pay.html` mendaftarkan SW
+    pasca-`load`, feature-detected `'serviceWorker' in navigator`,
+    `.catch(() => {})` agar SW gagal tidak memecah halaman.
+  - Ponytail: tidak ada caching data TiDB. Bila perlu offline write-queue,
+    naikkan ke IndexedDB + background sync — jangan perluas cache ini.
+  - Harness `tools/verify_c9.mjs` diperbaiki (2 bug, bukan regresi produk):
+    1. `ReferenceError: textOf is not defined` — crash di assertion navigasi.
+    2. Mock `caches`/`fetch` tidak menormalisasi URL relatif terhadap origin,
+       sehingga key `/` ≠ `https://embun.test/` → precache shell kosong →
+       fallback navigasi offline kelihatan 500 (merah palsu). `sw.js` benar.
+  - 23/23 HIJAU. Ditambahkan ke `tools/run_all_verifiers.sh`.
+  - Post-verify live: `/sw.js` 200 `Content-Type: text/javascript` +
+    `x-content-type-options: nosniff`; keempat halaman live memuat registrasi
+    `/sw.js`; `/api/health` 200 `{"ok":true,...}`.
 
 - **Fase F (F1, F2, F3, F4)** — Sinkronisasi Seluruh Dokumentasi Proyek (.md) (P4) —
   (tick 51)
