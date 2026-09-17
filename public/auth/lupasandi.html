@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lupa Sandi • Embun Laundry</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg1: #1f62f0;
+  --bg2: #12cff0;
+  --ring: #9ec3ff;
+  --muted: #6b7280;
+  --shadow: 0 10px 30px rgba(0,0,0,.10);
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: #0f172a;
+  background: #f5f7fb;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .8rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-primary {
+  background: linear-gradient(90deg, var(--bg1), var(--bg2));
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.btn-ghost {
+  background: #fff;
+  color: var(--bg1);
+  border-color: #dbe3f3;
+}
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(31,98,240,.10), transparent 60%),
+    radial-gradient(800px 600px at 110% 110%, rgba(18,207,240,.12), transparent 55%);
+}
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 24px 70px rgba(15,23,42,.14);
+  padding: 2.25rem 2rem;
+  border: 1px solid #eef2fb;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+.logo-mark {
+  width: 42px; height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: 1.05rem;
+  box-shadow: 0 8px 22px rgba(31,98,240,.35);
+}
+.logo-name { font-weight: 800; font-size: 1.05rem; letter-spacing: .01em; }
+h1 {
+  font-size: 1.35rem;
+  margin: 0 0 .5rem;
+  text-align: center;
+}
+.sub {
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+.steps {
+  background: #f8faff;
+  border: 1px solid #eef2fb;
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+  margin: 0 0 1.5rem;
+}
+.steps ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #334155;
+  font-size: .875rem;
+  line-height: 1.85;
+}
+.steps ol li::marker { color: var(--bg1); font-weight: 700; }
+.contact {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: #fff;
+  border: 1px solid #e3e9f5;
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  font-size: .85rem;
+  color: #334155;
+  margin-bottom: 1.5rem;
+}
+.contact b { color: var(--bg1); }
+.row {
+  display: flex;
+  gap: .6rem;
+}
+.row .btn { flex: 1; }
+.small {
+  text-align: center;
+  color: var(--muted);
+  font-size: .8rem;
+  margin-top: 1.1rem;
+}
+.small a { color: var(--bg1); font-weight: 600; text-decoration: none; }
+.small a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="logo">
+      <div class="logo-mark">EL</div>
+      <div class="logo-name">Embun Laundry</div>
+    </div>
+
+    <h1>Lupa Sandi?</h1>
+    <p class="sub">Untuk keamanan akun, sandi direset oleh admin. Ikuti langkah berikut:</p>
+
+    <div class="steps">
+      <ol>
+        <li>Hubungi admin Embun Laundry via WhatsApp.</li>
+        <li>Sebutkan username dan nama terdaftar Anda.</li>
+        <li>Admin memverifikasi, lalu kirimkan sandi sementara.</li>
+        <li>Login dengan sandi sementara, lalu ganti di Profil.</li>
+      </ol>
+    </div>
+
+    <div class="contact">
+      <span>👤</span>
+      <span>Admin: <b>+62 821-4856-4979</b> (WhatsApp)</span>
+    </div>
+
+    <div class="row">
+      <a class="btn btn-primary" href="https://wa.me/6282148564979?text=Halo%20admin%20Embun%20Laundry%2C%20saya%20lupa%20sandi%20akun%20saya." target="_blank" rel="noopener">Hubungi Admin</a>
+      <a class="btn btn-ghost" href="login.html">Kembali ke Login</a>
+    </div>
+
+    <p class="small">Sudah punya akun? <a href="login.html">Masuk di sini</a></p>
+  </div>
+</div>
+</body>
+</html>
