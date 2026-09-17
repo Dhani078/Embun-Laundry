@@ -265,6 +265,12 @@ a {
 .status-batal   { background: var(--red-soft);    color: var(--red);    border-color: var(--red-border); }
 .status-diantar { background: var(--violet-soft); color: var(--violet); border-color: var(--violet-border); }
 
+/* Small buttons (toolbar actions in invoice modal etc.) */
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+/* Global spinner keyframes (pay.html + inline buttons) */
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .content {
   padding: 28px 32px;
   animation: contentFadeIn 0.4s ease both;
