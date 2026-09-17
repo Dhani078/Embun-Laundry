@@ -258,6 +258,13 @@ a {
 
 .bd-blue { background: var(--blue-soft); color: var(--blue); border-color: var(--blue-border); }
 
+/* Order status badges — app.js emits .status-<status> */
+.status-baru    { background: var(--blue-soft);   color: var(--blue);   border-color: var(--blue-border); }
+.status-proses  { background: var(--amber-soft);  color: var(--amber);  border-color: var(--amber-border); }
+.status-selesai { background: var(--green-soft);  color: var(--green);  border-color: var(--green-border); }
+.status-batal   { background: var(--red-soft);    color: var(--red);    border-color: var(--red-border); }
+.status-diantar { background: var(--violet-soft); color: var(--violet); border-color: var(--violet-border); }
+
 .content {
   padding: 28px 32px;
   animation: contentFadeIn 0.4s ease both;
