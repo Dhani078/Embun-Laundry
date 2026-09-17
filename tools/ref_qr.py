@@ -1,7 +1,7 @@
 """Reference matrix dump (byte-mode forced) + bitstream for diffing against qrcode.js."""
 import sys, os
 import qrcode
-from qrcode.util import MODE_8BIT_BYTE, create_data
+from qrcode.util import MODE_8BIT_BYTE, QRData, create_data
 from qrcode.main import QRCode
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -11,7 +11,7 @@ LEVELS = {'L': qrcode.ERROR_CORRECT_L, 'M': qrcode.ERROR_CORRECT_M,
 
 def ref(text, level='M'):
     qr = QRCode(version=None, error_correction=LEVELS[level], border=0)
-    qr.add_data(text, mode=MODE_8BIT_BYTE)   # force byte mode -> match JS byte encoder
+    qr.data_list = [QRData(t.encode('utf-8'), mode=MODE_8BIT_BYTE, check_data=False)]
     qr.make(fit=True)
     mod = qr.modules
     n = len(mod)
