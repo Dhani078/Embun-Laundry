@@ -1486,7 +1486,7 @@ async function fetchModalNotifications(code) {
       } else {
         list.innerHTML = data.notifications.map(n => {
           const time = n.created_at ? new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
-          return `<li style="font-size:0.75rem;padding:6px 8px;background:var(--bg-surface);border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          return `<li style="font-size:0.75rem;padding:6px 8px;background:var(--color-bg-elevated);border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
             <span>${esc(n.message)}</span>
             <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${time}</span>
           </li>`;
@@ -1641,10 +1641,10 @@ function renderTrackResult(order) {
         </div>
       ` : ''}
     </div>
-    <div id="modalNotifBox" style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px">
+    <div id="modalNotifBox" style="margin-top:14px;border-top:1px solid var(--color-border-subtle);padding-top:10px">
       <div style="font-size:0.75rem;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span>Riwayat Status Real-Time</span>
-        <span id="modalPollInd" style="font-size:10px;color:var(--primary);display:none">● Live</span>
+        <span id="modalPollInd" style="font-size:10px;color:var(--color-brand-primary);display:none">● Live</span>
       </div>
       <ul id="modalNotifList" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto"></ul>
     </div>

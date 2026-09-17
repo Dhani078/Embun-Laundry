@@ -384,7 +384,7 @@
       <div id="notif-box" style="margin-top:var(--space-4);border-top:1px solid var(--color-border);padding-top:var(--space-4)">
         <div style="font-size:var(--text-caption);color:var(--color-text-secondary);margin-bottom:var(--space-2);display:flex;justify-content:space-between;align-items:center">
           <span>Riwayat Status & Notifikasi Real-Time</span>
-          <span id="poll-indicator" style="font-size:11px;color:var(--color-primary);display:none">● Memantau (Live)</span>
+          <span id="poll-indicator" style="font-size:11px;color:var(--color-brand-primary);display:none">● Memantau (Live)</span>
         </div>
         <ul id="notif-list" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--space-2);max-height:220px;overflow-y:auto"></ul>
       </div>
@@ -464,11 +464,11 @@
         var list = document.getElementById('notif-list');
         if (list && Array.isArray(data.notifications)) {
           if (data.notifications.length === 0) {
-            list.innerHTML = '<li style="font-size:var(--text-small);color:var(--color-text-secondary);padding:var(--space-2)">Belum ada riwayat aktivitas untuk pesanan ini.</li>';
+            list.innerHTML = '<li style="font-size:var(--text-caption);color:var(--color-text-secondary);padding:var(--space-2)">Belum ada riwayat aktivitas untuk pesanan ini.</li>';
           } else {
             list.innerHTML = data.notifications.map(function (n) {
               var time = n.created_at ? new Date(n.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
-              return '<li style="font-size:var(--text-small);padding:var(--space-2) var(--space-3);background:var(--color-surface-subtle);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;gap:var(--space-2)">' +
+              return '<li style="font-size:var(--text-caption);padding:var(--space-2) var(--space-3);background:var(--color-bg-tertiary);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;gap:var(--space-2)">' +
                 '<span>' + escapeHtml(n.message) + '</span>' +
                 '<span style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">' + time + '</span>' +
                 '</li>';
