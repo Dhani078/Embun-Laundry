@@ -2569,5 +2569,228 @@ body.sidebar-locked {
   padding: 14px 14px 6px;
 }
 
+/* ==========================================================================
+   10/10 SaaS COMPONENTS: TICKETS, PROFILE HERO, PASSWORD TOGGLE, CHARTS
+   ========================================================================== */
 
+/* Perforated Voucher Ticket Cards */
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
 
+.ticket-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.ticket-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--blue-border);
+}
+
+.ticket-card::before,
+.ticket-card::after {
+  content: '';
+  position: absolute;
+  left: 100px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg);
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  z-index: 2;
+}
+
+.ticket-card::before {
+  top: -8px;
+}
+
+.ticket-card::after {
+  bottom: -8px;
+}
+
+.ticket-left {
+  width: 108px;
+  background: linear-gradient(135deg, var(--blue-soft), rgba(37, 99, 235, 0.15));
+  border-right: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ticket-discount-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1.1;
+}
+
+.ticket-discount-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--blue);
+  margin-top: 2px;
+}
+
+.ticket-right {
+  flex: 1;
+  padding: 16px 18px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.ticket-code-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border: 1px dashed var(--blue-border);
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* Profile Hero Banner & Bento Grid */
+.profile-hero-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 24px 28px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--blue), #06b6d4, #10b981);
+}
+
+.profile-avatar-xl {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), #4f46e5);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+  flex-shrink: 0;
+  border: 3px solid var(--card);
+}
+
+.profile-stats-ribbon {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-stat-box {
+  padding: 8px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.profile-stat-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.profile-stat-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.profile-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 860px) {
+  .profile-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Password Eye Toggle Input Wrap */
+.pass-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pass-input-wrap input {
+  width: 100%;
+  padding-right: 42px !important;
+}
+
+.pass-toggle-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.pass-toggle-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+/* Promo Table Columns */
+.col-promo-code { width: 140px; }
+.col-promo-name { width: 220px; }
+.col-promo-type { width: 90px; }
+.col-promo-val { width: 110px; }
+.col-promo-min { width: 110px; }
+.col-promo-exp { width: 110px; }
+.col-promo-status { width: 95px; }
+.col-promo-act { width: 140px; text-align: right; }
