@@ -77,13 +77,13 @@ export async function onRequestPost({ request, env, ctx }) {
       return reply(key, { ok: false, msg: 'Database tidak terhubung' }, 500);
     }
 
-    // Find user by email, phone, or full_name
+    // Find user by email, phone, full_name, or username prefix
     const users = await db.query(
       `SELECT id, full_name, email, phone, password_hash, role, session_version 
        FROM users 
-       WHERE email = ? OR phone = ? OR full_name = ? 
+       WHERE email = ? OR phone = ? OR full_name = ? OR SUBSTRING_INDEX(email, '@', 1) = ?
        LIMIT 1`,
-      [identity, identity, identity]
+      [identity, identity, identity, identity]
     );
 
     if (users.length === 0) {
