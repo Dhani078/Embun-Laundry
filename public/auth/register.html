@@ -177,8 +177,26 @@ label { font-size: 13px; font-weight: 600; color: #334155; }
 .link { color: #2563eb; text-decoration: none; }
 .link:hover { text-decoration: underline; }
 
-/* footer kecil */
-.bottom { margin-top: 8px; text-align: center; }
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+.btn-back:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  transform: translateX(-2px);
+}
 </style>
 </head>
 <body>
@@ -186,9 +204,14 @@ label { font-size: 13px; font-weight: 600; color: #334155; }
   <div class="card">
 
     <!-- Brand -->
-    <div class="brand">
-      <img src="../img/Logo.png" alt="Embun Laundry" class="logo-img" width="36" height="36" decoding="async" fetchpriority="high">
-      <div class="brand-name">Embun Laundry</div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div class="brand" style="margin: 0;">
+        <img src="../img/Logo.png" alt="Embun Laundry" class="logo-img" width="36" height="36" decoding="async" fetchpriority="high">
+        <div class="brand-name">Embun Laundry</div>
+      </div>
+      <a href="/" class="btn-back" title="Kembali ke Halaman Beranda">
+        <span style="font-size: 14px;">←</span> <span>Beranda</span>
+      </a>
     </div>
 
     <h1>Buat Akun Embun Laundry</h1>
