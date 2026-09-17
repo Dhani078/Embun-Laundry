@@ -692,5 +692,13 @@
     }
   })();
   </script>
+<script>
+  // C9: daftarkan service worker untuk mode offline dasar.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
