@@ -117,6 +117,10 @@ const App = window.App = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeMobileSidebar();
+        // close any open modal (order/invoice/proof/promo/voucher)
+        document.querySelectorAll('[id$="Modal"], [id$="Wrap"]').forEach(el => {
+          if (el.style && el.style.display !== 'none') el.style.display = 'none';
+        });
       }
     });
 
@@ -289,7 +293,8 @@ const App = window.App = {
     }, 3200);
   },
 
-  confirm(msg) {
+  confirm(msg, opts = {}) {
+    const { okLabel = 'Hapus', okClass = '' } = opts;
     return new Promise(resolve => {
       // remove any existing confirm dialog
       const old = document.getElementById('_appConfirm');
@@ -300,11 +305,12 @@ const App = window.App = {
       el.setAttribute('aria-modal', 'true');
       el.setAttribute('aria-label', msg);
       el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.55);backdrop-filter:blur(2px)';
+      const okBg = okClass === 'danger' ? 'var(--red)' : okClass === 'primary' ? 'var(--blue)' : 'var(--red)';
       el.innerHTML = `<div style="background:var(--card);border-radius:14px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:var(--shadow-card);border:1px solid var(--line);">
         <p style="margin:0 0 20px;font-size:15px;font-weight:600;color:var(--text);line-height:1.5">${esc(msg)}</p>
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button id="_confirmNo" style="padding:8px 18px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer">Batal</button>
-          <button id="_confirmYes" style="padding:8px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Hapus</button>
+          <button id="_confirmYes" style="padding:8px 18px;border-radius:8px;border:none;background:${okBg};color:#fff;font-size:13px;font-weight:600;cursor:pointer">${esc(okLabel)}</button>
         </div>
       </div>`;
       document.body.appendChild(el);
@@ -388,7 +394,7 @@ const App = window.App = {
             <button type="button" class="btn btn-sm btn-primary" onclick="window.print()" style="padding: 6px 14px; font-size: 12px; font-weight: 600;">
               🖨️ Cetak / Simpan PDF
             </button>
-            <button type="button" class="btn btn-sm" onclick="document.getElementById('invoiceModal').style.display='none'" style="padding: 6px 10px; font-size: 12px; cursor: pointer;">
+            <button type="button" class="btn btn-sm" aria-label="Tutup invoice" onclick="document.getElementById('invoiceModal').style.display='none'" style="padding: 6px 10px; font-size: 12px; cursor: pointer;">
               ✕
             </button>
           </div>
@@ -496,7 +502,7 @@ const App = window.App = {
               <h4 style="margin:0;font-size:16px;font-weight:800;color:var(--text);">Bukti Pembayaran</h4>
               <div style="font-size:12px;color:var(--muted);font-weight:600;">Nota: ${esc(orderCode)}</div>
             </div>
-            <button type="button" onclick="document.getElementById('proofModal').style.display='none'" style="border:none;background:var(--bg);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
+            <button type="button" aria-label="Tutup bukti pembayaran" onclick="document.getElementById('proofModal').style.display='none'" style="border:none;background:var(--bg);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
           </div>
           ${proofs.length === 0 ? `
             <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:13px;">
@@ -808,6 +814,10 @@ const App = window.App = {
         const page = navLink.getAttribute('data-page');
         if (page) {
           this.currentPage = page;
+          const path = '/' + page;
+          if (window.location.pathname !== path) {
+            window.history.pushState({ page }, '', path);
+          }
           document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
           navLink.classList.add('active');
           if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
@@ -1198,6 +1208,12 @@ const App = window.App = {
 
   renderPage(page) {
     try {
+      this.currentPage = page;
+      // keep nav highlight in sync (also covers browser back/forward)
+      document.querySelectorAll('.nav-link').forEach(l => {
+        const on = l.getAttribute('data-page') === page;
+        l.classList.toggle('active', on);
+      });
       if (page === 'pesanan') this.renderPesanan();
       else if (page === 'pelanggan') this.renderPelanggan();
       else if (page === 'layanan') this.renderLayanan();
@@ -2069,7 +2085,7 @@ const App = window.App = {
   },
 
   async deleteVoucher(id) {
-    if (!await this.confirm('Cabut voucher ini dari pelanggan?')) return;
+    if (!await this.confirm('Cabut voucher ini dari pelanggan?', { okLabel: 'Cabut', okClass: 'primary' })) return;
     try {
       const res = await fetch('/api/vouchers', {
         method: 'POST',
