@@ -1449,3 +1449,37 @@ Mutasi 5 penting: tanpa itu, pengetatan **BERLEBIHAN** akan tetap HIJAU.
 
 
 
+
+## Tick 52 — 2026-09-17T08:58:00+08:00 (Task C9: Service Worker Offline Dasar)
+
+**Task**: C9 — Service worker (offline dasar) (P3, Fase C). Satu-satunya task
+P3 open; WIP tick sebelumnya ditinggal di working tree (sw.js + 4 halaman +
+harness). A3b, B2, B5 sudah `[x]` — urutan prioritas prompt sudah selesai
+semua, jadi lanjut ke task open berikutnya di backlog.
+
+**Perubahan** (`7541ece`):
+- `public/sw.js` (baru): app-shell precache 14 URL eksplisit; SWR aset;
+  network-first `/api/*` GET; **non-GET pass-through, tidak pernah di-cache**;
+  navigasi offline fallback shell; 503 JSON terstruktur; cleanup cache lama;
+  origin-check (CDN dilewati).
+- `public/{index,dashboard,track,pay}.html`: registrasi SW pasca-load,
+  feature-detected, swallow error.
+- `tools/verify_c9.mjs`: 2 bug harness diperbaiki:
+  1. `ReferenceError: textOf is not defined` (crash assertion navigasi).
+  2. Mock caches/fetch tidak menormalisasi URL relatif → key `/` ≠
+     `https://embun.test/` → precache shell kosong → fallback offline
+     kelihatan 500 (merah palsu; sw.js sebenarnya benar).
+- `tools/run_all_verifiers.sh`: `verify_c9.mjs` masuk daftar regresi.
+
+**Verifikasi**:
+- `node tools/verify_c9.mjs` → **HIJAU 23/23**.
+- `bash tools/verify_all.sh` → **44/44 verifier HIJAU**, 0 regresi.
+- Post-deploy live (embun-laundry.dhanisepeda.workers.dev):
+  - `GET /sw.js` → 200, `Content-Type: text/javascript`,
+    `x-content-type-options: nosniff`, `Cache-Control: max-age=0, must-revalidate`.
+  - `/`, `/dashboard`, `/track`, `/pay` (307→200) memuat
+    `navigator.serviceWorker.register('/sw.js')`.
+  - `/api/health` → 200 `{"ok":true,"status":"healthy",...}`.
+
+**Status**: C9 `[x]` `7541ece`. Fase C 11/11 kecuali C10 (P4). Backlog sisa:
+C10 (P4, multi-bahasa), E4 (P4, minifikasi build). Tidak ada P0/P1/P2 lagi.
