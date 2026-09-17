@@ -940,10 +940,28 @@ const App = window.App = {
         if (modal) modal.style.display = 'grid';
       }
       
-      // Close New Order Modal
+      // Close Modal Buttons
       if (e.target.id === 'closeOrderModalBtn') {
         const modal = document.getElementById('orderModal');
         if (modal) modal.style.display = 'none';
+      }
+      if (e.target.id === 'openNewServiceModal') {
+        this.openServiceModal();
+      }
+      if (e.target.id === 'closeServiceModalBtn') {
+        const modal = document.getElementById('serviceModal');
+        if (modal) modal.style.display = 'none';
+      }
+      if (e.target.id === 'openNewDeliveryModal') {
+        this.openDeliveryModal();
+      }
+      if (e.target.id === 'closeDeliveryModalBtn') {
+        const modal = document.getElementById('deliveryModal');
+        if (modal) modal.style.display = 'none';
+      }
+      // Backdrop click dismiss
+      if (e.target.classList && (e.target.classList.contains('modal-backdrop') || e.target.id === 'orderModal' || e.target.id === 'serviceModal' || e.target.id === 'deliveryModal')) {
+        e.target.style.display = 'none';
       }
       
       // Delete Order
@@ -1143,6 +1161,145 @@ const App = window.App = {
           this.toast(data.msg || 'Gagal menerbitkan voucher', 'error');
         }
       }
+
+      // Service Form Submit
+      if (e.target.id === 'serviceForm') {
+        e.preventDefault();
+        const id = this._editServiceId;
+        const code = document.getElementById('svcCode').value.trim();
+        const name = document.getElementById('svcName').value.trim();
+        const category = document.getElementById('svcCategory').value.trim();
+        const unit = document.getElementById('svcUnit').value;
+        const price = parseInt(document.getElementById('svcPrice').value) || 0;
+        const est_hours = parseInt(document.getElementById('svcHours').value) || 24;
+        const badge = document.getElementById('svcBadge')?.value.trim() || null;
+        const description = document.getElementById('svcDesc')?.value.trim() || '';
+        const is_active = document.getElementById('svcActive').checked ? 1 : 0;
+
+        const payload = {
+          action: id ? 'update_service' : 'create_service',
+          ...(id ? { id: Number(id) } : {}),
+          code, name, category, unit, price, est_hours, badge, description, is_active
+        };
+
+        const res = await fetch('/api/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const modal = document.getElementById('serviceModal');
+          if (modal) modal.style.display = 'none';
+          this.toast(id ? 'Layanan berhasil diubah' : 'Layanan baru berhasil ditambahkan', 'success');
+          this.renderLayanan();
+        } else {
+          this.toast(data.msg || 'Gagal menyimpan layanan', 'error');
+        }
+      }
+
+      // Delivery Form Submit
+      if (e.target.id === 'deliveryForm') {
+        e.preventDefault();
+        const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
+        const type = document.getElementById('dlvType').value;
+        const customer_name = isStaff ? document.getElementById('dlvCustName').value.trim() : (this.user.user_name || this.user.name || '');
+        const phone = document.getElementById('dlvPhone').value.trim();
+        const address = document.getElementById('dlvAddress').value.trim();
+        const order_code = document.getElementById('dlvOrderCode')?.value.trim() || null;
+        const schedule_date = document.getElementById('dlvDate').value;
+        const start_time = document.getElementById('dlvStartTime').value ? document.getElementById('dlvStartTime').value + ':00' : '09:00:00';
+        const notes = document.getElementById('dlvNotes')?.value.trim() || null;
+        const courierSelect = document.getElementById('dlvCourier');
+        const courier_id = (isStaff && courierSelect && courierSelect.value) ? parseInt(courierSelect.value) : undefined;
+
+        const payload = {
+          action: 'create_task',
+          type,
+          customer_name,
+          phone,
+          address,
+          order_code: order_code || undefined,
+          schedule_date,
+          start_time,
+          notes: notes || undefined,
+          courier_id
+        };
+
+        const res = await fetch('/api/delivery', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const modal = document.getElementById('deliveryModal');
+          if (modal) modal.style.display = 'none';
+          this.toast(`Tugas ${type === 'pickup' ? 'Penjemputan' : 'Pengantaran'} berhasil dijadwalkan!`, 'success');
+          this.renderDelivery();
+        } else {
+          this.toast(data.msg || 'Gagal menjadwalkan tugas', 'error');
+        }
+      }
+    });
+
+    // Global Change Delegation
+    document.addEventListener('change', async (e) => {
+      // Order status dropdown change
+      const statusSelect = e.target.closest('.status-select');
+      if (statusSelect) {
+        const id = Number(statusSelect.getAttribute('data-id'));
+        const newStatus = statusSelect.value;
+        try {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            this.toast(`Status pesanan #${id} diubah ke ${newStatus.toUpperCase()}`, 'success');
+          } else {
+            this.toast(data.msg || 'Gagal mengubah status', 'error');
+            this.renderPesanan();
+          }
+        } catch (err) {
+          this.toast('Gagal menghubungi server', 'error');
+        }
+      }
+
+      // Delivery task status dropdown change
+      const taskStatusSelect = e.target.closest('.task-status-select');
+      if (taskStatusSelect) {
+        const id = Number(taskStatusSelect.getAttribute('data-id'));
+        const newStatus = taskStatusSelect.value;
+        try {
+          const res = await fetch('/api/delivery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            this.toast(`Status tugas kurir #${id} diubah ke ${newStatus.toUpperCase()}`, 'success');
+          } else {
+            this.toast(data.msg || 'Gagal memperbarui status kurir', 'error');
+            this.renderDelivery();
+          }
+        } catch (err) {
+          this.toast('Gagal menghubungi server', 'error');
+        }
+      }
+
+      // Assign courier change
+      const courierSelect = e.target.closest('.task-courier-select');
+      if (courierSelect) {
+        const id = Number(courierSelect.getAttribute('data-id'));
+        const courierId = courierSelect.value ? Number(courierSelect.value) : null;
+        if (courierId) {
+          this.assignCourier(id, courierId);
+        }
+      }
     });
 
     this.renderPage(this.currentPage);
@@ -1199,31 +1356,66 @@ const App = window.App = {
       const s = data.stats;
 
       c.innerHTML = `
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Omset</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--text); margin-top: 4px;">Rp ${Number(s.total_revenue).toLocaleString('id-ID')}</div>
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="stat-card stat-blue">
+            <div class="stat-card-header">
+              <span class="stat-label">Total Omset</span>
+              <div class="stat-icon icon-blue">💰</div>
+            </div>
+            <div class="stat-value" data-kpi="${Number(s.total_revenue) || 0}">Rp ${Number(s.total_revenue).toLocaleString('id-ID')}</div>
+            <div class="stat-sub"><span style="color:var(--green)">●</span> Total pendapatan riil</div>
           </div>
-          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Pesanan Aktif</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--blue); margin-top: 4px;">${esc(s.active_orders || 0)}</div>
+          <div class="stat-card stat-blue">
+            <div class="stat-card-header">
+              <span class="stat-label">Pesanan Aktif</span>
+              <div class="stat-icon icon-blue">🧺</div>
+            </div>
+            <div class="stat-value" data-kpi="${s.active_orders || 0}">${esc(s.active_orders || 0)}</div>
+            <div class="stat-sub">Dalam antrean & pencucian</div>
           </div>
-          <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Selesai Hari Ini</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--green); margin-top: 4px;">${esc(s.finished_today || 0)}</div>
+          <div class="stat-card stat-green">
+            <div class="stat-card-header">
+              <span class="stat-label">Selesai Hari Ini</span>
+              <div class="stat-icon icon-green">✨</div>
+            </div>
+            <div class="stat-value" data-kpi="${s.finished_today || 0}">${esc(s.finished_today || 0)}</div>
+            <div class="stat-sub">Siap diambil / diantar</div>
           </div>
           ${isStaff ? `
-            <div class="card" style="padding: 18px; border-radius: var(--radius-md);">
-              <div style="font-size: 13px; color: var(--muted); font-weight: 600;">Total Pelanggan</div>
-              <div style="font-size: 24px; font-weight: 800; color: var(--amber); margin-top: 4px;">${esc(s.total_customers || 0)}</div>
+            <div class="stat-card stat-amber">
+              <div class="stat-card-header">
+                <span class="stat-label">Total Pelanggan</span>
+                <div class="stat-icon icon-amber">👥</div>
+              </div>
+              <div class="stat-value" data-kpi="${s.total_customers || 0}">${esc(s.total_customers || 0)}</div>
+              <div class="stat-sub">Pelanggan terdaftar aktif</div>
             </div>
           ` : ''}
         </div>
 
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Pesanan Terbaru</h3>
-            <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 14px; font-size: 13px;">+ Buat Pesanan</button>
+        <div class="card glass-panel" style="padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; font-size: 18px;">⚡</div>
+            <div>
+              <div style="font-weight: 700; font-size: 14px; color: var(--text);">Pintasan Operasional Cepat</div>
+              <div style="font-size: 12px; color: var(--muted);">Akses navigasi praktis untuk aktivitas laundry Anda</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="App.renderPesanan()" style="padding: 8px 16px; font-size: 13px;">+ Buat Pesanan Baru</button>
+            <button class="btn" onclick="App.renderDelivery()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">🚚 Pickup & Delivery</button>
+            ${isStaff ? `<button class="btn" onclick="App.renderLayanan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">💲 Layanan & Tarif</button>` : ''}
+            ${isStaff ? `<button class="btn" onclick="App.renderLaporan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">📊 Laporan Keuangan</button>` : ''}
+          </div>
+        </div>
+
+        <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Pesanan Terbaru</h3>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Daftar transaksi masuk terkini</div>
+            </div>
+            <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 16px; font-size: 13px;">+ Buat Pesanan</button>
           </div>
           <div style="overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
@@ -1325,17 +1517,19 @@ const App = window.App = {
       const services = svcData.services || [];
 
       c.innerHTML = `
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+        <div class="filter-bar glass-panel">
           <div class="presets" role="group" aria-label="Rentang tanggal cepat" style="display:flex;gap:6px;flex-wrap:wrap">
             ${[['Hari Ini','today'],['7 Hari','7d'],['Bulan Ini','month']].map(([lbl,key]) =>
-              `<button class="btn preset-pill" data-preset="${key}" style="padding:8px 14px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:${(start||'')+'' === _presetStart(key) ? 'var(--blue)' : 'transparent'};color:${(start||'')+'' === _presetStart(key) ? '#fff' : 'var(--text)'}">${lbl}</button>`
+              `<button class="btn preset-pill" data-preset="${key}" style="padding:8px 14px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:${(start||'')+'' === this._presetStart(key) ? 'var(--blue)' : 'transparent'};color:${(start||'')+'' === this._presetStart(key) ? '#fff' : 'var(--text)'}">${lbl}</button>`
             ).join('')}
           </div>
-          <input type="date" id="filterStart" value="${esc(start)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
-          <span style="color: var(--muted); font-size: 13px;">s/d</span>
-          <input type="date" id="filterEnd" value="${esc(end)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="date" id="filterStart" class="input-control" value="${esc(start)}">
+            <span style="color: var(--muted); font-size: 13px;">s/d</span>
+            <input type="date" id="filterEnd" class="input-control" value="${esc(end)}">
+          </div>
           
-          <select id="filterStatus" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
+          <select id="filterStatus" class="input-control">
             <option value="">Semua Status</option>
             <option value="baru" ${status === 'baru' ? 'selected' : ''}>Baru</option>
             <option value="proses" ${status === 'proses' ? 'selected' : ''}>Proses</option>
@@ -1343,26 +1537,25 @@ const App = window.App = {
             <option value="batal" ${status === 'batal' ? 'selected' : ''}>Batal</option>
           </select>
 
-          <input type="text" id="ordSearch" value="${esc(q)}" placeholder="Cari kode/pelanggan..." 
-            style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); flex: 1; min-width: 150px;">
+          <input type="text" id="ordSearch" class="input-control" value="${esc(q)}" placeholder="Cari kode atau nama pelanggan..." style="flex: 1; min-width: 180px;">
           
-          <button class="btn" id="btnFilterOrders" style="padding: 8px 16px; font-size: 13px; background: var(--line); color: var(--text);">Filter</button>
+          <button class="btn" id="btnFilterOrders" style="padding: 8px 16px; font-size: 13px; background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border);">🔍 Filter</button>
           ${(start || end || q || status) ? `<button class="btn" id="btnResetFilterOrders" style="padding: 8px 16px; font-size: 13px; background: transparent; border: 1px solid var(--line); color: var(--muted);">Reset</button>` : ''}
           
           <button class="btn btn-primary" id="openNewOrderModal" style="${!isStaff ? 'display: none;' : ''}">+ Pesanan Baru</button>
         </div>
 
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
+        <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); overflow-x: auto;">
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
               <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
-                <th style="padding: 10px;">Kode</th>
-                <th style="padding: 10px;">Pelanggan</th>
-                <th style="padding: 10px;">Layanan</th>
-                <th style="padding: 10px;">Berat</th>
-                <th style="padding: 10px;">Total</th>
-                <th style="padding: 10px;">Status</th>
-                <th style="padding: 10px; text-align: right;">Aksi</th>
+                <th style="padding: 12px 10px;">Kode</th>
+                <th style="padding: 12px 10px;">Pelanggan</th>
+                <th style="padding: 12px 10px;">Layanan</th>
+                <th style="padding: 12px 10px;">Berat</th>
+                <th style="padding: 12px 10px;">Total</th>
+                <th style="padding: 12px 10px;">Status</th>
+                <th style="padding: 12px 10px; text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="ordersTableBody">
@@ -1382,15 +1575,15 @@ const App = window.App = {
                   </td>
                 </tr>
               ` : orders.map(o => `
-                <tr style="border-bottom: 1px solid var(--line);">
-                  <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
-                  <td style="padding: 10px;">${esc(o.customer_name)}</td>
-                  <td style="padding: 10px;">${esc(o.service_name)}</td>
-                  <td style="padding: 10px;">${esc(o.weight_kg)} kg</td>
-                  <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
-                  <td style="padding: 10px;">
+                <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
+                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;">${esc(o.order_code)}</td>
+                  <td style="padding: 12px 10px; font-weight: 600;">${esc(o.customer_name)}</td>
+                  <td style="padding: 12px 10px;">${esc(o.service_name)}</td>
+                  <td style="padding: 12px 10px; font-weight: 500;">${esc(o.weight_kg)} kg</td>
+                  <td style="padding: 12px 10px; font-weight: 700; color: var(--text);">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
+                  <td style="padding: 12px 10px;">
                     ${isStaff ? `
-                      <select class="status-select" data-id="${esc(o.id)}" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text);">
+                      <select class="status-select input-control" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; font-weight: 600;">
                         <option value="baru" ${o.status === 'baru' ? 'selected' : ''}>Baru</option>
                         <option value="proses" ${o.status === 'proses' ? 'selected' : ''}>Proses</option>
                         <option value="selesai" ${o.status === 'selesai' ? 'selected' : ''}>Selesai</option>
@@ -1398,13 +1591,15 @@ const App = window.App = {
                       </select>
                     ` : `<span class="badge status-${esc(o.status)}">${esc(o.status)}</span>`}
                   </td>
-                  <td style="padding: 10px; text-align: right; white-space: nowrap;">
-                    <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
-                    <button type="button" class="btn btn-sm btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🖼️ Bukti</button>
-                    <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="btn" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--card); border: 1px solid var(--line); color: var(--text);">Bayar</a>
-                    ${(isStaff || o.status === 'baru') ? `
-                      <button class="btn btn-del" data-id="${esc(o.id)}" style="padding: 4px 8px; font-size: 12px; color: var(--red); border: 1px solid var(--red); background: transparent; border-radius: 6px; cursor: pointer;">Hapus</button>
-                    ` : ''}
+                  <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
+                    <div class="action-btn-group">
+                      <button type="button" class="action-btn btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')">🧾 Invoice</button>
+                      <button type="button" class="action-btn btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')">🖼️ Bukti</button>
+                      <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="action-btn action-btn-primary">💳 Bayar</a>
+                      ${(isStaff || o.status === 'baru') ? `
+                        <button class="action-btn action-btn-danger btn-del" data-id="${esc(o.id)}">🗑️ Hapus</button>
+                      ` : ''}
+                    </div>
                   </td>
                 </tr>
               `).join('')}
@@ -1413,41 +1608,46 @@ const App = window.App = {
         </div>
 
         <!-- Order Modal -->
-        <div id="orderModal" style="display: none; position: fixed; inset: 0; background: var(--color-bg-overlay, rgba(0,0,0,0.5)); place-items: center; z-index: 999; padding: 20px;">
-          <div class="card" style="width: 100%; max-width: 500px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 24px; color: var(--text);">
-            <h3 style="margin-top: 0; color: var(--text);">Buat Pesanan Laundry</h3>
+        <div id="orderModal" class="modal-backdrop" style="display: none;">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h3 class="modal-title">🧺 Buat Pesanan Laundry</h3>
+              <button type="button" class="modal-close" id="closeOrderModalBtn" aria-label="Tutup">✕</button>
+            </div>
             <form id="newOrderForm">
               ${isStaff ? `
-                <div style="margin-bottom: 12px;">
-                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Pelanggan</label>
-                  <input type="text" id="ordCustName" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+                <div style="margin-bottom: 14px;">
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Pelanggan <span style="color:var(--red)">*</span></label>
+                  <input type="text" id="ordCustName" class="input-control" required style="width: 100%;" placeholder="Nama lengkap pelanggan">
                 </div>
               ` : ''}
-              <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP / WA</label>
-                <input type="text" id="ordPhone" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP / WhatsApp</label>
+                <input type="text" id="ordPhone" class="input-control" style="width: 100%;" placeholder="0812xxxxxxxx">
               </div>
-              <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Alamat</label>
-                <input type="text" id="ordAddress" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Alamat Pengiriman</label>
+                <input type="text" id="ordAddress" class="input-control" style="width: 100%;" placeholder="Alamat penjemputan/antar">
               </div>
-              <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Pilih Layanan</label>
-                <select id="ordService" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Pilih Layanan Laundry <span style="color:var(--red)">*</span></label>
+                <select id="ordService" class="input-control" required style="width: 100%;">
                   ${services.map(s => `<option value="${esc(s.id)}" data-price="${esc(s.price)}">${esc(s.name)} (Rp ${Number(s.price).toLocaleString('id-ID')}/${esc(s.unit || 'kg')})</option>`).join('')}
                 </select>
               </div>
-              <div style="margin-bottom: 12px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Berat (kg)</label>
-                <input type="number" id="ordWeight" min="1" value="1" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Berat / Kuantitas <span style="color:var(--red)">*</span></label>
+                  <input type="number" id="ordWeight" class="input-control" min="1" value="1" required style="width: 100%;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Kode Voucher Diskon</label>
+                  <input type="text" id="ordVoucher" class="input-control" placeholder="misal: PROMO10" style="width: 100%;">
+                </div>
               </div>
-              <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Kode Voucher / Diskon (opsional)</label>
-                <input type="text" id="ordVoucher" placeholder="misal: PROMO10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
-              </div>
-              <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                <button type="button" class="btn" id="closeOrderModalBtn">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan Pesanan</button>
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 16px;">
+                <button type="button" class="btn" onclick="document.getElementById('orderModal').style.display='none'" style="padding: 8px 18px;">Batal</button>
+                <button type="submit" class="btn btn-primary" style="padding: 8px 22px;">Simpan Pesanan</button>
               </div>
             </form>
           </div>
@@ -1542,31 +1742,127 @@ const App = window.App = {
       const res = await fetch('/api/services');
       const data = await res.json();
       const services = data.services || [];
+      this._services = services;
+      const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user?.role || this.user?.user_role);
 
       if (services.length === 0) {
         c.innerHTML = this.renderEmptyState({
           icon: '💲',
           title: 'Belum Ada Layanan',
-          subtitle: 'Daftar paket layanan laundry belum dikonfigurasi.'
+          subtitle: 'Daftar paket layanan laundry belum dikonfigurasi.',
+          actionHtml: isStaff ? '<button class="btn btn-primary" onclick="App.openServiceModal()">+ Tambah Layanan Sekarang</button>' : ''
         });
         return;
       }
 
       c.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text);">Katalog Layanan & Tarif</h3>
+            <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">Tersedia ${services.length} pilihan paket laundry berkualitas</div>
+          </div>
+          ${isStaff ? `
+            <button class="btn btn-primary" id="openNewServiceModal" style="padding: 9px 18px; font-size: 13px; font-weight: 600;">+ Tambah Layanan Baru</button>
+          ` : ''}
+        </div>
+
+        <div class="service-grid">
           ${services.map(s => `
-            <div class="card" style="padding: 20px; border-radius: var(--radius-md);">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h4 style="margin: 0 0 8px; font-size: 16px; color: var(--text);">${esc(s.name)}</h4>
-                <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}">${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
+            <div class="service-card glass-panel">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border); font-family: monospace; font-size: 11px;">${esc(s.code || 'SVC')}</span>
+                  <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}">${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                </div>
+                <h4 style="margin: 0 0 4px; font-size: 17px; font-weight: 700; color: var(--text);">${esc(s.name)}</h4>
+                <div style="display: inline-block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">${esc(s.category || 'Reguler')}</div>
+                <div class="service-price-tag">
+                  Rp ${Number(s.price).toLocaleString('id-ID')} <span class="service-unit">/ ${esc(s.unit || 'kg')}</span>
+                </div>
+                <p style="font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4;">${esc(s.description || 'Proses pengerjaan rapi, bersih dan higienis.')}</p>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 16px;">
+                  <span>⏱️ Estimasi: <strong>${esc(s.duration_hours || 24)} Jam</strong></span>
+                  ${s.badge ? `<span style="background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber-border); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">${esc(s.badge)}</span>` : ''}
+                </div>
               </div>
-              <div style="font-size: 20px; font-weight: 800; color: var(--blue); margin-bottom: 8px;">
-                Rp ${Number(s.price).toLocaleString('id-ID')} <span style="font-size: 13px; color: var(--muted); font-weight: 500;">/ ${esc(s.unit || 'kg')}</span>
+              <div>
+                ${isStaff ? `
+                  <div class="action-btn-group" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px;">
+                    <button class="action-btn" onclick="App.openServiceModal(${s.id})" style="justify-content: center;">✏️ Edit</button>
+                    <button class="action-btn" onclick="App.toggleServiceActive(${s.id}, ${s.is_active ? 0 : 1})" style="justify-content: center;">${s.is_active ? 'Nonaktif' : 'Aktifkan'}</button>
+                    <button class="action-btn action-btn-danger" onclick="App.deleteService(${s.id})" title="Hapus Layanan">🗑️</button>
+                  </div>
+                ` : `
+                  <button class="btn btn-primary" style="width: 100%; padding: 9px; font-size: 13px;" onclick="App.renderPesanan()">Pesan Layanan Ini</button>
+                `}
               </div>
-              <p style="font-size: 13px; color: var(--muted); margin: 0 0 12px;">Durasi estimasi: ${esc(s.duration_hours || 24)} Jam</p>
-              <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="App.renderPesanan()">Pesan Sekarang</button>
             </div>
           `).join('')}
+        </div>
+
+        <!-- Service Modal -->
+        <div id="serviceModal" class="modal-backdrop" style="display: none;">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h3 class="modal-title" id="serviceModalTitle">💲 Tambah Layanan Laundry</h3>
+              <button type="button" class="modal-close" id="closeServiceModalBtn" aria-label="Tutup">✕</button>
+            </div>
+            <form id="serviceForm">
+              <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Kode Layanan <span style="color:var(--red)">*</span></label>
+                  <input type="text" id="svcCode" class="input-control" required style="width: 100%;" placeholder="SVC-01">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Layanan <span style="color:var(--red)">*</span></label>
+                  <input type="text" id="svcName" class="input-control" required style="width: 100%;" placeholder="Contoh: Cuci Komplit Kilat">
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Kategori</label>
+                  <input type="text" id="svcCategory" class="input-control" style="width: 100%;" placeholder="Reguler / Express / Bed Cover">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Satuan</label>
+                  <select id="svcUnit" class="input-control" style="width: 100%;">
+                    <option value="kg">kg (Kilogram)</option>
+                    <option value="pcs">pcs (Satuan Buah)</option>
+                    <option value="item">item (Barang)</option>
+                    <option value="meter">meter (Panjang)</option>
+                    <option value="set">set (Per Set)</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Tarif Harga (Rp) <span style="color:var(--red)">*</span></label>
+                  <input type="number" id="svcPrice" class="input-control" required min="0" style="width: 100%;" placeholder="10000">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Durasi (Jam) <span style="color:var(--red)">*</span></label>
+                  <input type="number" id="svcHours" class="input-control" required min="1" style="width: 100%;" placeholder="24">
+                </div>
+              </div>
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Badge Label Promo / Unggulan</label>
+                <input type="text" id="svcBadge" class="input-control" style="width: 100%;" placeholder="Contoh: Populer / Hemat / Kilat">
+              </div>
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Deskripsi Layanan</label>
+                <textarea id="svcDesc" class="input-control" rows="2" style="width: 100%; resize: vertical;" placeholder="Detail cakupan pengerjaan cuci, setrika, pewangi..."></textarea>
+              </div>
+              <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text);">
+                  <input type="checkbox" id="svcActive" checked> Status Layanan Aktif
+                </label>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px;">
+                <button type="button" class="btn" onclick="document.getElementById('serviceModal').style.display='none'" style="padding: 8px 18px;">Batal</button>
+                <button type="submit" class="btn btn-primary" style="padding: 8px 22px;">Simpan Layanan</button>
+              </div>
+            </form>
+          </div>
         </div>
       `;
     } catch (e) {
@@ -1578,24 +1874,36 @@ const App = window.App = {
     document.getElementById('pageTitle').textContent = 'Pickup & Antar Jemput';
     const c = document.getElementById('mainContent');
     c.innerHTML = this.renderSkeletonTable({ columns: 7, rows: 5, hasActions: false });
+    const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user?.role || this.user?.user_role);
 
     try {
       const res = await fetch('/api/delivery');
       const data = await res.json();
       const tasks = data.tasks || [];
+      const couriers = data.couriers || [];
+      this._deliveryTasks = tasks;
+      this._couriers = couriers;
 
       c.innerHTML = `
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text);">Logistik & Antar Jemput Laundry</h3>
+            <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">Kelola jadwal penjemputan cucian kotor dan pengantaran laundry bersih</div>
+          </div>
+          <button class="btn btn-primary" id="openNewDeliveryModal" style="padding: 9px 18px; font-size: 13px; font-weight: 600;">+ Jadwalkan Pickup / Antar</button>
+        </div>
+
+        <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); overflow-x: auto;">
           <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
             <thead>
               <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
-                <th style="padding: 10px;">Kode Tugas</th>
-                <th style="padding: 10px;">Tipe</th>
-                <th style="padding: 10px;">Pelanggan</th>
-                <th style="padding: 10px;">Alamat</th>
-                <th style="padding: 10px;">Kurir</th>
-                <th style="padding: 10px;">Jadwal</th>
-                <th style="padding: 10px;">Status</th>
+                <th style="padding: 12px 10px;">Kode Tugas</th>
+                <th style="padding: 12px 10px;">Tipe</th>
+                <th style="padding: 12px 10px;">Pelanggan</th>
+                <th style="padding: 12px 10px;">Alamat</th>
+                <th style="padding: 12px 10px;">Kurir</th>
+                <th style="padding: 12px 10px;">Jadwal</th>
+                <th style="padding: 12px 10px;">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -1605,23 +1913,109 @@ const App = window.App = {
                     ${this.renderEmptyState({
                       icon: '🚚',
                       title: 'Belum Ada Tugas Kurir',
-                      subtitle: 'Tidak ada jadwal penjemputan atau pengantaran laundry saat ini.'
+                      subtitle: 'Tidak ada jadwal penjemputan atau pengantaran laundry saat ini.',
+                      actionHtml: '<button class="btn btn-primary" onclick="App.openDeliveryModal()">+ Buat Jadwal Sekarang</button>'
                     })}
                   </td>
                 </tr>
               ` : tasks.map(t => `
-                <tr style="border-bottom: 1px solid var(--line);">
-                  <td style="padding: 10px; font-weight: 600;">${esc(t.task_code)}</td>
-                  <td style="padding: 10px;"><span class="badge">${esc(String(t.type || '').toUpperCase())}</span></td>
-                  <td style="padding: 10px;">${esc(t.customer_name)}</td>
-                  <td style="padding: 10px;">${esc(t.address || '-')}</td>
-                  <td style="padding: 10px;">${esc(t.courier_name || 'Belum ditugaskan')}</td>
-                  <td style="padding: 10px;">${esc(t.schedule_date)}</td>
-                  <td style="padding: 10px;"><span class="badge status-${esc(t.status)}">${esc(t.status)}</span></td>
+                <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
+                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;">${esc(t.task_code)}</td>
+                  <td style="padding: 12px 10px;">
+                    <span class="badge ${t.type === 'pickup' ? 'status-baru' : 'status-selesai'}">${t.type === 'pickup' ? '🧺 PICKUP' : '🚚 DELIVERY'}</span>
+                  </td>
+                  <td style="padding: 12px 10px;">
+                    <div style="font-weight: 600;">${esc(t.customer_name)}</div>
+                    <div style="font-size: 12px; color: var(--muted);">${esc(t.phone || '-')}</div>
+                  </td>
+                  <td style="padding: 12px 10px; max-width: 220px; word-break: break-word;">${esc(t.address || '-')}</td>
+                  <td style="padding: 12px 10px;">
+                    ${isStaff && couriers.length > 0 ? `
+                      <select class="task-courier-select input-control" data-id="${esc(t.id)}" style="padding: 4px 8px; font-size: 12px;">
+                        <option value="">-- Belum Ditugaskan --</option>
+                        ${couriers.map(c => `<option value="${esc(c.id)}" ${t.courier_id == c.id ? 'selected' : ''}>${esc(c.full_name)}</option>`).join('')}
+                      </select>
+                    ` : `<span>${esc(t.courier_name || 'Belum ditugaskan')}</span>`}
+                  </td>
+                  <td style="padding: 12px 10px;">
+                    <div style="font-weight: 500;">${esc(t.schedule_date)}</div>
+                    <div style="font-size: 12px; color: var(--muted);">${esc(String(t.start_time || '').slice(0, 5))} WIB</div>
+                  </td>
+                  <td style="padding: 12px 10px;">
+                    ${isStaff ? `
+                      <select class="task-status-select input-control" data-id="${esc(t.id)}" style="padding: 4px 8px; font-size: 12px; font-weight: 600;">
+                        <option value="scheduled" ${t.status === 'scheduled' ? 'selected' : ''}>Dijadwalkan</option>
+                        <option value="assigned" ${t.status === 'assigned' ? 'selected' : ''}>Kurir Ditugaskan</option>
+                        <option value="onroute" ${t.status === 'onroute' ? 'selected' : ''}>Dalam Perjalanan</option>
+                        <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>Selesai</option>
+                        <option value="cancelled" ${t.status === 'cancelled' ? 'selected' : ''}>Dibatalkan</option>
+                      </select>
+                    ` : `<span class="badge status-${esc(t.status)}">${esc(t.status)}</span>`}
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- Delivery Modal -->
+        <div id="deliveryModal" class="modal-backdrop" style="display: none;">
+          <div class="modal-dialog">
+            <div class="modal-header">
+              <h3 class="modal-title">🚚 Jadwalkan Penjemputan / Pengantaran</h3>
+              <button type="button" class="modal-close" id="closeDeliveryModalBtn" aria-label="Tutup">✕</button>
+            </div>
+            <form id="deliveryForm">
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Tipe Tugas <span style="color:var(--red)">*</span></label>
+                <select id="dlvType" class="input-control" required style="width: 100%;">
+                  <option value="pickup">🧺 Penjemputan Cucian Kotor (Pickup)</option>
+                  <option value="delivery">🚚 Pengantaran Laundry Selesai (Delivery)</option>
+                </select>
+              </div>
+              ${isStaff ? `
+                <div style="margin-bottom: 14px;">
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Pelanggan <span style="color:var(--red)">*</span></label>
+                  <input type="text" id="dlvCustName" class="input-control" required style="width: 100%;" placeholder="Nama pelanggan">
+                </div>
+              ` : ''}
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP / WhatsApp <span style="color:var(--red)">*</span></label>
+                <input type="text" id="dlvPhone" class="input-control" required style="width: 100%;" placeholder="0812xxxxxxxx" value="${esc(this.user?.phone || '')}">
+              </div>
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Alamat Lengkap <span style="color:var(--red)">*</span></label>
+                <textarea id="dlvAddress" class="input-control" required rows="2" style="width: 100%; resize: vertical;" placeholder="Alamat jalan, nomor rumah, RT/RW atau patokan">${esc(this.user?.address || '')}</textarea>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Tanggal Jadwal <span style="color:var(--red)">*</span></label>
+                  <input type="date" id="dlvDate" class="input-control" required style="width: 100%;">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Jam Mulai</label>
+                  <input type="time" id="dlvStartTime" class="input-control" value="09:00" style="width: 100%;">
+                </div>
+              </div>
+              ${isStaff && couriers.length > 0 ? `
+                <div style="margin-bottom: 14px;">
+                  <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Tugaskan Kurir</label>
+                  <select id="dlvCourier" class="input-control" style="width: 100%;">
+                    <option value="">-- Tetapkan Nanti --</option>
+                    ${couriers.map(c => `<option value="${esc(c.id)}">${esc(c.full_name)} (${esc(c.phone || '-')})</option>`).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Catatan Tambahan</label>
+                <input type="text" id="dlvNotes" class="input-control" style="width: 100%;" placeholder="misal: Titip satpam, hubungi sebelum datang">
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px;">
+                <button type="button" class="btn" onclick="document.getElementById('deliveryModal').style.display='none'" style="padding: 8px 18px;">Batal</button>
+                <button type="submit" class="btn btn-primary" style="padding: 8px 22px;">Jadwalkan Tugas</button>
+              </div>
+            </form>
+          </div>
         </div>
       `;
     } catch (e) {
@@ -1875,6 +2269,110 @@ const App = window.App = {
       }
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat promo</div>';
+    }
+  },
+
+  // Service Management Methods
+  openServiceModal(id = null) {
+    this._editServiceId = id;
+    const modal = document.getElementById('serviceModal');
+    if (!modal) return;
+    const isEdit = !!id;
+    document.getElementById('serviceModalTitle').textContent = isEdit ? '✏️ Edit Layanan & Tarif' : '💲 Tambah Layanan Laundry Baru';
+    if (isEdit && this._services) {
+      const s = this._services.find(item => item.id === id);
+      if (s) {
+        document.getElementById('svcCode').value = s.code || '';
+        document.getElementById('svcName').value = s.name || '';
+        document.getElementById('svcCategory').value = s.category || 'Reguler';
+        document.getElementById('svcUnit').value = s.unit || 'kg';
+        document.getElementById('svcPrice').value = s.price || 0;
+        document.getElementById('svcHours').value = s.duration_hours || 24;
+        document.getElementById('svcBadge').value = s.badge || '';
+        document.getElementById('svcDesc').value = s.description || '';
+        document.getElementById('svcActive').checked = !!s.is_active;
+      }
+    } else {
+      document.getElementById('serviceForm').reset();
+      document.getElementById('svcCode').value = 'SVC-' + Math.floor(100 + Math.random() * 900);
+      document.getElementById('svcCategory').value = 'Reguler';
+      document.getElementById('svcUnit').value = 'kg';
+      document.getElementById('svcPrice').value = '10000';
+      document.getElementById('svcHours').value = '24';
+      document.getElementById('svcActive').checked = true;
+    }
+    modal.style.display = 'grid';
+  },
+
+  async toggleServiceActive(id, newActive) {
+    try {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_active', id: Number(id), is_active: newActive ? 1 : 0 })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        this.toast(`Status layanan #${id} diperbarui`, 'success');
+        this.renderLayanan();
+      } else {
+        this.toast(data.msg || 'Gagal mengubah status layanan', 'error');
+      }
+    } catch (e) {
+      this.toast('Gagal menghubungi server', 'error');
+    }
+  },
+
+  async deleteService(id) {
+    if (!await this.confirm('Apakah Anda yakin ingin menghapus layanan ini?')) return;
+    try {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_service', id: Number(id) })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        this.toast('Layanan berhasil dihapus', 'success');
+        this.renderLayanan();
+      } else {
+        this.toast(data.msg || 'Gagal menghapus layanan', 'error');
+      }
+    } catch (e) {
+      this.toast('Gagal menghubungi server', 'error');
+    }
+  },
+
+  // Delivery Logistics Methods
+  openDeliveryModal() {
+    const modal = document.getElementById('deliveryModal');
+    if (!modal) return;
+    document.getElementById('deliveryForm').reset();
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('dlvDate');
+    if (dateInput) dateInput.value = today;
+    const timeInput = document.getElementById('dlvStartTime');
+    if (timeInput) timeInput.value = '09:00';
+    modal.style.display = 'grid';
+  },
+
+  async assignCourier(taskId, courierId) {
+    if (!courierId) return;
+    try {
+      const res = await fetch('/api/delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_courier', id: Number(taskId), courier_id: Number(courierId) })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        this.toast('Kurir berhasil ditugaskan', 'success');
+        this.renderDelivery();
+      } else {
+        this.toast(data.msg || 'Gagal menugaskan kurir', 'error');
+      }
+    } catch (e) {
+      this.toast('Gagal menghubungi server', 'error');
     }
   },
 
@@ -2415,49 +2913,65 @@ const App = window.App = {
       const data = await res.json();
       const u = data.user || this.user;
 
+      const initials = (u.full_name || u.name || 'U').charAt(0).toUpperCase();
+
       c.innerHTML = `
-        <div style="max-width: 600px; margin: 0 auto; display: grid; gap: 20px;">
-          <div class="card" style="padding: 24px; border-radius: var(--radius-md);">
+        <div style="max-width: 680px; margin: 0 auto; display: grid; gap: 24px;">
+          <div class="card glass-panel" style="padding: 26px; border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line);">
+              <div class="user-avatar">${esc(initials)}</div>
+              <div>
+                <div style="font-size: 18px; font-weight: 700; color: var(--text);">${esc(u.full_name || u.name || 'Pengguna')}</div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                  <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border);">${esc(u.role || u.user_role || 'Customer')}</span>
+                  <span style="font-size: 12px; color: var(--muted);">${esc(u.email || '')}</span>
+                </div>
+              </div>
+            </div>
+
             <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Informasi Pribadi</h3>
             <form id="profileForm">
-              <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Nama Lengkap</label>
-                <input type="text" id="profName" value="${esc(u.full_name || u.name || '')}" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Nama Lengkap</label>
+                <input type="text" id="profName" class="input-control" value="${esc(u.full_name || u.name || '')}" required style="width: 100%;">
               </div>
-              <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Email</label>
-                <input type="email" value="${esc(u.email || '')}" disabled  
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); box-sizing: border-box;">
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Email Akun (Permanen)</label>
+                <input type="email" class="input-control" value="${esc(u.email || '')}" disabled style="width: 100%; opacity: 0.7; background: var(--bg-subtle);">
               </div>
-              <div style="margin-bottom: 18px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">No. HP</label>
-                <input type="text" id="profPhone" value="${esc(u.phone || '')}" 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">No. Handphone / WhatsApp</label>
+                <input type="text" id="profPhone" class="input-control" value="${esc(u.phone || '')}" style="width: 100%;" placeholder="08xxxxxxxx">
               </div>
-              <button type="submit" class="btn btn-primary">Simpan Profil</button>
+              <button type="submit" class="btn btn-primary" style="padding: 9px 22px;">💾 Simpan Profil</button>
             </form>
           </div>
 
-          <div class="card" style="padding: 24px; border-radius: var(--radius-md);">
-            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Ganti Sandi</h3>
+          <div class="card glass-panel" style="padding: 26px; border-radius: var(--radius-md);">
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--text);">Keamanan & Ganti Sandi</h3>
             <form id="passForm">
-              <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Sandi Lama</label>
-                <input type="password" id="oldPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Sandi Lama</label>
+                <div style="position: relative;">
+                  <input type="password" id="oldPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Masukkan sandi saat ini">
+                  <button type="button" onclick="const i=document.getElementById('oldPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
+                </div>
               </div>
-              <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Sandi Baru</label>
-                <input type="password" id="newPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Sandi Baru</label>
+                <div style="position: relative;">
+                  <input type="password" id="newPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Minimal 6 karakter">
+                  <button type="button" onclick="const i=document.getElementById('newPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
+                </div>
               </div>
-              <div style="margin-bottom: 18px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text);">Konfirmasi Sandi Baru</label>
-                <input type="password" id="repPass" required 
-                  style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); box-sizing: border-box;">
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Konfirmasi Sandi Baru</label>
+                <div style="position: relative;">
+                  <input type="password" id="repPass" class="input-control" required style="width: 100%; padding-right: 40px;" placeholder="Ulangi sandi baru">
+                  <button type="button" onclick="const i=document.getElementById('repPass');i.type=i.type==='password'?'text':'password';" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 14px; color: var(--muted);">👁</button>
+                </div>
               </div>
-              <button type="submit" class="btn btn-primary">Ganti Sandi</button>
+              <button type="submit" class="btn btn-primary" style="padding: 9px 22px;">🔑 Perbarui Sandi</button>
             </form>
           </div>
         </div>

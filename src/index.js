@@ -138,7 +138,8 @@ export default {
     // Serve static assets from public directory
     if (env.ASSETS) {
       // Handle SPA routes - serve dashboard.html for /dashboard and sub-routes
-      if (path === '/dashboard' || path.startsWith('/dashboard/')) {
+      const spaRoutes = ['/dashboard', '/pesanan', '/pelanggan', '/layanan', '/delivery', '/promo', '/laporan', '/profile'];
+      if (spaRoutes.includes(path) || path.startsWith('/dashboard/')) {
         const dashboardUrl = new URL(request.url);
         dashboardUrl.pathname = '/dashboard.html';
         const dashRes = await env.ASSETS.fetch(dashboardUrl);
