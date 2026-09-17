@@ -187,6 +187,26 @@ h1 { font-size: 20px; margin: 6px 0 0; }
   .auth-wrap { grid-template-columns: 1fr; }
   .auth-aside { display: none; }
 }
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+.btn-back:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  transform: translateX(-2px);
+}
 </style>
 </head>
 <body>
@@ -194,8 +214,13 @@ h1 { font-size: 20px; margin: 6px 0 0; }
   <!-- KIRI: kartu login -->
   <div class="auth-card">
     <div class="card-auth">
-      <div class="brand" style="margin-bottom:6px">
-        <div class="logo"></div><div class="brand-name">Embun Laundry</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="brand">
+          <div class="logo"></div><div class="brand-name">Embun Laundry</div>
+        </div>
+        <a href="/" class="btn-back" title="Kembali ke Halaman Beranda">
+          <span style="font-size: 14px;">←</span> <span>Beranda</span>
+        </a>
       </div>
       <h1>Masuk</h1>
       <div class="small">Kelola bisnis laundry Anda</div>
@@ -228,6 +253,12 @@ h1 { font-size: 20px; margin: 6px 0 0; }
 
         <div class="small" style="margin-top:6px">
           Belum punya akun? <a class="link" href="register.html">Buat akun</a>
+        </div>
+
+        <div class="small" style="margin-top:14px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+          <a class="link" href="/" style="color: #64748b; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
+            <span>← Kembali ke Halaman Utama</span>
+          </a>
         </div>
       </form>
     </div>
