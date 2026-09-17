@@ -806,68 +806,114 @@ const App = window.App = {
 
   renderApp() {
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
+    const userInitials = (this.user.user_name || this.user.name || 'User').slice(0, 2).toUpperCase();
 
     document.body.innerHTML = `
       <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
       <div class="wrap">
         <aside class="sidebar">
-          <div class="brand">
-            <img src="/img/Logo.png" alt="Embun Laundry" class="logo-img" width="36" height="36" />
-            <div class="brand-text">Embun Laundry</div>
+          <div class="brand" style="display: flex; align-items: center; gap: 10px; padding: 4px 6px 16px; margin-bottom: 8px; border-bottom: 1px solid var(--line);">
+            <img src="/img/Logo.png" alt="Embun Laundry" class="logo-img" width="34" height="34" />
+            <div style="flex: 1; min-width: 0;">
+              <div class="brand-text" style="font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.2;">Embun Laundry</div>
+              <div style="font-size: 11px; color: var(--muted); font-weight: 500;">Cloud POS & Management</div>
+            </div>
             <button id="sidebarCloseBtn" class="btn btn-icon sidebar-close-btn" type="button" aria-label="Tutup menu" title="Tutup">
               <span>✕</span>
             </button>
           </div>
+
           <nav class="nav">
+            <div class="nav-section-title">Menu Utama</div>
             <a href="#" class="nav-link ${this.currentPage === 'dashboard' ? 'active' : ''}" data-page="dashboard">
               <span>🏠</span> <span>Dashboard</span>
             </a>
             <a href="#" class="nav-link ${this.currentPage === 'pesanan' ? 'active' : ''}" data-page="pesanan">
               <span>🧺</span> <span>${isStaff ? 'Pesanan' : 'Riwayat Pesanan'}</span>
             </a>
+
+            <div class="nav-section-title">Operasional</div>
             ${isStaff ? `
               <a href="#" class="nav-link ${this.currentPage === 'pelanggan' ? 'active' : ''}" data-page="pelanggan">
                 <span>👥</span> <span>Pelanggan</span>
               </a>
             ` : ''}
             <a href="#" class="nav-link ${this.currentPage === 'layanan' ? 'active' : ''}" data-page="layanan">
-              <span>💲</span> <span>Layanan & Harga</span>
+              <span>💲</span> <span>Layanan & Tarif</span>
             </a>
             <a href="#" class="nav-link ${this.currentPage === 'delivery' ? 'active' : ''}" data-page="delivery">
               <span>🚚</span> <span>Pickup & Delivery</span>
             </a>
+
+            <div class="nav-section-title">Bisnis & Promo</div>
             <a href="#" class="nav-link ${this.currentPage === 'promo' ? 'active' : ''}" data-page="promo">
-              <span>🏷️</span> <span>Promo</span>
+              <span>🏷️</span> <span>Promo & Voucher</span>
             </a>
             ${isStaff ? `
               <a href="#" class="nav-link ${this.currentPage === 'laporan' ? 'active' : ''}" data-page="laporan">
-                <span>📑</span> <span>Laporan</span>
+                <span>📑</span> <span>Laporan Keuangan</span>
               </a>
             ` : ''}
           </nav>
+
           <div class="side-bottom">
-            <a href="#" class="btn nav-link" data-page="profile"><span>👤</span> <span>Profil</span></a>
-            <button id="logoutBtn" class="btn" style="width: 100%; text-align: left; background: transparent; border: none; color: inherit; cursor: pointer;">
-              <span>🚪</span> <span>Keluar</span>
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); margin-bottom: 6px;">
+              <div class="user-avatar-sm" style="background: linear-gradient(135deg, var(--blue), #06b6d4); color: #fff;">
+                ${userInitials}
+              </div>
+              <div style="flex: 1; min-width: 0; overflow: hidden;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${esc(this.user.user_name || this.user.name || 'User')}
+                </div>
+                <div style="font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green);"></span>
+                  ${esc(this.user.role || this.user.user_role || 'Customer')}
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <a href="#" class="btn nav-link" data-page="profile" style="padding: 6px 10px; font-size: 12px; justify-content: center; border: 1px solid var(--line); border-radius: 8px;"><span>👤 Profil</span></a>
+              <button id="logoutBtn" class="btn" style="padding: 6px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--red); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                <span>🚪 Keluar</span>
+              </button>
+            </div>
           </div>
         </aside>
 
         <section class="main">
           <div class="topbar">
-            <div class="topbar-inner" style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="topbar-inner" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 12px;">
                 <button id="sidebarToggleBtn" class="btn btn-icon sidebar-toggle-btn" type="button" aria-label="Buka navigasi menu" title="Menu Navigasi">
                   <span>☰</span>
                 </button>
-                <div class="h1" id="pageTitle" style="font-size: 20px; font-weight: 700; margin: 0;">Dashboard</div>
-                <div class="badge" style="margin-left: 8px;">${esc(this.user.role || this.user.user_role)}</div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);">
+                    <span>Embun</span> <span>/</span> <span style="color: var(--blue); font-weight: 600;">SaaS v2.5</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="h1" id="pageTitle" style="font-size: 19px; font-weight: 800; margin: 0; letter-spacing: -0.01em;">Dashboard</div>
+                    <div class="badge status-selesai" id="roleBadge" style="font-size: 11px; padding: 2px 8px;">● ${esc(this.user.role || this.user.user_role)}</div>
+                  </div>
+                </div>
               </div>
-              <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                ${isStaff ? `
+                  <button type="button" class="btn btn-primary" onclick="App.renderPesanan()" style="padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>+</span> <span>Pesanan Baru</span>
+                  </button>
+                ` : ''}
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
                   <span class="theme-icon" id="themeIcon">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</span>
                 </button>
-                <span style="font-size: 14px; font-weight: 600;">Hai, ${esc(this.user.user_name || this.user.name || 'User')}</span>
+                <div style="display: flex; align-items: center; gap: 8px; padding-left: 6px; border-left: 1px solid var(--line);">
+                  <div class="user-avatar-sm" style="width: 28px; height: 28px; font-size: 11px;">
+                    ${userInitials}
+                  </div>
+                  <span id="userName" style="font-size: 13px; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${esc(this.user.user_name || this.user.name || 'User')}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1418,16 +1464,25 @@ const App = window.App = {
             <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 16px; font-size: 13px;">+ Buat Pesanan</button>
           </div>
           <div style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+            <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
+              <colgroup>
+                <col style="width: 140px;">
+                <col style="width: 230px;">
+                <col style="width: 160px;">
+                <col style="width: 85px;">
+                <col style="width: 130px;">
+                <col style="width: 110px;">
+                <col style="width: 110px;">
+              </colgroup>
               <thead>
                 <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
-                  <th style="padding: 10px;">Kode</th>
-                  <th style="padding: 10px;">Pelanggan</th>
-                  <th style="padding: 10px;">Layanan</th>
-                  <th style="padding: 10px;">Berat</th>
-                  <th style="padding: 10px;">Total</th>
-                  <th style="padding: 10px;">Status</th>
-                  <th style="padding: 10px; text-align: right;">Aksi</th>
+                  <th style="padding: 10px 12px;">Kode</th>
+                  <th style="padding: 10px 12px;">Pelanggan</th>
+                  <th style="padding: 10px 12px;">Layanan</th>
+                  <th style="padding: 10px 12px;">Berat</th>
+                  <th style="padding: 10px 12px;">Total</th>
+                  <th style="padding: 10px 12px;">Status</th>
+                  <th style="padding: 10px 12px; text-align: right;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -1449,13 +1504,22 @@ const App = window.App = {
                   }
                   return this._recentOrders.map(o => `
                   <tr style="border-bottom: 1px solid var(--line);">
-                    <td style="padding: 10px; font-weight: 600;">${esc(o.order_code)}</td>
-                    <td style="padding: 10px;">${esc(o.customer_name)}</td>
-                    <td style="padding: 10px;">${esc(o.service_name)}</td>
-                    <td style="padding: 10px;">${esc(o.weight_kg)} kg</td>
-                    <td style="padding: 10px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
-                    <td style="padding: 10px;"><span class="badge status-${esc(o.status)}">${esc(o.status)}</span></td>
-                    <td style="padding: 10px; text-align: right; white-space: nowrap;">
+                    <td style="padding: 10px 12px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</td>
+                    <td style="padding: 10px 12px;">
+                      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
+                          ${(o.customer_name || 'C').slice(0, 2).toUpperCase()}
+                        </div>
+                        <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.customer_name)}">
+                          ${esc(o.customer_name)}
+                        </span>
+                      </div>
+                    </td>
+                    <td style="padding: 10px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.service_name)}">${esc(o.service_name)}</td>
+                    <td style="padding: 10px 12px;">${esc(o.weight_kg)} kg</td>
+                    <td style="padding: 10px 12px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
+                    <td style="padding: 10px 12px;"><span class="badge status-${esc(o.status)}"><span class="badge-dot"></span> ${esc(o.status)}</span></td>
+                    <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
                       <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
                     </td>
                   </tr>
@@ -1546,7 +1610,16 @@ const App = window.App = {
         </div>
 
         <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+          <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <colgroup>
+              <col style="width: 140px;">
+              <col style="width: 220px;">
+              <col style="width: 160px;">
+              <col style="width: 85px;">
+              <col style="width: 130px;">
+              <col style="width: 120px;">
+              <col style="width: 220px;">
+            </colgroup>
             <thead>
               <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                 <th style="padding: 12px 10px;">Kode</th>
@@ -1576,9 +1649,18 @@ const App = window.App = {
                 </tr>
               ` : orders.map(o => `
                 <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
-                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;">${esc(o.order_code)}</td>
-                  <td style="padding: 12px 10px; font-weight: 600;">${esc(o.customer_name)}</td>
-                  <td style="padding: 12px 10px;">${esc(o.service_name)}</td>
+                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</td>
+                  <td style="padding: 12px 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                      <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
+                        ${(o.customer_name || 'C').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.customer_name)}">
+                        ${esc(o.customer_name)}
+                      </span>
+                    </div>
+                  </td>
+                  <td style="padding: 12px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.service_name)}">${esc(o.service_name)}</td>
                   <td style="padding: 12px 10px; font-weight: 500;">${esc(o.weight_kg)} kg</td>
                   <td style="padding: 12px 10px; font-weight: 700; color: var(--text);">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
                   <td style="padding: 12px 10px;">
@@ -1589,7 +1671,7 @@ const App = window.App = {
                         <option value="selesai" ${o.status === 'selesai' ? 'selected' : ''}>Selesai</option>
                         <option value="batal" ${o.status === 'batal' ? 'selected' : ''}>Batal</option>
                       </select>
-                    ` : `<span class="badge status-${esc(o.status)}">${esc(o.status)}</span>`}
+                    ` : `<span class="badge status-${esc(o.status)}"><span class="badge-dot"></span> ${esc(o.status)}</span>`}
                   </td>
                   <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
                     <div class="action-btn-group">
@@ -1675,20 +1757,39 @@ const App = window.App = {
       const customers = data.customers || [];
 
       c.innerHTML = `
-        <div class="card" style="padding: 20px; border-radius: var(--radius-md); overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text);">Direktori Pelanggan</h3>
+            <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">Tercatat ${customers.length} pelanggan terdaftar aktif</div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex: 1; max-width: 380px;">
+            <input type="text" id="custSearchInput" class="input-control" placeholder="🔍 Cari nama, kode, atau no. HP..." style="width: 100%; padding: 8px 14px; font-size: 13px;">
+          </div>
+        </div>
+
+        <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); overflow-x: auto;">
+          <table class="table" id="customersTable" style="width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <colgroup>
+              <col style="width: 130px;">
+              <col style="width: 230px;">
+              <col style="width: 180px;">
+              <col style="width: 200px;">
+              <col style="width: 110px;">
+              <col style="width: 85px;">
+              <col style="width: 130px;">
+            </colgroup>
             <thead>
               <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
-                <th style="padding: 10px;">Kode</th>
-                <th style="padding: 10px;">Nama</th>
-                <th style="padding: 10px;">No. HP</th>
-                <th style="padding: 10px;">Alamat</th>
-                <th style="padding: 10px;">Tag</th>
-                <th style="padding: 10px;">Pesanan</th>
-                <th style="padding: 10px;">Total Belanja</th>
+                <th style="padding: 12px 10px;">Kode</th>
+                <th style="padding: 12px 10px;">Nama</th>
+                <th style="padding: 12px 10px;">Kontak</th>
+                <th style="padding: 12px 10px;">Alamat</th>
+                <th style="padding: 12px 10px;">Status Tag</th>
+                <th style="padding: 12px 10px;">Pesanan</th>
+                <th style="padding: 12px 10px;">Total Belanja</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="customersTableBody">
               ${customers.length === 0 ? `
                 <tr>
                   <td colspan="7" style="padding: 0; border: none;">
@@ -1699,21 +1800,60 @@ const App = window.App = {
                     })}
                   </td>
                 </tr>
-              ` : customers.map(cust => `
-                <tr style="border-bottom: 1px solid var(--line);">
-                  <td style="padding: 10px; font-weight: 600;">${esc(cust.code)}</td>
-                  <td style="padding: 10px;">${esc(cust.full_name)}</td>
-                  <td style="padding: 10px;">${esc(cust.phone || '-')}</td>
-                  <td style="padding: 10px;">${esc(cust.address || '-')}</td>
-                  <td style="padding: 10px;"><span class="badge">${esc(cust.computed_tag || cust.tag)}</span></td>
-                  <td style="padding: 10px;">${esc(cust.orders_count || 0)}</td>
-                  <td style="padding: 10px; font-weight: 700; color: var(--text);">Rp ${Number(cust.total_spent || 0).toLocaleString('id-ID')}</td>
-                </tr>
-              `).join('')}
+              ` : customers.map(cust => {
+                const tag = cust.computed_tag || cust.tag || 'Baru';
+                const tagClass = tag === 'VIP' ? 'status-proses' : (tag === 'Reguler' ? 'status-baru' : 'status-selesai');
+                const rawPhone = String(cust.phone || '').trim();
+                const waPhone = rawPhone.replace(/[^0-9]/g, '');
+                const cleanWa = waPhone.startsWith('0') ? '62' + waPhone.slice(1) : waPhone;
+
+                return `
+                  <tr class="cust-row" data-search="${esc(String(cust.code || '') + ' ' + String(cust.full_name || '') + ' ' + rawPhone).toLowerCase()}" style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
+                    <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(cust.code)}">${esc(cust.code)}</td>
+                    <td style="padding: 12px 10px;">
+                      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <div class="user-avatar-sm" style="width: 28px; height: 28px; font-size: 11px; flex-shrink: 0;">
+                          ${(cust.full_name || 'C').slice(0, 2).toUpperCase()}
+                        </div>
+                        <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(cust.full_name)}">
+                          ${esc(cust.full_name)}
+                        </span>
+                      </div>
+                    </td>
+                    <td style="padding: 12px 10px;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;" title="${esc(rawPhone || '-')}">${esc(rawPhone || '-')}</span>
+                        ${waPhone.length >= 8 ? `
+                          <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-wa" title="Hubungi via WhatsApp">
+                            <span>💬</span> <span>WA</span>
+                          </a>
+                        ` : ''}
+                      </div>
+                    </td>
+                    <td style="padding: 12px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(cust.address || '-')}">${esc(cust.address || '-')}</td>
+                    <td style="padding: 12px 10px;"><span class="badge ${tagClass}"><span class="badge-dot"></span> ${esc(tag)}</span></td>
+                    <td style="padding: 12px 10px; font-weight: 600;">${esc(cust.orders_count || 0)}x</td>
+                    <td style="padding: 12px 10px; font-weight: 700; color: var(--text);">Rp ${Number(cust.total_spent || 0).toLocaleString('id-ID')}</td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>
       `;
+
+      // Live client-side instant search for customer directory
+      const searchInput = document.getElementById('custSearchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const val = e.target.value.toLowerCase().trim();
+          const rows = document.querySelectorAll('.cust-row');
+          rows.forEach(row => {
+            const rowText = row.getAttribute('data-search') || '';
+            row.style.display = rowText.includes(val) ? '' : 'none';
+          });
+        });
+      }
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat pelanggan</div>';
     }
@@ -1756,30 +1896,51 @@ const App = window.App = {
       }
 
       c.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
           <div>
             <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text);">Katalog Layanan & Tarif</h3>
             <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">Tersedia ${services.length} pilihan paket laundry berkualitas</div>
           </div>
-          ${isStaff ? `
-            <button class="btn btn-primary" id="openNewServiceModal" style="padding: 9px 18px; font-size: 13px; font-weight: 600;">+ Tambah Layanan Baru</button>
-          ` : ''}
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="svcSearchInput" class="input-control" placeholder="🔍 Cari layanan..." style="width: 200px; padding: 7px 12px; font-size: 12px;">
+            ${isStaff ? `
+              <button class="btn btn-primary" id="openNewServiceModal" style="padding: 8px 16px; font-size: 13px; font-weight: 600;">+ Tambah Layanan Baru</button>
+            ` : ''}
+          </div>
         </div>
 
-        <div class="service-grid">
-          ${services.map(s => `
-            <div class="service-card glass-panel">
+        <div class="category-tabs" id="svcCategoryTabs">
+          <button class="cat-tab active" data-cat="all">Semua Layanan</button>
+          <button class="cat-tab" data-cat="kiloan">🧺 Kiloan</button>
+          <button class="cat-tab" data-cat="satuan">👔 Satuan</button>
+          <button class="cat-tab" data-cat="express">⚡ Express</button>
+          <button class="cat-tab" data-cat="bed cover">🛏️ Bed Cover</button>
+        </div>
+
+        <div class="service-grid" id="serviceGrid">
+          ${services.map(s => {
+            const nameLower = (s.name || '').toLowerCase();
+            const icon = nameLower.includes('setrika') ? '👔'
+              : (nameLower.includes('dry') ? '🧥'
+              : (nameLower.includes('bed') || nameLower.includes('selimut') ? '🛏️'
+              : (nameLower.includes('express') || nameLower.includes('kilat') ? '⚡' : '🧺')));
+
+            return `
+            <div class="service-card glass-panel svc-item" data-cat="${esc((s.category || 'Reguler').toLowerCase())}" data-name="${esc(nameLower)}">
               <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border); font-family: monospace; font-size: 11px;">${esc(s.code || 'SVC')}</span>
-                  <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}">${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 18px;">${icon}</span>
+                    <span class="badge" style="background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border); font-family: monospace; font-size: 11px;">${esc(s.code || 'SVC')}</span>
+                  </div>
+                  <span class="badge ${s.is_active ? 'status-selesai' : 'status-batal'}"><span class="badge-dot"></span> ${s.is_active ? 'Aktif' : 'Nonaktif'}</span>
                 </div>
-                <h4 style="margin: 0 0 4px; font-size: 17px; font-weight: 700; color: var(--text);">${esc(s.name)}</h4>
-                <div style="display: inline-block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 8px;">${esc(s.category || 'Reguler')}</div>
+                <h4 style="margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(s.name)}">${esc(s.name)}</h4>
+                <div style="display: inline-block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.04em;">${esc(s.category || 'Reguler')}</div>
                 <div class="service-price-tag">
                   Rp ${Number(s.price).toLocaleString('id-ID')} <span class="service-unit">/ ${esc(s.unit || 'kg')}</span>
                 </div>
-                <p style="font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4;">${esc(s.description || 'Proses pengerjaan rapi, bersih dan higienis.')}</p>
+                <p style="font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${esc(s.description || 'Proses pengerjaan rapi, bersih dan higienis.')}</p>
                 <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 16px;">
                   <span>⏱️ Estimasi: <strong>${esc(s.duration_hours || 24)} Jam</strong></span>
                   ${s.badge ? `<span style="background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber-border); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">${esc(s.badge)}</span>` : ''}
@@ -1797,8 +1958,36 @@ const App = window.App = {
                 `}
               </div>
             </div>
-          `).join('')}
-        </div>
+            `;
+          }).join('')}
+        </div>`;
+
+      // Live category tab & search filtering for services
+      const filterServices = () => {
+        const activeTab = document.querySelector('#svcCategoryTabs .cat-tab.active')?.getAttribute('data-cat') || 'all';
+        const searchVal = document.getElementById('svcSearchInput')?.value.toLowerCase().trim() || '';
+        const items = document.querySelectorAll('.svc-item');
+        items.forEach(item => {
+          const itemCat = item.getAttribute('data-cat') || '';
+          const itemName = item.getAttribute('data-name') || '';
+          const matchesCat = activeTab === 'all' || itemCat.includes(activeTab);
+          const matchesSearch = !searchVal || itemName.includes(searchVal);
+          item.style.display = (matchesCat && matchesSearch) ? 'flex' : 'none';
+        });
+      };
+
+      document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          document.querySelectorAll('#svcCategoryTabs .cat-tab').forEach(t => t.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          filterServices();
+        });
+      });
+
+      const svcSearchInput = document.getElementById('svcSearchInput');
+      if (svcSearchInput) {
+        svcSearchInput.addEventListener('input', filterServices);
+      }
 
         <!-- Service Modal -->
         <div id="serviceModal" class="modal-backdrop" style="display: none;">
@@ -1894,7 +2083,17 @@ const App = window.App = {
         </div>
 
         <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); overflow-x: auto;">
-          <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+          <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <colgroup>
+              <col style="width: 130px;">
+              <col style="width: 115px;">
+              <col style="width: 200px;">
+              <col style="width: 200px;">
+              <col style="width: 170px;">
+              <col style="width: 120px;">
+              <col style="width: 140px;">
+              <col style="width: 130px;">
+            </colgroup>
             <thead>
               <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
                 <th style="padding: 12px 10px;">Kode Tugas</th>
@@ -1904,12 +2103,13 @@ const App = window.App = {
                 <th style="padding: 12px 10px;">Kurir</th>
                 <th style="padding: 12px 10px;">Jadwal</th>
                 <th style="padding: 12px 10px;">Status</th>
+                <th style="padding: 12px 10px; text-align: right;">Aksi Cepat</th>
               </tr>
             </thead>
             <tbody>
               ${tasks.length === 0 ? `
                 <tr>
-                  <td colspan="7" style="padding: 0; border: none;">
+                  <td colspan="8" style="padding: 0; border: none;">
                     ${this.renderEmptyState({
                       icon: '🚚',
                       title: 'Belum Ada Tugas Kurir',
@@ -1918,17 +2118,30 @@ const App = window.App = {
                     })}
                   </td>
                 </tr>
-              ` : tasks.map(t => `
+              ` : tasks.map(t => {
+                const rawPhone = String(t.phone || '').trim();
+                const waPhone = rawPhone.replace(/[^0-9]/g, '');
+                const cleanWa = waPhone.startsWith('0') ? '62' + waPhone.slice(1) : waPhone;
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.address || '')}`;
+
+                return `
                 <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
-                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;">${esc(t.task_code)}</td>
+                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(t.task_code)}">${esc(t.task_code)}</td>
                   <td style="padding: 12px 10px;">
-                    <span class="badge ${t.type === 'pickup' ? 'status-baru' : 'status-selesai'}">${t.type === 'pickup' ? '🧺 PICKUP' : '🚚 DELIVERY'}</span>
+                    <span class="badge ${t.type === 'pickup' ? 'status-baru' : 'status-selesai'}"><span class="badge-dot"></span> ${t.type === 'pickup' ? 'PICKUP' : 'DELIVERY'}</span>
                   </td>
                   <td style="padding: 12px 10px;">
-                    <div style="font-weight: 600;">${esc(t.customer_name)}</div>
-                    <div style="font-size: 12px; color: var(--muted);">${esc(t.phone || '-')}</div>
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                      <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
+                        ${(t.customer_name || 'C').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div style="min-width: 0; overflow: hidden;">
+                        <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(t.customer_name)}">${esc(t.customer_name)}</div>
+                        <div style="font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(t.phone || '-')}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td style="padding: 12px 10px; max-width: 220px; word-break: break-word;">${esc(t.address || '-')}</td>
+                  <td style="padding: 12px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(t.address || '-')}">${esc(t.address || '-')}</td>
                   <td style="padding: 12px 10px;">
                     ${isStaff && couriers.length > 0 ? `
                       <select class="task-courier-select input-control" data-id="${esc(t.id)}" style="padding: 4px 8px; font-size: 12px;">
@@ -1938,8 +2151,8 @@ const App = window.App = {
                     ` : `<span>${esc(t.courier_name || 'Belum ditugaskan')}</span>`}
                   </td>
                   <td style="padding: 12px 10px;">
-                    <div style="font-weight: 500;">${esc(t.schedule_date)}</div>
-                    <div style="font-size: 12px; color: var(--muted);">${esc(String(t.start_time || '').slice(0, 5))} WIB</div>
+                    <div style="font-weight: 600;">${esc(t.schedule_date)}</div>
+                    <div style="font-size: 11px; color: var(--muted);">${esc(String(t.start_time || '').slice(0, 5))} WIB</div>
                   </td>
                   <td style="padding: 12px 10px;">
                     ${isStaff ? `
@@ -1950,10 +2163,21 @@ const App = window.App = {
                         <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>Selesai</option>
                         <option value="cancelled" ${t.status === 'cancelled' ? 'selected' : ''}>Dibatalkan</option>
                       </select>
-                    ` : `<span class="badge status-${esc(t.status)}">${esc(t.status)}</span>`}
+                    ` : `<span class="badge status-${esc(t.status)}"><span class="badge-dot"></span> ${esc(t.status)}</span>`}
+                  </td>
+                  <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
+                    <div style="display: inline-flex; gap: 4px; align-items: center;">
+                      ${waPhone.length >= 8 ? `
+                        <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-wa" title="Chat Pelanggan di WhatsApp">💬 WA</a>
+                      ` : ''}
+                      ${t.address ? `
+                        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="btn-map" title="Buka Rute di Google Maps">🗺️ Peta</a>
+                      ` : ''}
+                    </div>
                   </td>
                 </tr>
-              `).join('')}
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>
