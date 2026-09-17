@@ -126,6 +126,30 @@
       if (box) box.style.display = 'none';
     }
 
+    // Copy + transient toast (non-blocking, replaces alert())
+    function copyText(text, label) {
+      const done = () => {
+        showAlert((label || 'Teks') + ' disalin!', 'success');
+        clearTimeout(copyText._t);
+        copyText._t = setTimeout(hideAlert, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+      } else {
+        fallbackCopy(text, done);
+      }
+    }
+    function fallbackCopy(text, done) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      done();
+    }
+
     function setMethod(method) {
       selectedMethod = method;
       document.querySelectorAll('.method-pill').forEach(el => {
@@ -151,11 +175,11 @@
             <div style="font-weight: 700; margin-bottom: 6px; color: #0f172a;">Transfer Rekening Bank Resmi:</div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <span>Bank BCA: <strong>8901-234-567</strong></span>
-              <button type="button" onclick="navigator.clipboard.writeText('8901234567');alert('Nomor rekening BCA disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+              <button type="button" onclick="copyText('8901234567','Nomor rekening BCA');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span>Bank Mandiri: <strong>137-00-1234567-8</strong></span>
-              <button type="button" onclick="navigator.clipboard.writeText('1370012345678');alert('Nomor rekening Mandiri disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+              <button type="button" onclick="copyText('1370012345678','Nomor rekening Mandiri');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
             </div>
             <div style="font-size: 11px; color: #64748b; margin-top: 6px;">a.n. PT Embun Laundry Indonesia</div>
           </div>
@@ -166,7 +190,7 @@
             <div style="font-weight: 700; margin-bottom: 6px; color: #0f172a;">Nomor E-Wallet ${esc(method)}:</div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span>0812-3456-7890 (Embun Laundry)</span>
-              <button type="button" onclick="navigator.clipboard.writeText('081234567890');alert('Nomor e-wallet disalin!');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
+              <button type="button" onclick="copyText('081234567890','Nomor e-wallet');" style="font-size: 11px; padding: 2px 6px; cursor: pointer; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">Salin</button>
             </div>
           </div>
         `;
