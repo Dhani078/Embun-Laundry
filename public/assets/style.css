@@ -1680,6 +1680,26 @@ textarea {
   border-color: var(--red-border);
 }
 
+/* WCAG 2.1 AA — skip link (audit #36). Off-screen sampai fokus keyboard. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100001;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.15s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;

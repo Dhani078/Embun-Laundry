@@ -1,5 +1,5 @@
-// HTML escape helper: use global esc() from /assets/escape.js (loaded first;
-// it also maps null/undefined -> '' instead of printing "null").
+// HTML escape helper: use global esc() from /assets/escape.js or fallback
+const esc = typeof window !== 'undefined' && window.esc ? window.esc : s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 // public/app.js - Embun Laundry Single Page App
 const App = window.App = {
@@ -8,6 +8,9 @@ const App = window.App = {
 
   async init() {
     this.initTheme();
+    if (typeof document !== 'undefined' && !document.getElementById('mainContent')) {
+      return;
+    }
     this.initRipple();
     this.initMobileSidebar();
     this.setupContentObserver();
@@ -298,11 +301,55 @@ const App = window.App = {
     `;
   },
 
+  // Rentang tanggal cepat untuk filter pesanan (audit #17).
+  // Pakai tanggal LOKAL (bukan toISOString = UTC) — B12: zona operasional
+  // Asia/Jakarta, toISOString menggeser tanggal 7 jam di WIB.
+  _presetStart(key) {
+    const d = new Date();
+    const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+    if (key === 'today') return iso(d);
+    if (key === '7d') { const x = new Date(d); x.setDate(x.getDate() - 6); return iso(x); }
+    if (key === 'month') return iso(new Date(d.getFullYear(), d.getMonth(), 1));
+    return '';
+  },
+
+  // Undo toast: tampilkan aksi + tombol "Batal" selama 5 detik.
+  // onUndo dipanggil jika user menekan sebelum habis.
+  undoToast(msg, onUndo) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      container.setAttribute('role', 'status');
+      container.setAttribute('aria-live', 'polite');
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    el.className = 'toast-item toast-info';
+    let left = 5;
+    el.innerHTML = `<span>ℹ️</span><span>${esc(msg)}</span><button type="button"
+      style="margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--text);
+      padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">Batal (<span class="_undoLeft">${left}</span>)</button>`;
+    container.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 10);
+    const tick = setInterval(() => {
+      left -= 1;
+      const n = el.querySelector('._undoLeft');
+      if (n) n.textContent = Math.max(0, left);
+      if (left <= 0) clearInterval(tick);
+    }, 1000);
+    const done = () => { clearInterval(tick); el.classList.remove('show'); setTimeout(() => el.remove(), 350); };
+    el.querySelector('button').onclick = () => { done(); try { onUndo(); } catch (e) {} };
+    setTimeout(done, 5200);
+  },
+
   toast(msg, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
       container = document.createElement('div');
       container.className = 'toast-container';
+      container.setAttribute('role', 'status');
+      container.setAttribute('aria-live', 'polite');
       document.body.appendChild(container);
     }
     const toast = document.createElement('div');
@@ -339,7 +386,9 @@ const App = window.App = {
       </div>`;
       document.body.appendChild(el);
       const cleanup = ok => { el.remove(); resolve(ok); };
-      el.querySelector('#_confirmYes').onclick = () => cleanup(true);
+      // haptic feedback on mobile for confirm dialogs (delete/pay/copy actions)
+      if (navigator.vibrate) navigator.vibrate(10);
+      el.querySelector('#_confirmYes').onclick = () => { if (navigator.vibrate) navigator.vibrate(10); cleanup(true); };
       el.querySelector('#_confirmNo').onclick  = () => cleanup(false);
       el.addEventListener('click', e => { if (e.target === el) cleanup(false); });
     });
@@ -398,7 +447,7 @@ const App = window.App = {
 
     const qrSvg = (typeof QRCode !== 'undefined' && QRCode.svg)
       ? QRCode.svg(String(o.order_code || o.id || ''), { level: 'M', scale: 4, border: 2 })
-      : '';
+      : `<svg width="64" height="64" viewBox="0 0 64 64" style="display:block;margin:0 auto;"><rect width="64" height="64" fill="#fff"/><path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/></svg>`;
 
     modal.innerHTML = `
       <div class="invoice-paper ${mode === 'a4' ? 'a4-mode' : 'thermal-mode'}" style="padding: 24px; position: relative; margin: 20px auto;">
@@ -876,6 +925,16 @@ const App = window.App = {
       if (e.target.id === 'btnResetFilterOrders') {
         this.renderPesanan({});
       }
+      const presetPill = e.target.closest('.preset-pill');
+      if (presetPill) {
+        const key = presetPill.getAttribute('data-preset');
+        this.renderPesanan({
+          start: this._presetStart(key),
+          end: document.getElementById('filterEnd')?.value || this._presetStart('today'),
+          status: document.getElementById('filterStatus')?.value || '',
+          q: document.getElementById('ordSearch')?.value || ''
+        });
+      }
       if (e.target.id === 'openNewOrderModal') {
         const modal = document.getElementById('orderModal');
         if (modal) modal.style.display = 'grid';
@@ -891,13 +950,40 @@ const App = window.App = {
       const btnDel = e.target.closest('.btn-del');
       if (btnDel) {
         if (!await this.confirm('Hapus pesanan ini?')) return;
-        const id = btnDel.getAttribute('data-id');
-        await fetch('/api/orders', {
+        const id = Number(btnDel.getAttribute('data-id'));
+        // snapshot SEBELUM delete supaya bisa di-undo (relasi payments/
+        // pickup_delivery/voucher_claims tetap konsisten — id & kode asli)
+        const snap = (this._orders || []).find(o => Number(o.id) === id);
+        const r = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'delete_order', id })
         });
+        const data = await r.json().catch(() => ({}));
+        if (!data.ok) { this.toast(data.msg || 'Gagal menghapus', 'error'); return; }
         this.renderPesanan();
+        this.undoToast('Pesanan dihapus', async () => {
+          if (!snap) { this.toast('Tidak dapat memulihkan', 'error'); return; }
+          const rr = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'restore_order',
+              id: snap.id, order_code: snap.order_code,
+              user_id: snap.user_id || 0,
+              customer_name: snap.customer_name, customer_phone: snap.customer_phone || '',
+              customer_address: snap.customer_address || '',
+              service_id: snap.service_id, weight_kg: snap.weight_kg,
+              price_per_kg: snap.price_per_kg, discount: snap.discount || 0,
+              total_amount: snap.total_amount, status: snap.status,
+              created_at: snap.created_at, finished_at: snap.finished_at || ''
+            })
+          });
+          const dd = await rr.json().catch(() => ({}));
+          if (dd.ok) { this.toast('Pesanan dipulihkan', 'success'); }
+          else { this.toast(dd.msg || 'Gagal memulihkan', 'error'); }
+          this.renderPesanan();
+        });
       }
 
     });
@@ -1240,6 +1326,11 @@ const App = window.App = {
 
       c.innerHTML = `
         <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+          <div class="presets" role="group" aria-label="Rentang tanggal cepat" style="display:flex;gap:6px;flex-wrap:wrap">
+            ${[['Hari Ini','today'],['7 Hari','7d'],['Bulan Ini','month']].map(([lbl,key]) =>
+              `<button class="btn preset-pill" data-preset="${key}" style="padding:8px 14px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:${(start||'')+'' === _presetStart(key) ? 'var(--blue)' : 'transparent'};color:${(start||'')+'' === _presetStart(key) ? '#fff' : 'var(--text)'}">${lbl}</button>`
+            ).join('')}
+          </div>
           <input type="date" id="filterStart" value="${esc(start)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
           <span style="color: var(--muted); font-size: 13px;">s/d</span>
           <input type="date" id="filterEnd" value="${esc(end)}" style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 13px;">
