@@ -2,6 +2,20 @@
 
 Riwayat tick (append-only).
 
+
+---
+## Sesi manual — 2026-09-17 (chat, bukan cron)
+
+7 commit f5233d2..a25ed07 (branch main, ter-push GitHub). app.js 2556→2398 baris.
+
+- **QR code FIX TOTAL** (4f47b01) — generator tangan dibuang (cv2 decode 0/3, matrix diff 140/625, akar tak terisolasi walau RS/formatBits/TABLE/bitStream terverifikasi benar). Diganti **qrcodejs** (Arase, public domain, 19.9KB) di-**host lokal** (bukan CDN — privasi order, service-worker friendly) + wrapper SVG 75 baris. API publik dipertahankan: QRCode.encode(text,level) -> {size,matrix}, QRCode.svg(text,opts). **Verifikasi: cv2 decode 3/3 exact match.**
+- **Audit UI/UX** (deleg_598c2952 -> UI_UX_AUDIT.md 29.9KB). Semua 6 item kritis dikerjakan: badge status (baf85ac), spinner+btn-sm (243f826), lupa sandi 404 (baf85ac), dedupe esc() (6e2f5ee), 6 token CSS tak terdefinisi (6e2f5ee), hapus 158 baris dead-code promo (a25ed07 — 15/15 elemen 0 markup refs, savePromo live utuh).
+- **Fitur**: KPI count-up + copy toast (573aa30), SPA back/forward + Esc tutup modal + confirm per-aksi + a11y (32bf433).
+- **Ghost CSS ~60% style.css TIDAK dikerjakan** — 96 kelas "mati" terdeteksi tapi regex miss concatenation dinamis (status-${s}, skeleton classList). Risiko break UI > manfaat. Meninggalkan.
+- **Folder disatukan** dhani-laundry -> embun-laundry (dhani-laundry terbukti superset via git ls-files diff kosong; embun-laundry stale dihapus). Antigravity IDE + PowerShell kunci cwd -> kill psutil -> rename 2-tahap via dhani_temp. Cron 6644cfdf9118 workdir diupdate.
+- **Subagent QR gagal 2x**: deleg_cd816787 (71 call, 30m) klaim "placeFinder salah" — **TIDAK benar**, reference pakai set {0,6}. deleg_ef3527f0 (44 call, 21m) interrupted. QR fix tanpa subagent.
+- **BLOCKER manusia (bukan kode)**: (1) secret CF belum diset -> 10 API 500 "Database not configured"; (2) password TiDB Error 1045 Access denied padahal awalnya valid — di-rotate sisi TiDB; (3) wrangler deploy butuh login CF. Detail di AGENT_STATE.md "Blokir".
+
 ---
 
 ## Tick 50 — 2026-09-16T14:18:00+08:00
@@ -1483,3 +1497,5 @@ semua, jadi lanjut ke task open berikutnya di backlog.
 
 **Status**: C9 `[x]` `7541ece`. Fase C 11/11 kecuali C10 (P4). Backlog sisa:
 C10 (P4, multi-bahasa), E4 (P4, minifikasi build). Tidak ada P0/P1/P2 lagi.
+
+---

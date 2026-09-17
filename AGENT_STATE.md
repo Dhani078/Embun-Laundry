@@ -273,7 +273,12 @@ Model: atria/Atria-Dawn-Preview
     - Frontend Pelacakan Publik `public/track.html`: Menambahkan tombol "🧾 Cetak / Unduh Invoice" dan dialog modal invoice interaktif yang memungkinkan pelanggan mencetak nota langsung tanpa login.
     - Stylesheet `public/assets/style.css` & `public/track.html`: Aturan cetak vektor `@media print` lengkap, menyembunyikan elemen antarmuka (topbar, sidebar, modal overlay) dan memformat kertas cetak secara presisi (80mm untuk struk thermal dan 100%/190mm untuk invoice formal A4).
     - Sanitasi XSS: Seluruh data pelanggan (`customer_name`, `order_code`, `service_name`) dilindungi secara ketat melalui fungsi escaping (`esc()` / `escapeHtml()`).
-    - Vektor QR Code Native: Menggunakan vector SVG inline murni (2KB) tanpa library QR pihak ketiga yang berat.
+    - Vektor QR Code: Menggunakan **qrcodejs** (Kazuhiko Arase, public domain,
+      19.9KB) yang di-**host lokal** (`public/assets/qrcode-lib.js`), dibungkus
+      wrapper SVG 75 baris (`public/assets/qrcode.js`). BUKAN CDN — tidak ada
+      request eksternal, tetap service-worker friendly. Terverifikasi:
+      cv2.QRCodeDetector decode 3/3 exact match. Commit `4f47b01`.
+      (Sebelumnya generator tangan 2KB — salah, tak ter-decode, dibuang.)
   - **Toast Notification & Dialog Modern (Task D5)**:
     - Menggantikan 34 kemunculan dialog pemblokir browser bawaan (`alert()` / `confirm()`) dengan sistem toast non-blocking `App.toast(msg, type)` dan konfirmasi modal `App.confirm(msg)`.
     - Animasi CSS smooth fade-in/fade-out dengan varian status (success, error, warning, info).
@@ -910,14 +915,30 @@ Model: atria/Atria-Dawn-Preview
   - Alat audit ikut ter-commit: `tools/audit_api_guard.py`,
     `tools/audit_throw_sites.py`, `tools/probe_api.py`
 
-## Blokir
+## Blokir (update 2026-09-17)
 
-- **A6** (P0) — secret `TIDB_DATABASE_URL` + `JWT_SECRET` masih plaintext di
-  `wrangler.toml`. Butuh **Cloudflare API token** untuk `wrangler secret put`.
-  - Butuh: `CLOUDFLARE_API_TOKEN` dengan izin Workers Secrets:Edit
-  - Atau: manusia jalankan `npx wrangler secret put TIDB_DATABASE_URL` manual
-  - Sejak: 2026-09-08T21:42
-  - Task terdampak: A6, B3 (sebagian)
+Semua blocker lama **TIDAK RELEVAN LAGI**:
+
+- **A6 SELESAI** `f51efc0` — secret sudah pindah dari `wrangler.toml` ke
+  CF secret store. Lihat detail di AGENT_BACKLOG.md "Sesi 2026-09-17".
+
+Blocker sekarang **butuh manusia, bukan kode**:
+
+1. **Secret CF belum diset di production** → **10 API 500**
+   `{"ok":false,"msg":"Database not configured"}`. Kode BENAR
+   (`functions/_db.js:11` baca `env.TIDB_DATABASE_URL`).
+   CF Dashboard → Workers & Pages → `embun-laundry` → Settings →
+   Variables and Secrets → Add (TIDB_DATABASE_URL + JWT_SECRET) →
+   Save and Deploy. Sejak: 2026-09-17.
+2. **Password TiDB DITOLAK** —
+   `Error 1045 (28000): Access denied for user 'nkLgGwz1mobWK3U.root'@'10.0.114.45'`.
+   Awalnya valid (19 services + 10 tabel terbaca di sesi ini), lalu ditolak
+   beberapa menit kemudian. Password di-rotate/expired sisi TiDB.
+   **User cek TiDB Cloud console.** Sejak: 2026-09-17.
+3. **Deploy butuh login CF** — `npx wrangler deploy` gagal: not logged in.
+   `wrangler whoami` = belum autentikasi. Push GitHub sukses (`main` @
+   `a25ed07`), tapi Workers tidak auto-deploy. Butuh `CLOUDFLARE_API_TOKEN`
+   atau `npx wrangler login` interaktif.
 - **Catatan mitigasi**: JWT sudah baca `env.JWT_SECRET` dengan fallback;
   setelah secret diset di produksi, fallback otomatis tidak terpakai.
 
