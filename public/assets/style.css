@@ -333,6 +333,7 @@ a {
 
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0 8px;
   margin-top: -8px;
@@ -346,6 +347,9 @@ a {
   color: var(--muted);
   padding: 10px 14px;
   border: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table td {
@@ -356,6 +360,9 @@ a {
   font-size: 0.925rem;
   vertical-align: middle;
   transition: all 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tr {
@@ -2439,5 +2446,128 @@ body.sidebar-locked {
   background: var(--red);
   color: #ffffff;
 }
+
+/* SaaS Table Column Helpers */
+.col-code { width: 140px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; color: var(--blue); }
+.col-customer { width: 220px; }
+.col-phone { width: 130px; }
+.col-service { width: 160px; }
+.col-weight { width: 85px; }
+.col-amount { width: 130px; font-weight: 700; }
+.col-status { width: 120px; }
+.col-courier { width: 150px; }
+.col-date { width: 120px; }
+.col-actions { width: 190px; text-align: right; }
+.cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* User Avatar Small */
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--blue-border);
+}
+
+/* Category Filter Tabs */
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 20px;
+}
+
+.cat-tab {
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cat-tab:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-color: var(--blue-border);
+}
+
+.cat-tab.active {
+  background: var(--blue);
+  color: #ffffff;
+  border-color: var(--blue);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+/* WhatsApp & Maps buttons */
+.btn-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-wa:hover {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  transform: translateY(-1px);
+}
+
+.btn-map {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--blue);
+  border: 1px solid var(--blue-border);
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-map:hover {
+  background: var(--blue);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* Sidebar section divider */
+.nav-section-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  opacity: 0.75;
+  padding: 14px 14px 6px;
+}
+
 
 
