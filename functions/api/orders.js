@@ -351,6 +351,48 @@ export async function onRequest({ request, env }) {
         return jsonResponse({ ok: true });
       }
 
+      // B-undo — restore pesanan yang baru saja dihapus (frontend undo toast).
+      // Snapshot dikirim kembali dari client (diambil dari this._orders SEBELUM
+      // delete). Insert ulang dengan id & order_code asli agar relasi (payments,
+      // pickup_delivery, voucher_claims) tetap konsisten.
+      if (act === 'restore_order') {
+        const v = validateOr400(body, {
+          id: { type: 'int', required: true, min: 1, label: 'ID' },
+          order_code: { type: 'str', max: 40, required: true, label: 'Kode pesanan' },
+          customer_name: COL_SPEC.orderCustomerName,
+          customer_phone: COL_SPEC.orderCustomerPhone,
+          customer_address: COL_SPEC.orderCustomerAddress,
+          service_id: { type: 'int', min: 1, label: 'Layanan' },
+          weight_kg: { type: 'int', min: 1, max: 1000, default: 1, label: 'Berat (kg)' },
+          price_per_kg: { type: 'int', min: 0, max: 10000000, default: 0, label: 'Harga per kg' },
+          discount: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Diskon' },
+          total_amount: { type: 'int', min: 0, max: 100000000, default: 0, label: 'Total' },
+          status: { type: 'enum', values: STATUS_ORDER, default: 'baru', label: 'Status' },
+          user_id: { type: 'int', min: 0, label: 'User ID' },
+          created_at: { type: 'str', max: 32, label: 'Dibuat' },
+          finished_at: { type: 'str', max: 32, label: 'Selesai' }
+        });
+        if (!v.ok) return v.response;
+        const d = v.data;
+
+        // Hanya staff atau pemilik yang boleh restore (sama dengan delete_order).
+        if (!isStaff) {
+          const existing = await db.query('SELECT id FROM orders WHERE id = ?', [d.id]);
+          if (existing.length > 0) return jsonResponse({ ok: false, msg: 'Tidak diizinkan' }, 403);
+        }
+
+        await db.execute(
+          `INSERT INTO orders
+           (id, order_code, user_id, customer_name, customer_phone, customer_address,
+            service_id, weight_kg, price_per_kg, discount, total_amount, status, created_at, finished_at)
+           VALUES (?, ?, NULLIF(?, 0), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''))`,
+          [d.id, d.order_code, d.user_id || 0, d.customer_name, d.customer_phone || '',
+           d.customer_address || '', d.service_id, d.weight_kg, d.price_per_kg, d.discount,
+           d.total_amount, d.status, d.created_at, d.finished_at || '']
+        );
+        return jsonResponse({ ok: true });
+      }
+
       return jsonResponse({ ok: false, msg: 'Unknown action' }, 400);
     } catch (e) {
       return jsonResponse({ ok: false, msg: SERVER_ERROR }, 500);

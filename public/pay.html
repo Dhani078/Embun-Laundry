@@ -68,6 +68,7 @@
   </style>
 </head>
 <body style="background: var(--bg); color: var(--text); padding: 20px; display: grid; place-items: center; min-height: 100vh; margin: 0; font-family: var(--font-sans, system-ui, sans-serif);">
+  <div class="confetti" aria-hidden="true"></div>
   <div class="card" style="width: 100%; max-width: 480px; background: var(--card); border-radius: 16px; border: 1px solid var(--line); padding: 28px; box-shadow: var(--shadow); box-sizing: border-box;">
     <div style="position: relative; text-align: center; margin-bottom: 20px;">
       <button id="themeToggleBtn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)" style="position: absolute; right: 0; top: 0; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; font-size: 16px;">
@@ -101,6 +102,30 @@
     let currentOrder = null;
     let selectedMethod = 'QRIS';
     let base64Proof = null;
+
+    function burstConfetti() {
+      const host = document.querySelector('.confetti');
+      if (!host) return;
+      const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < 60; i++) {
+        const p = document.createElement('span');
+        p.className = 'piece';
+        p.style.left = (Math.random() * 100).toFixed(2) + 'vw';
+        p.style.background = colors[i % colors.length];
+        p.style.width = (6 + Math.random() * 6).toFixed(1) + 'px';
+        p.style.height = (8 + Math.random() * 8).toFixed(1) + 'px';
+        p.style.borderRadius = '2px';
+        p.style.setProperty('--x', ((Math.random() - 0.5) * 160).toFixed(1) + 'px');
+        p.style.setProperty('--r', (Math.random() * 360).toFixed(1) + 'deg');
+        p.style.setProperty('--rr', (360 + Math.random() * 720).toFixed(1) + 'deg');
+        p.style.setProperty('--t', (1100 + Math.random() * 1400).toFixed(0) + 'ms');
+        p.style.animationDelay = (Math.random() * 250).toFixed(0) + 'ms';
+        frag.appendChild(p);
+      }
+      host.appendChild(frag);
+      setTimeout(() => { host.textContent = ''; }, 3400);
+    }
 
     function showAlert(msg, type = 'error') {
       const box = document.getElementById('payAlert');
@@ -322,6 +347,10 @@
 
         // Sukses
         showAlert('Pembayaran berhasil dicatat dan diverifikasi!', 'success');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches === false) {
+          burstConfetti();
+          if (navigator.vibrate) navigator.vibrate(30);
+        }
         document.getElementById('payContent').innerHTML = `
           <div style="text-align: center; padding: 24px 10px;">
             <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
