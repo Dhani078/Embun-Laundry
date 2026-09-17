@@ -179,6 +179,30 @@ const App = window.App = {
     mo.observe(c, { childList: true, subtree: false });
   },
 
+  animateKpis(rootEl) {
+    const root = rootEl || (typeof document !== 'undefined' ? document.getElementById('mainContent') : null);
+    if (!root || typeof window === 'undefined') return;
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    root.querySelectorAll('.kpi-value').forEach(el => {
+      const target = Number(el.getAttribute('data-count') || 0);
+      if (!isFinite(target)) return;
+      const cur = el.getAttribute('data-currency') === '1';
+      const suffix = el.querySelector('span') ? ' <span style="font-size:14px;font-weight:600;color:var(--muted)">order</span>' : '';
+      const fmt = v => cur ? 'Rp ' + Math.round(v).toLocaleString('id-ID') : Math.round(v).toLocaleString('id-ID') + suffix;
+      if (prefersReduced) { el.innerHTML = fmt(target); return; }
+      const dur = 700;
+      const start = performance.now();
+      const step = now => {
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.innerHTML = fmt(target * eased);
+        if (p < 1) requestAnimationFrame(step);
+        else el.innerHTML = fmt(target);
+      };
+      requestAnimationFrame(step);
+    });
+  },
+
   initScrollReveal(rootEl = (typeof document !== 'undefined' ? document.getElementById('mainContent') : null)) {
     if (!rootEl || typeof window === 'undefined' || typeof document === 'undefined') return;
     const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1223,6 +1247,7 @@ const App = window.App = {
       else if (page === 'profile') this.renderProfile();
       else this.renderDashboard();
       this.initScrollReveal();
+      this.animateKpis();
     } catch (e) {
       this.renderError(e && e.message ? e.message : String(e));
     }
@@ -2312,22 +2337,22 @@ const App = window.App = {
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
           <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
             <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Omset</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px;">Rp ${Number(kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div class="kpi-value" data-count="${Number(kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
             <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Seluruh pendapatan kotor</div>
           </div>
           <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--blue);">
             <div style="font-size: 12px; color: var(--blue); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kas Terbayar</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--blue); margin-top: 4px;">Rp ${Number(totalPaid || kpi.rev || 0).toLocaleString('id-ID')}</div>
+            <div class="kpi-value" data-count="${Number(totalPaid || kpi.rev || 0)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--blue); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
             <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Pembayaran lunas diterima</div>
           </div>
           <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md); border-left: 4px solid var(--amber);">
             <div style="font-size: 12px; color: var(--amber); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Piutang / Belum Lunas</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--amber); margin-top: 4px;">Rp ${Number(totalUnpaid).toLocaleString('id-ID')}</div>
+            <div class="kpi-value" data-count="${Number(totalUnpaid)}" data-currency="1" data-lang="id" style="font-size: 22px; font-weight: 800; color: var(--amber); margin-top: 4px; font-variant-numeric: tabular-nums;">Rp 0</div>
             <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Sisa tagihan pelanggan</div>
           </div>
           <div class="card" style="padding: 16px 18px; border-radius: var(--radius-md);">
-            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order & Bobot</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px;">${kpi.ord || 0} <span style="font-size: 14px; font-weight: 600; color: var(--muted);">order</span></div>
+            <div style="font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Order &amp; Bobot</div>
+            <div class="kpi-value" data-count="${Number(kpi.ord || 0)}" style="font-size: 22px; font-weight: 800; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums;">0 <span style="font-size: 14px; font-weight: 600; color: var(--muted);">order</span></div>
             <div style="font-size: 11px; color: var(--green); font-weight: 600; margin-top: 2px;">Rata-rata: ${kpi.avg_wt || 0} kg/order</div>
           </div>
         </div>
