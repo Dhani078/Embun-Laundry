@@ -20,6 +20,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci || npm install
 
+      - name: Run Verification Tests & Asset Build
+        run: |
+          npm test
+          npm run build
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

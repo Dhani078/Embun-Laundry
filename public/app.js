@@ -8,6 +8,7 @@ const App = window.App = {
 
   async init() {
     this.initTheme();
+    this.initLang();
     if (typeof document !== 'undefined' && !document.getElementById('mainContent')) {
       return;
     }
@@ -62,6 +63,35 @@ const App = window.App = {
     icons.forEach(el => {
       el.textContent = isDark ? '☀️' : '🌙';
     });
+  },
+
+  // C10: Multi-bahasa (ID/EN) sederhana
+  initLang() {
+    let lang = 'id';
+    try {
+      lang = localStorage.getItem('embun_lang') || 'id';
+    } catch (e) {}
+    this.applyLang(lang);
+  },
+
+  applyLang(lang) {
+    this.lang = lang;
+    try { localStorage.setItem('embun_lang', lang); } catch (e) {}
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', lang);
+      const labels = document.querySelectorAll('#langLabel, .lang-label');
+      labels.forEach(el => {
+        el.textContent = lang === 'id' ? '🌐 EN' : '🌐 ID';
+      });
+    }
+  },
+
+  toggleLang() {
+    const next = this.lang === 'id' ? 'en' : 'id';
+    this.applyLang(next);
+    if (typeof this.renderPage === 'function' && this.currentPage) {
+      this.renderPage(this.currentPage);
+    }
   },
 
   // D6: Micro-interaction ripple feedback on buttons
@@ -629,6 +659,11 @@ const App = window.App = {
         e.preventDefault();
         this.toggleTheme();
       }
+      const langToggle = e.target.closest('#langToggleBtn, .lang-toggle-btn');
+      if (langToggle) {
+        e.preventDefault();
+        this.toggleLang();
+      }
     });
   },
 
@@ -903,6 +938,9 @@ const App = window.App = {
                     <span>+</span> <span>Pesanan Baru</span>
                   </button>
                 ` : ''}
+                <button id="langToggleBtn" class="lang-toggle-btn btn-ghost" type="button" aria-label="Ganti Bahasa" title="Ganti Bahasa / Switch Language" style="padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-card); color: var(--text-main); cursor: pointer;">
+                  <span id="langLabel">${this.lang === 'en' ? '🌐 ID' : '🌐 EN'}</span>
+                </button>
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
                   <span class="theme-icon" id="themeIcon">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</span>
                 </button>
