@@ -472,8 +472,8 @@ bundel valid sebelum push.
 | C6 | Riwayat order pelanggan + filter tanggal | P2 | ☑ |
 | C7 | Manajemen voucher & promo (admin) | P2 | ☑ |
 | C8 | Laporan bulanan dengan chart (Chart.js inline atau SVG manual) | P2 | ☑ |
-| C9 | Mode offline: service worker untuk caching dasar | P3 | ☐ |
-| C10 | Multi-bahasa (ID/EN) sederhana | P4 | ☐ |
+| C9 | Mode offline: service worker untuk caching dasar | P3 | ☑ |
+| C10 | Multi-bahasa (ID/EN) sederhana | P4 | ☑ |
 
 ### FASE D — Desain & UX (P3)
 
@@ -496,8 +496,8 @@ bundel valid sebelum push.
 | E1 | Cache response `/api/services` di edge (KV atau Cache API, TTL 5m) | P3 | ☑ |
 | E2 | Lazy load gambar non-kritis | P3 | ☑ |
 | E3 | Preconnect/preload font kritis | P3 | ☑ |
-| E4 | Minifikasi CSS/JS saat build (jika ada pipeline) | P4 | ☐ |
-| E5 | Logging terstruktur ke `console` dengan level (dev only) | P3 | ☐ |
+| E4 | Minifikasi CSS/JS saat build (jika ada pipeline) | P4 | ☑ |
+| E5 | Logging terstruktur ke `console` dengan level (dev only) | P3 | ☑ |
 | E6 | Error boundary global di SPA | P3 | ☑ |
 
 ### FASE F — Dokumentasi (P4)

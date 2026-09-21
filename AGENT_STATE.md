@@ -49,11 +49,19 @@ Model: atria/Atria-Dawn-Preview
 ## Task aktif
 
 - ID: —
-- Judul: Tidak ada task P0/P1/P2 tersisa (Fase A–F tuntas). Sisa: C10 (P4), E4 (P4).
-- Fase: idle
+- Judul: SEMUA TASK FASE 0 s/d FASE F 100% TUNTAS. Zero pending backlog tasks.
+- Fase: complete
 - Mulai: —
 
 ## Task selesai
+
+- **C10 & E4** (Fase C & E) — Multi-bahasa ID/EN Sederhana & Minifikasi Asset Build Pipeline (P4) —
+  - `public/index.html`: Tombol `#langToggleBtn` di header navigasi, sistem `data-i18n`, kamus dwibahasa `I18N` (ID/EN) terintegrasi dengan persistensi `localStorage('embun_lang')`.
+  - `public/dashboard.html` & `public/app.js`: Dukungan `App.initLang()`, `App.applyLang()`, `App.toggleLang()`, tombol `#langToggleBtn` di topbar, otomatis sinkronisasi status bahasa di seluruh SPA.
+  - `tools/build.mjs`: Pipeline build minifikasi aset (`design-tokens.min.css`, `style.min.css`, `hero-canvas.min.js`, `app.min.js`) dengan kompresi hingga -51.5%.
+  - `package.json`: Menambahkan scripts `"test": "node tools/run_all_verifiers.mjs"` dan `"build": "node tools/build.mjs"`.
+  - `.github/workflows/deploy.yml`: Integrasi langkah `npm test` & `npm run build` sebelum Cloudflare deployment.
+  - Verifikasi: `tools/verify_c10_run.mjs` (13/13 HIJAU) & `tools/verify_e4_run.mjs` (14/14 HIJAU). Seluruh 48 suites HIJAU 100%.
 
 - **C9** (Fase C) — Service worker offline dasar (P3) — `7541ece` (tick 52)
   - `public/sw.js` baru: app-shell precache eksplisit (14 URL), SWR untuk aset

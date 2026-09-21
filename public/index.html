@@ -980,12 +980,15 @@ body.no-scroll { overflow: hidden; }
       <div class="brand-text">Embun Laundry</div>
     </div>
     <nav class="nav-actions">
+      <button class="btn btn-ghost lang-toggle-btn" id="langToggleBtn" type="button" aria-label="Ganti Bahasa" title="Ganti Bahasa / Switch Language" style="padding: 8px 12px; font-size: 13px; font-weight: 700;">
+        <span id="langLabel">🌐 EN</span>
+      </button>
       <button class="btn btn-ghost theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle dark mode" title="Ubah Tema" style="padding: 8px 12px; font-size: 16px;">
         <span class="theme-icon" id="themeIcon">🌙</span>
       </button>
-      <button class="btn btn-ghost" id="btnOpenTrack" type="button" aria-label="Lacak Pesanan">🔍 Lacak Pesanan</button>
-      <a class="btn btn-ghost" href="/auth/login.html">Masuk</a>
-      <a class="btn btn-primary" href="/auth/register.html">Buat Akun</a>
+      <button class="btn btn-ghost" id="btnOpenTrack" type="button" aria-label="Lacak Pesanan" data-i18n="nav_track">🔍 Lacak Pesanan</button>
+      <a class="btn btn-ghost" href="/auth/login.html" data-i18n="nav_login">Masuk</a>
+      <a class="btn btn-primary" href="/auth/register.html" data-i18n="nav_register">Buat Akun</a>
     </nav>
   </div>
 </header>
@@ -995,17 +998,17 @@ body.no-scroll { overflow: hidden; }
   <div id="hero-canvas-container" aria-hidden="true"></div>
   <div class="container hero-grid">
     <div>
-      <h1>Laundry jadi cepat,<br/>rapi, dan terpantau.</h1>
-      <p class="lead">Terima pesanan, atur kurir, dan pantau pembayaran dalam satu dashboard.</p>
+      <h1 data-i18n="hero_title">Laundry jadi cepat,<br/>rapi, dan terpantau.</h1>
+      <p class="lead" data-i18n="hero_lead">Terima pesanan, atur kurir, dan pantau pembayaran dalam satu dashboard.</p>
 
       <div class="pill">
         <span style="color:var(--color-rating)">★★★★★</span>
-        <span style="opacity:.9; color: var(--color-neutral-0); margin-left: 4px;">4.9/5 dari 1.200+ pelanggan</span>
+        <span style="opacity:.9; color: var(--color-neutral-0); margin-left: 4px;" data-i18n="hero_rating">4.9/5 dari 1.200+ pelanggan</span>
       </div>
       <div class="cta-row">
-        <a class="btn btn-primary js-scroll" href="#harga">Pesan Sekarang</a>
-        <a class="btn btn-outline js-scroll" href="#harga">Lihat Harga</a>
-        <button class="btn btn-outline" id="btnHeroTrack" type="button" aria-label="Lacak Pesanan">🔍 Lacak Pesanan</button>
+        <a class="btn btn-primary js-scroll" href="#harga" data-i18n="hero_cta_order">Pesan Sekarang</a>
+        <a class="btn btn-outline js-scroll" href="#harga" data-i18n="hero_cta_pricing">Lihat Harga</a>
+        <button class="btn btn-outline" id="btnHeroTrack" type="button" aria-label="Lacak Pesanan" data-i18n="hero_cta_track">🔍 Lacak Pesanan</button>
       </div>
     </div>
 
@@ -1033,8 +1036,8 @@ body.no-scroll { overflow: hidden; }
     </div>
 
     <div class="section-head reveal">
-      <h2>Harga Layanan</h2>
-      <p class="sub">Pilih layanan yang sesuai dengan kebutuhan Anda</p>
+      <h2 data-i18n="pricing_title">Harga Layanan</h2>
+      <p class="sub" data-i18n="pricing_sub">Pilih layanan yang sesuai dengan kebutuhan Anda</p>
     </div>
 
     <!-- C1: Search bar & Category filter pills -->
@@ -1779,6 +1782,76 @@ initReveal();
       updateIcon();
     });
   }
+})();
+
+// C10: Multi-bahasa (ID/EN) sederhana
+(function() {
+  var I18N = {
+    id: {
+      nav_track: '🔍 Lacak Pesanan',
+      nav_login: 'Masuk',
+      nav_register: 'Buat Akun',
+      hero_title: 'Laundry jadi cepat,<br/>rapi, dan terpantau.',
+      hero_lead: 'Terima pesanan, atur kurir, dan pantau pembayaran dalam satu dashboard.',
+      hero_rating: '4.9/5 dari 1.200+ pelanggan',
+      hero_cta_order: 'Pesan Sekarang',
+      hero_cta_pricing: 'Lihat Harga',
+      hero_cta_track: '🔍 Lacak Pesanan',
+      pricing_title: 'Harga Layanan',
+      pricing_sub: 'Pilih layanan yang sesuai dengan kebutuhan Anda',
+      search_placeholder: '🔍 Cari layanan (mis. Kiloan, Jas, Selimut)...',
+      lang_btn: '🌐 EN'
+    },
+    en: {
+      nav_track: '🔍 Track Order',
+      nav_login: 'Sign In',
+      nav_register: 'Register',
+      hero_title: 'Laundry made fast,<br/>neat, and monitored.',
+      hero_lead: 'Receive orders, manage couriers, and track payments in one dashboard.',
+      hero_rating: '4.9/5 from 1,200+ customers',
+      hero_cta_order: 'Order Now',
+      hero_cta_pricing: 'View Pricing',
+      hero_cta_track: '🔍 Track Order',
+      pricing_title: 'Service Pricing',
+      pricing_sub: 'Choose the service that fits your laundry needs',
+      search_placeholder: '🔍 Search services (e.g. Regular, Suit, Blanket)...',
+      lang_btn: '🌐 ID'
+    }
+  };
+
+  function applyLang(lang) {
+    var dict = I18N[lang] || I18N.id;
+    document.documentElement.setAttribute('lang', lang);
+    var label = document.getElementById('langLabel');
+    if (label) label.textContent = dict.lang_btn;
+    
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      if (dict[key]) {
+        if (dict[key].includes('<br')) el.innerHTML = dict[key];
+        else el.textContent = dict[key];
+      }
+    });
+    
+    var searchInput = document.getElementById('serviceSearchInput');
+    if (searchInput && dict.search_placeholder) {
+      searchInput.placeholder = dict.search_placeholder;
+    }
+  }
+
+  var curLang = 'id';
+  try { curLang = localStorage.getItem('embun_lang') || 'id'; } catch(e) {}
+  applyLang(curLang);
+
+  var langBtn = document.getElementById('langToggleBtn');
+  if (langBtn) {
+    langBtn.addEventListener('click', function() {
+      curLang = (curLang === 'id' ? 'en' : 'id');
+      try { localStorage.setItem('embun_lang', curLang); } catch(e) {}
+      applyLang(curLang);
+    });
+  }
+  window.embunApplyLang = applyLang;
 })();
 </script>
 

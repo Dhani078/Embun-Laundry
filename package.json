@@ -5,7 +5,8 @@
   "description": "Aplikasi pengelolaan layanan laundry, pencatatan transaksi kasir, dan tracking status pesanan pelanggan.",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tools/run_all_verifiers.mjs",
+    "build": "node tools/build.mjs"
   },
   "repository": {
     "type": "git",

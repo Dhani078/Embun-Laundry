@@ -79,7 +79,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | C7 | Manajemen voucher & promo (admin) | P2 | [x] | `e12c0f9` `ad6d155` |
 | C8 | Laporan bulanan + chart | P2 | [x] | `e697d7f` |
 | C9 | Service worker (offline dasar) | P3 | [x] | `7541ece` |
-| C10 | Multi-bahasa ID/EN | P4 | [ ] | — |
+| C10 | Multi-bahasa ID/EN | P4 | [x] | `pending` |
 | C11 | Sinkronisasi `paid_amount` & `payment_status` orders via `POST /api/pay` | P1 | [x] | `ecfe4b9` |
 
 ---
@@ -107,7 +107,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | E1 | Cache `/api/services` di edge (TTL 5m) | P3 | [x] | `a220f3a` |
 | E2 | Lazy load gambar non-kritis | P3 | [x] | `b9db8c5` |
 | E3 | Preconnect/preload font kritis | P3 | [x] | `b9db8c5` |
-| E4 | Minifikasi CSS/JS saat build | P4 | [ ] | — |
+| E4 | Minifikasi CSS/JS saat build | P4 | [x] | `pending` |
 | E5 | Logging terstruktur (dev only) | P3 | [x] | (tick52) |
 | E6 | Error boundary global SPA | P3 | [x] | `a8912df` |
 
