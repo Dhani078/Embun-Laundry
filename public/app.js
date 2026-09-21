@@ -65,7 +65,88 @@ const App = window.App = {
     });
   },
 
-  // C10: Multi-bahasa (ID/EN) sederhana
+  // C10: Multi-bahasa (ID/EN) Sederhana & Lengkap
+  I18N: {
+    id: {
+      lang_btn: '🌐 EN',
+      menu_dashboard: 'Dashboard',
+      menu_orders: 'Pesanan',
+      menu_customers: 'Pelanggan',
+      menu_services: 'Layanan & Harga',
+      menu_delivery: 'Pickup & Delivery',
+      menu_promos: 'Promo & Voucher',
+      menu_reports: 'Laporan',
+      menu_profile: 'Profil',
+      menu_logout: 'Keluar',
+      new_order: 'Buat Pesanan Baru',
+      total_revenue: 'Total Omset',
+      total_revenue_sub: 'Total pendapatan riil',
+      active_orders: 'Pesanan Aktif',
+      active_orders_sub: 'Dalam antrean & pencucian',
+      finished_today: 'Selesai Hari Ini',
+      finished_today_sub: 'Siap diambil / diantar',
+      total_customers: 'Total Pelanggan',
+      total_customers_sub: 'Pelanggan terdaftar aktif',
+      quick_shortcuts: 'Pintasan Operasional Cepat',
+      quick_sub: 'Akses navigasi praktis untuk aktivitas laundry Anda',
+      latest_orders: 'Pesanan Terbaru',
+      latest_orders_sub: 'Daftar transaksi masuk terkini',
+      col_code: 'Kode',
+      col_customer: 'Pelanggan',
+      col_service: 'Layanan',
+      col_weight: 'Berat',
+      col_total: 'Total',
+      col_status: 'Status',
+      col_action: 'Aksi',
+      action_invoice: 'Invoice',
+      btn_filter: 'Filter',
+      search_placeholder: 'Cari data...',
+      toast_lang: 'Bahasa dialihkan ke Bahasa Indonesia (ID)'
+    },
+    en: {
+      lang_btn: '🌐 ID',
+      menu_dashboard: 'Dashboard',
+      menu_orders: 'Orders',
+      menu_customers: 'Customers',
+      menu_services: 'Services & Pricing',
+      menu_delivery: 'Pickup & Delivery',
+      menu_promos: 'Promos & Vouchers',
+      menu_reports: 'Reports',
+      menu_profile: 'Profile',
+      menu_logout: 'Sign Out',
+      new_order: 'New Order',
+      total_revenue: 'Total Revenue',
+      total_revenue_sub: 'Real laundry earnings',
+      active_orders: 'Active Orders',
+      active_orders_sub: 'In queue & washing process',
+      finished_today: 'Completed Today',
+      finished_today_sub: 'Ready for pickup / delivery',
+      total_customers: 'Total Customers',
+      total_customers_sub: 'Active registered clients',
+      quick_shortcuts: 'Quick Operational Shortcuts',
+      quick_sub: 'Fast access to your daily laundry tasks',
+      latest_orders: 'Recent Orders',
+      latest_orders_sub: 'List of latest incoming transactions',
+      col_code: 'Code',
+      col_customer: 'Customer',
+      col_service: 'Service',
+      col_weight: 'Weight',
+      col_total: 'Total',
+      col_status: 'Status',
+      col_action: 'Action',
+      action_invoice: 'Invoice',
+      btn_filter: 'Filter',
+      search_placeholder: 'Search data...',
+      toast_lang: 'Language switched to English (EN)'
+    }
+  },
+
+  t(key) {
+    const isEn = this.lang === 'en';
+    const dict = (this.I18N && (isEn ? this.I18N.en : this.I18N.id)) || {};
+    return dict[key] || key;
+  },
+
   initLang() {
     let lang = 'id';
     try {
@@ -83,12 +164,25 @@ const App = window.App = {
       labels.forEach(el => {
         el.textContent = lang === 'id' ? '🌐 EN' : '🌐 ID';
       });
+
+      // Terjemahkan seluruh elemen yang memiliki atribut data-i18n
+      const isEn = lang === 'en';
+      const dict = (this.I18N && (isEn ? this.I18N.en : this.I18N.id)) || {};
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (dict[k]) {
+          el.textContent = dict[k];
+        }
+      });
     }
   },
 
   toggleLang() {
     const next = this.lang === 'id' ? 'en' : 'id';
     this.applyLang(next);
+    if (typeof this.toast === 'function') {
+      this.toast(next === 'en' ? 'Language switched to English (EN)' : 'Bahasa dialihkan ke Bahasa Indonesia (ID)', 'info');
+    }
     if (typeof this.renderPage === 'function' && this.currentPage) {
       this.renderPage(this.currentPage);
     }
@@ -935,7 +1029,7 @@ const App = window.App = {
               <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
                 ${isStaff ? `
                   <button type="button" class="btn btn-primary" onclick="App.renderPesanan()" style="padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span>+</span> <span>Pesanan Baru</span>
+                    <span>+</span> <span data-i18n="new_order">${this.t('new_order')}</span>
                   </button>
                 ` : ''}
                 <button id="langToggleBtn" class="lang-toggle-btn btn-ghost" type="button" aria-label="Ganti Bahasa" title="Ganti Bahasa / Switch Language" style="padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-card); color: var(--text-main); cursor: pointer;">
@@ -1424,7 +1518,7 @@ const App = window.App = {
 
   // PAGE RENDERERS
   async renderDashboard() {
-    document.getElementById('pageTitle').textContent = 'Dashboard';
+    document.getElementById('pageTitle').textContent = this.t('menu_dashboard');
     const c = document.getElementById('mainContent');
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
     c.innerHTML = `
@@ -1443,36 +1537,36 @@ const App = window.App = {
         <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
           <div class="stat-card stat-blue">
             <div class="stat-card-header">
-              <span class="stat-label">Total Omset</span>
+              <span class="stat-label">${this.t('total_revenue')}</span>
               <div class="stat-icon icon-blue">💰</div>
             </div>
             <div class="stat-value" data-kpi="${Number(s.total_revenue) || 0}">Rp ${Number(s.total_revenue).toLocaleString('id-ID')}</div>
-            <div class="stat-sub"><span style="color:var(--green)">●</span> Total pendapatan riil</div>
+            <div class="stat-sub"><span style="color:var(--green)">●</span> ${this.t('total_revenue_sub')}</div>
           </div>
           <div class="stat-card stat-blue">
             <div class="stat-card-header">
-              <span class="stat-label">Pesanan Aktif</span>
+              <span class="stat-label">${this.t('active_orders')}</span>
               <div class="stat-icon icon-blue">🧺</div>
             </div>
             <div class="stat-value" data-kpi="${s.active_orders || 0}">${esc(s.active_orders || 0)}</div>
-            <div class="stat-sub">Dalam antrean & pencucian</div>
+            <div class="stat-sub">${this.t('active_orders_sub')}</div>
           </div>
           <div class="stat-card stat-green">
             <div class="stat-card-header">
-              <span class="stat-label">Selesai Hari Ini</span>
+              <span class="stat-label">${this.t('finished_today')}</span>
               <div class="stat-icon icon-green">✨</div>
             </div>
             <div class="stat-value" data-kpi="${s.finished_today || 0}">${esc(s.finished_today || 0)}</div>
-            <div class="stat-sub">Siap diambil / diantar</div>
+            <div class="stat-sub">${this.t('finished_today_sub')}</div>
           </div>
           ${isStaff ? `
             <div class="stat-card stat-amber">
               <div class="stat-card-header">
-                <span class="stat-label">Total Pelanggan</span>
+                <span class="stat-label">${this.t('total_customers')}</span>
                 <div class="stat-icon icon-amber">👥</div>
               </div>
               <div class="stat-value" data-kpi="${s.total_customers || 0}">${esc(s.total_customers || 0)}</div>
-              <div class="stat-sub">Pelanggan terdaftar aktif</div>
+              <div class="stat-sub">${this.t('total_customers_sub')}</div>
             </div>
           ` : ''}
         </div>
@@ -1481,25 +1575,25 @@ const App = window.App = {
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 38px; height: 38px; border-radius: 10px; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; font-size: 18px;">⚡</div>
             <div>
-              <div style="font-weight: 700; font-size: 14px; color: var(--text);">Pintasan Operasional Cepat</div>
-              <div style="font-size: 12px; color: var(--muted);">Akses navigasi praktis untuk aktivitas laundry Anda</div>
+              <div style="font-weight: 700; font-size: 14px; color: var(--text);">${this.t('quick_shortcuts')}</div>
+              <div style="font-size: 12px; color: var(--muted);">${this.t('quick_sub')}</div>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="App.renderPesanan()" style="padding: 8px 16px; font-size: 13px;">+ Buat Pesanan Baru</button>
-            <button class="btn" onclick="App.renderDelivery()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">🚚 Pickup & Delivery</button>
-            ${isStaff ? `<button class="btn" onclick="App.renderLayanan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">💲 Layanan & Tarif</button>` : ''}
-            ${isStaff ? `<button class="btn" onclick="App.renderLaporan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">📊 Laporan Keuangan</button>` : ''}
+            <button class="btn btn-primary" onclick="App.renderPesanan()" style="padding: 8px 16px; font-size: 13px;">+ ${this.t('new_order')}</button>
+            <button class="btn" onclick="App.renderDelivery()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">🚚 ${this.t('menu_delivery')}</button>
+            ${isStaff ? `<button class="btn" onclick="App.renderLayanan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">💲 ${this.t('menu_services')}</button>` : ''}
+            ${isStaff ? `<button class="btn" onclick="App.renderLaporan()" style="padding: 8px 16px; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text);">📊 ${this.t('menu_reports')}</button>` : ''}
           </div>
         </div>
 
         <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
             <div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">Pesanan Terbaru</h3>
-              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Daftar transaksi masuk terkini</div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">${this.t('latest_orders')}</h3>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">${this.t('latest_orders_sub')}</div>
             </div>
-            <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 16px; font-size: 13px;">+ Buat Pesanan</button>
+            <button class="btn btn-primary" id="dashNewOrdBtn" style="padding: 8px 16px; font-size: 13px;">+ ${this.t('new_order')}</button>
           </div>
           <div style="overflow-x: auto;">
             <table class="table" style="width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 13px;">
@@ -1514,13 +1608,13 @@ const App = window.App = {
               </colgroup>
               <thead>
                 <tr style="border-bottom: 2px solid var(--line); color: var(--muted);">
-                  <th style="padding: 10px 12px;">Kode</th>
-                  <th style="padding: 10px 12px;">Pelanggan</th>
-                  <th style="padding: 10px 12px;">Layanan</th>
-                  <th style="padding: 10px 12px;">Berat</th>
-                  <th style="padding: 10px 12px;">Total</th>
-                  <th style="padding: 10px 12px;">Status</th>
-                  <th style="padding: 10px 12px; text-align: right;">Aksi</th>
+                  <th style="padding: 10px 12px;">${this.t('col_code')}</th>
+                  <th style="padding: 10px 12px;">${this.t('col_customer')}</th>
+                  <th style="padding: 10px 12px;">${this.t('col_service')}</th>
+                  <th style="padding: 10px 12px;">${this.t('col_weight')}</th>
+                  <th style="padding: 10px 12px;">${this.t('col_total')}</th>
+                  <th style="padding: 10px 12px;">${this.t('col_status')}</th>
+                  <th style="padding: 10px 12px; text-align: right;">${this.t('col_action')}</th>
                 </tr>
               </thead>
               <tbody>

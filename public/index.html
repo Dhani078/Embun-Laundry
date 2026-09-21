@@ -1029,10 +1029,10 @@ body.no-scroll { overflow: hidden; }
 <section id="harga" class="section">
   <div class="container">
     <div class="promo reveal">
-      <span>🎟️ Promo Spesial</span>
+      <span data-i18n="promo_special">🎟️ Promo Spesial</span>
       <span style="color: var(--text-light)">•</span>
-      <strong>Diskon 15% Cuci Kering untuk pelanggan baru</strong>
-      <button class="btn btn-outline" id="btnPromo">Gunakan Promo</button>
+      <strong data-i18n="promo_desc">Diskon 15% Cuci Kering untuk pelanggan baru</strong>
+      <button class="btn btn-outline" id="btnPromo" data-i18n="promo_btn">Gunakan Promo</button>
     </div>
 
     <div class="section-head reveal">
@@ -1053,34 +1053,34 @@ body.no-scroll { overflow: hidden; }
     </div>
 
     <div class="section-head reveal" style="margin-top:80px; margin-bottom: 40px;">
-      <h2>Mengapa Pilih Embun Laundry?</h2>
-      <p class="sub">Kami berkomitmen memberikan layanan terbaik dengan kepuasan pelanggan sebagai prioritas utama</p>
+      <h2 data-i18n="why_title">Mengapa Pilih Embun Laundry?</h2>
+      <p class="sub" data-i18n="why_sub">Kami berkomitmen memberikan layanan terbaik dengan kepuasan pelanggan sebagai prioritas utama</p>
     </div>
     
     <div class="features-bento">
       <div class="bento-cell large reveal">
         <div>
           <div class="ic">🚚</div>
-          <h4>Pickup &amp; Delivery Cepat</h4>
-          <p>Tidak perlu keluar rumah. Kurir kami siap menjemput pakaian kotor Anda dan mengantarkannya kembali dalam kondisi bersih, wangi, dan rapi sesuai jadwal.</p>
+          <h4 data-i18n="why_f1_title">Pickup &amp; Delivery Cepat</h4>
+          <p data-i18n="why_f1_desc">Tidak perlu keluar rumah. Kurir kami siap menjemput pakaian kotor Anda dan mengantarkannya kembali dalam kondisi bersih, wangi, dan rapi sesuai jadwal.</p>
         </div>
         <div style="margin-top: 30px; display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;">Layanan Terpercaya</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="why_f1_badge">Layanan Terpercaya</span>
           <div style="flex: 1; height: 1px; background: var(--accent-border);"></div>
         </div>
       </div>
       <div class="bento-cell small-1 reveal" style="--delay:100ms">
         <div>
           <div class="ic">📦</div>
-          <h4>Kelola Pesanan Mandiri</h4>
-          <p>Sistem manajemen pesanan modern yang terpusat. Anda bisa memantau detail cucian, berat timbangan, hingga proses cuci langsung dari perangkat Anda.</p>
+          <h4 data-i18n="why_f2_title">Kelola Pesanan Mandiri</h4>
+          <p data-i18n="why_f2_desc">Sistem manajemen pesanan modern yang terpusat. Anda bisa memantau detail cucian, berat timbangan, hingga proses cuci langsung dari perangkat Anda.</p>
         </div>
       </div>
       <div class="bento-cell small-2 reveal" style="--delay:200ms">
         <div>
           <div class="ic">📈</div>
-          <h4>Laporan Pembayaran Real-time</h4>
-          <p>Pantau status transaksi, struk pembayaran digital, dan histori cucian secara instan tanpa perlu repot menyimpan nota kertas.</p>
+          <h4 data-i18n="why_f3_title">Laporan Pembayaran Real-time</h4>
+          <p data-i18n="why_f3_desc">Pantau status transaksi, struk pembayaran digital, dan histori cucian secara instan tanpa perlu repot menyimpan nota kertas.</p>
         </div>
       </div>
     </div>
@@ -1101,10 +1101,10 @@ body.no-scroll { overflow: hidden; }
         />
         <div class="brand-text" style="color:var(--color-text-on-inverse)">Embun Laundry</div>
       </div>
-      <p>Solusi terpercaya untuk kebutuhan laundry Anda.</p>
+      <p data-i18n="footer_tagline">Solusi terpercaya untuk kebutuhan laundry Anda.</p>
     </div>
     <div>
-      <h4>Layanan</h4>
+      <h4 data-i18n="footer_services">Layanan</h4>
       <ul class="list-plain">
         <li>Cuci Kering</li>
         <li>Setrika</li>
@@ -1113,7 +1113,7 @@ body.no-scroll { overflow: hidden; }
       </ul>
     </div>
     <div>
-      <h4>Kontak</h4>
+      <h4 data-i18n="footer_contact">Kontak</h4>
       <ul class="list-plain">
         <li>+62 821-4856-4979</li>
         <li>dhanisepeda@gmail.com</li>
@@ -1121,7 +1121,7 @@ body.no-scroll { overflow: hidden; }
       </ul>
     </div>
     <div>
-      <h4>Jam Operasional</h4>
+      <h4 data-i18n="footer_hours">Jam Operasional</h4>
       <ul class="list-plain">
         <li>Senin - Jumat: 07.00 - 21.00</li>
         <li>Sabtu: 08.00 - 20.00</li>
@@ -1800,6 +1800,22 @@ initReveal();
       pricing_title: 'Harga Layanan',
       pricing_sub: 'Pilih layanan yang sesuai dengan kebutuhan Anda',
       search_placeholder: '🔍 Cari layanan (mis. Kiloan, Jas, Selimut)...',
+      why_title: 'Mengapa Pilih Embun Laundry?',
+      why_sub: 'Kami berkomitmen memberikan layanan terbaik dengan kepuasan pelanggan sebagai prioritas utama',
+      why_f1_title: 'Pickup & Delivery Cepat',
+      why_f1_desc: 'Tidak perlu keluar rumah. Kurir kami siap menjemput pakaian kotor Anda dan mengantarkannya kembali dalam kondisi bersih, wangi, dan rapi sesuai jadwal.',
+      why_f1_badge: 'Layanan Terpercaya',
+      why_f2_title: 'Kelola Pesanan Mandiri',
+      why_f2_desc: 'Sistem manajemen pesanan modern yang terpusat. Anda bisa memantau detail cucian, berat timbangan, hingga proses cuci langsung dari perangkat Anda.',
+      why_f3_title: 'Laporan Pembayaran Real-time',
+      why_f3_desc: 'Pantau status transaksi, struk pembayaran digital, dan histori cucian secara instan tanpa perlu repot menyimpan nota kertas.',
+      promo_special: '🎟️ Promo Spesial',
+      promo_desc: 'Diskon 15% Cuci Kering untuk pelanggan baru',
+      promo_btn: 'Gunakan Promo',
+      footer_tagline: 'Solusi terpercaya untuk kebutuhan laundry Anda.',
+      footer_services: 'Layanan',
+      footer_contact: 'Kontak',
+      footer_hours: 'Jam Operasional',
       lang_btn: '🌐 EN'
     },
     en: {
@@ -1815,6 +1831,22 @@ initReveal();
       pricing_title: 'Service Pricing',
       pricing_sub: 'Choose the service that fits your laundry needs',
       search_placeholder: '🔍 Search services (e.g. Regular, Suit, Blanket)...',
+      why_title: 'Why Choose Embun Laundry?',
+      why_sub: 'We are committed to providing top-tier laundry services with customer satisfaction as our priority',
+      why_f1_title: 'Fast Pickup & Delivery',
+      why_f1_desc: 'No need to leave home. Our couriers pick up and return your fresh, clean, and neatly pressed laundry on schedule.',
+      why_f1_badge: 'Trusted Service',
+      why_f2_title: 'Self-Service Order Management',
+      why_f2_desc: 'Modern centralized laundry management. Track laundry weight, wash stages, and real-time order status directly from your device.',
+      why_f3_title: 'Real-time Digital Invoices',
+      why_f3_desc: 'Monitor payment status, digital receipts, and wash history instantly without keeping paper receipts.',
+      promo_special: '🎟️ Special Promo',
+      promo_desc: '15% Off Laundry for new customers',
+      promo_btn: 'Use Promo',
+      footer_tagline: 'Your trusted solution for all laundry care.',
+      footer_services: 'Services',
+      footer_contact: 'Contact',
+      footer_hours: 'Opening Hours',
       lang_btn: '🌐 ID'
     }
   };
@@ -1839,6 +1871,18 @@ initReveal();
     }
   }
 
+  function showLangToast(msg) {
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:99999;box-shadow:0 10px 30px rgba(0,0,0,0.25);transition:all .3s ease;backdrop-filter:blur(8px);';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(10px)';
+      setTimeout(function() { if (t.parentNode) t.remove(); }, 300);
+    }, 2000);
+  }
+
   var curLang = 'id';
   try { curLang = localStorage.getItem('embun_lang') || 'id'; } catch(e) {}
   applyLang(curLang);
@@ -1849,6 +1893,7 @@ initReveal();
       curLang = (curLang === 'id' ? 'en' : 'id');
       try { localStorage.setItem('embun_lang', curLang); } catch(e) {}
       applyLang(curLang);
+      showLangToast(curLang === 'en' ? '🌐 Language switched to English (EN)' : '🌐 Bahasa dialihkan ke Bahasa Indonesia (ID)');
     });
   }
   window.embunApplyLang = applyLang;
