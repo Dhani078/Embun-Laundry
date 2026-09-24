@@ -1923,7 +1923,7 @@ const App = window.App = {
           const res = await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+            body: JSON.stringify({ action: 'move_status', id, status: newStatus })
           });
           const data = await res.json();
           if (data.ok) {
@@ -4091,7 +4091,7 @@ const App = window.App = {
     if (!newStatus) { this.toast('Pilih status terlebih dahulu', 'warning'); return; }
     const ids = [...document.querySelectorAll('.chk-order:checked')].map(cb => Number(cb.value));
     if (!ids.length) return;
-    if (!await this.confirm(`Ubah status ${ids.length} pesanan ke "${newStatus}"?`)) return;
+    if (!await this.confirm(`Ubah status ${ids.length} pesanan ke "${newStatus}"?`, { okLabel: 'Terapkan', okClass: 'primary' })) return;
 
     let ok = 0, fail = 0;
     for (const id of ids) {
@@ -4099,7 +4099,7 @@ const App = window.App = {
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_status', id, status: newStatus })
+          body: JSON.stringify({ action: 'move_status', id, status: newStatus })
         });
         const data = await res.json();
         if (data.ok) ok++; else fail++;

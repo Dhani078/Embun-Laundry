@@ -261,7 +261,7 @@ export async function onRequest({ request, env }) {
         return jsonResponse({ ok: true, order: newOrder[0] });
       }
 
-      if (act === 'move_status' && isStaff) {
+      if ((act === 'move_status' || act === 'update_status') && isStaff) {
         const v = validateOr400(body, {
           id: { type: 'int', required: true, min: 1, label: 'ID' },
           status: { type: 'enum', values: STATUS_ORDER, required: true, label: 'Status' }
