@@ -32,8 +32,9 @@ for (const f of files) {
     passed++;
   } catch (err) {
     console.error(`${f.padEnd(32)} MERAH`);
-    const out = err.stdout ? err.stdout.toString() : err.message;
-    console.error(out.split('\n').filter(l => l.includes('MERAH') || l.includes('HASIL')).slice(0, 8).join('\n'));
+    const stdout = err.stdout ? err.stdout.toString() : '';
+    const stderr = err.stderr ? err.stderr.toString() : '';
+    console.error(stdout || stderr || err.message);
     failed++;
   }
 }
