@@ -1,6 +1,7 @@
 // functions/api/services.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -68,7 +69,23 @@ export async function onRequest({ request, env }) {
           is_active: { type: 'bool', default: 0, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;
+        const tRow = await db.query('SELECT code, name FROM services WHERE id = ? LIMIT 1', [v.data.id]);
+        const tLabel = tRow?.[0]?.name || String(v.data.id);
         await db.execute('UPDATE services SET is_active = ?, updated_at = NOW() WHERE id = ?', [v.data.is_active, v.data.id]);
+
+        // Audit trail — toggle active
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'status_change',
+          entity_type: 'service',
+          entity_id: String(v.data.id),
+          entity_label: tLabel,
+          detail: `Status layanan: ${v.data.is_active ? 'Aktif' : 'Nonaktif'}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
@@ -109,6 +126,20 @@ export async function onRequest({ request, env }) {
         );
 
         const newSvc = await db.query('SELECT * FROM services WHERE code = ?', [code]);
+
+        // Audit trail — create service
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'service',
+          entity_id: code,
+          entity_label: `${d.name} (${code})`,
+          detail: `Layanan baru: ${d.name}, Rp ${Number(d.price).toLocaleString('id-ID')}/${d.unit}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, service: newSvc[0] });
       }
 
@@ -135,13 +166,42 @@ export async function onRequest({ request, env }) {
           [d.code, d.name, d.description, d.unit, d.price, d.est_hours, d.category, d.is_active, d.badge, now, d.id]
         );
 
+        // Audit trail — update service
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'update',
+          entity_type: 'service',
+          entity_id: String(d.id),
+          entity_label: d.name,
+          detail: `Perbarui layanan: ${d.name} (Rp ${Number(d.price).toLocaleString('id-ID')})`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
       if (act === 'delete_service') {
         const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
         if (!v.ok) return v.response;
+        const svcRow = await db.query('SELECT code, name FROM services WHERE id = ? LIMIT 1', [v.data.id]);
+        const svcLabel = svcRow?.[0]?.name ? `${svcRow[0].name} (${svcRow[0].code})` : String(v.data.id);
         await db.execute('DELETE FROM services WHERE id = ?', [v.data.id]);
+
+        // Audit trail — delete service
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'delete',
+          entity_type: 'service',
+          entity_id: String(v.data.id),
+          entity_label: svcLabel,
+          detail: `Hapus layanan: ${svcLabel}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 

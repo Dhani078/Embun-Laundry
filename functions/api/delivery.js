@@ -2,6 +2,7 @@
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr } from '../_validate.js';
 import { todayIn } from '../_today.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -169,6 +170,20 @@ export async function onRequest({ request, env }) {
         );
 
         const newTask = await db.query('SELECT * FROM pickup_delivery WHERE task_code = ?', [taskCode]);
+
+        // Audit trail — create task
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'delivery',
+          entity_id: taskCode,
+          entity_label: taskCode,
+          detail: `Tugas ${d.type.toUpperCase()}: ${customer}, ${scheduleDate}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, task: newTask[0] });
       }
 
@@ -186,10 +201,26 @@ export async function onRequest({ request, env }) {
           }
         });
         if (!v.ok) return v.response;
+        const taskRow = await db.query('SELECT task_code, type FROM pickup_delivery WHERE id = ? LIMIT 1', [v.data.id]);
+        const taskLabel = taskRow?.[0]?.task_code || String(v.data.id);
         await db.execute(
           'UPDATE pickup_delivery SET status = ?, updated_at = NOW() WHERE id = ?',
           [v.data.status, v.data.id]
         );
+
+        // Audit trail — update status
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'status_change',
+          entity_type: 'delivery',
+          entity_id: taskLabel,
+          entity_label: taskLabel,
+          detail: `Status kurir → ${v.data.status}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
@@ -203,11 +234,30 @@ export async function onRequest({ request, env }) {
         });
         if (!v.ok) return v.response;
 
+        const crRow = v.data.courier_id ? await db.query('SELECT full_name FROM couriers WHERE id = ? LIMIT 1', [v.data.courier_id]) : [];
+        const crName = crRow?.[0]?.full_name || 'Dilepas';
+        const taskRow2 = await db.query('SELECT task_code FROM pickup_delivery WHERE id = ? LIMIT 1', [v.data.id]);
+        const taskLabel2 = taskRow2?.[0]?.task_code || String(v.data.id);
+
         const status = v.data.courier_id ? 'assigned' : 'scheduled';
         await db.execute(
           'UPDATE pickup_delivery SET courier_id = ?, status = ?, updated_at = NOW() WHERE id = ?',
           [v.data.courier_id || null, status, v.data.id]
         );
+
+        // Audit trail — assign courier
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'update',
+          entity_type: 'delivery',
+          entity_id: taskLabel2,
+          entity_label: taskLabel2,
+          detail: `Tugaskan kurir: ${crName}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
@@ -217,6 +267,8 @@ export async function onRequest({ request, env }) {
         });
         if (!v.ok) return v.response;
         const id = v.data.id;
+        const delRow = await db.query('SELECT task_code FROM pickup_delivery WHERE id = ? LIMIT 1', [id]);
+        const delLabel = delRow?.[0]?.task_code || String(id);
 
         if (isStaff) {
           await db.execute('DELETE FROM pickup_delivery WHERE id = ?', [id]);
@@ -228,6 +280,20 @@ export async function onRequest({ request, env }) {
             return jsonResponse({ ok: false, msg: 'Tidak diizinkan' }, 403);
           }
         }
+
+        // Audit trail — delete task
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'delete',
+          entity_type: 'delivery',
+          entity_id: delLabel,
+          entity_label: delLabel,
+          detail: `Hapus tugas ${delLabel}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
