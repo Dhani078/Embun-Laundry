@@ -4,6 +4,7 @@ import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_
 // Modul ini sudah ada sejak B2, hanya belum dipakai di `/api/pay` — persis
 // pola yang sama dengan celah B13 di `/api/profile`.
 import { validateOr400, cleanStr } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -282,6 +283,19 @@ export async function onRequest({ request, env }) {
       } catch (notifErr) {
         // Gagal mencatat notifikasi tidak membatalkan respons pembayaran
       }
+
+      // Audit trail — payment
+      const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+      logActivity(db, {
+        actor_name: order.customer_name || 'Pelanggan',
+        actor_role: 'Customer',
+        action_type: 'payment',
+        entity_type: 'order',
+        entity_id: order.order_code,
+        entity_label: order.order_code,
+        detail: `Pembayaran Rp ${Number(amount).toLocaleString('id-ID')} (${method})`,
+        ip_address: clientIp
+      });
 
       return jsonResponse({
         ok: true,
