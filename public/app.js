@@ -939,8 +939,12 @@ const App = window.App = {
       if (data.ok && data.user) {
         this.user = data.user;
         this.renderApp();
+        // Load in-app notification count & alerts
+        this.updateNotifications();
         // Auto-open new order from landing page deep link
         this._handleDeepLink();
+        // Session keep-alive: check every 10 min, warn if expired
+        this._startSessionWatch();
       } else {
         // Show login page
         this.renderLogin();
@@ -969,6 +973,14 @@ const App = window.App = {
       if (langToggle) {
         e.preventDefault();
         this.toggleLang();
+      }
+      const notifBtn = e.target.closest('#notifBellBtn, .notif-bell-btn');
+      if (notifBtn) {
+        e.preventDefault();
+        this.toggleNotifDropdown();
+      } else if (!e.target.closest('#notifDropdown')) {
+        const drop = document.getElementById('notifDropdown');
+        if (drop && drop.style.display === 'block') drop.style.display = 'none';
       }
     });
   },
@@ -1253,6 +1265,21 @@ const App = window.App = {
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
                   <span class="theme-icon" id="themeIcon">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</span>
                 </button>
+                <div style="position: relative;">
+                  <button id="notifBellBtn" class="btn btn-ghost notif-bell-btn" type="button" aria-label="Notifikasi Aktivitas" title="Notifikasi Aktivitas" style="position: relative; padding: 6px 10px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border-light, var(--line)); background: var(--bg-card, var(--card)); color: var(--text-main, var(--text)); cursor: pointer; display: inline-flex; align-items: center;">
+                    <span>🔔</span>
+                    <span id="notifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: var(--red, #ef4444); color: #fff; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 99px; line-height: 1.2;">0</span>
+                  </button>
+                  <div id="notifDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 290px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-card); z-index: 1000; padding: 14px; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 10px;">
+                      <span style="font-weight: 700; color: var(--text);">Notifikasi Aktivitas</span>
+                      <span id="notifStatusSummary" style="font-size: 11px; color: var(--muted);">Terbaru</span>
+                    </div>
+                    <div id="notifList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                      <div style="font-size: 12px; color: var(--muted); text-align: center; padding: 12px 0;">Memuat notifikasi...</div>
+                    </div>
+                  </div>
+                </div>
                 <div style="display: flex; align-items: center; gap: 8px; padding-left: 6px; border-left: 1px solid var(--line);">
                   <div class="user-avatar-sm" style="width: 28px; height: 28px; font-size: 11px;">
                     ${userInitials}
@@ -1662,6 +1689,7 @@ const App = window.App = {
           const data = await res.json();
           if (data.ok) {
             this.toast(`Status pesanan #${id} diubah ke ${newStatus.toUpperCase()}`, 'success');
+            this.updateNotifications();
           } else {
             this.toast(data.msg || 'Gagal mengubah status', 'error');
             this.renderPesanan();
@@ -1870,28 +1898,37 @@ const App = window.App = {
                       </tr>
                     `;
                   }
-                  return this._recentOrders.map(o => `
-                  <tr style="border-bottom: 1px solid var(--line);">
-                    <td style="padding: 10px 12px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</td>
-                    <td style="padding: 10px 12px;">
-                      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                        <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
-                          ${(o.customer_name || 'C').slice(0, 2).toUpperCase()}
+                  return this._recentOrders.map(o => {
+                    const isSelesai = o.status === 'selesai';
+                    const rowStyle = isSelesai 
+                      ? 'border-bottom: 1px solid var(--line); background: rgba(16, 185, 129, 0.04); border-left: 3px solid var(--green, #10b981);'
+                      : 'border-bottom: 1px solid var(--line);';
+
+                    return `
+                    <tr style="${rowStyle}">
+                      <td style="padding: 10px 12px;">
+                        <div style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</div>
+                        <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" title="${esc(o.created_at || '')}">${this._timeAgo(o.created_at)}</div>
+                      </td>
+                      <td style="padding: 10px 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                          <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
+                            ${(o.customer_name || 'C').slice(0, 2).toUpperCase()}
+                          </div>
+                          <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.customer_name)}">
+                            ${esc(o.customer_name)}
+                          </span>
                         </div>
-                        <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.customer_name)}">
-                          ${esc(o.customer_name)}
-                        </span>
-                      </div>
-                    </td>
-                    <td style="padding: 10px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.service_name)}">${esc(o.service_name)}</td>
-                    <td style="padding: 10px 12px;">${esc(o.weight_kg)} kg</td>
-                    <td style="padding: 10px 12px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
-                    <td style="padding: 10px 12px;"><span class="badge status-${esc(o.status)}"><span class="badge-dot"></span> ${esc(o.status)}</span></td>
-                    <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
-                      <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
-                    </td>
-                  </tr>
-                `).join('');
+                      </td>
+                      <td style="padding: 10px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(o.service_name)}">${esc(o.service_name)}</td>
+                      <td style="padding: 10px 12px;">${esc(o.weight_kg)} kg</td>
+                      <td style="padding: 10px 12px; font-weight: 700;">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</td>
+                      <td style="padding: 10px 12px;"><span class="badge status-${esc(o.status)}"><span class="badge-dot"></span> ${esc(o.status)}</span></td>
+                      <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
+                        <button type="button" class="btn btn-sm btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')" style="padding: 4px 8px; font-size: 12px; background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer;">🧾 Invoice</button>
+                      </td>
+                    </tr>
+                  `;}).join('');
                 })()}
               </tbody>
             </table>
@@ -2032,10 +2069,19 @@ const App = window.App = {
                     })}
                   </td>
                 </tr>
-              ` : orders.map(o => `
-                <tr style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
+              ` : orders.map(o => {
+                const isSelesai = o.status === 'selesai';
+                const rowStyle = isSelesai 
+                  ? 'border-bottom: 1px solid var(--line); background: rgba(16, 185, 129, 0.04); border-left: 3px solid var(--green, #10b981); transition: background 0.15s ease;'
+                  : 'border-bottom: 1px solid var(--line); transition: background 0.15s ease;';
+
+                return `
+                <tr style="${rowStyle}">
                   ${isStaff ? `<td style="padding: 12px 6px;"><input type="checkbox" class="chk-order" data-id="${esc(o.id)}" value="${esc(o.id)}"></td>` : ''}
-                  <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</td>
+                  <td style="padding: 12px 10px;">
+                    <div style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</div>
+                    <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" title="${esc(o.created_at || '')}">${this._timeAgo(o.created_at)}</div>
+                  </td>
                   <td style="padding: 12px 10px;">
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                       <div class="user-avatar-sm" style="width: 26px; height: 26px; font-size: 10px; flex-shrink: 0;">
@@ -2064,13 +2110,14 @@ const App = window.App = {
                       <button type="button" class="action-btn btn-open-invoice" onclick="App.openInvoice('${esc(o.id)}')">🧾 Invoice</button>
                       <button type="button" class="action-btn btn-view-proof" onclick="App.viewPaymentProof('${esc(o.order_code)}')">🖼️ Bukti</button>
                       <a href="/pay.html?code=${encodeURIComponent(o.order_code || '')}" class="action-btn action-btn-primary">💳 Bayar</a>
+                      <button type="button" class="action-btn" onclick="App.shareOrderWa('${esc(o.order_code)}', '${esc(o.customer_name)}', '${esc(o.customer_phone)}', ${Number(o.total_amount)}, '${esc(o.status)}')" title="Kirim notifikasi WhatsApp">💬 WA</button>
                       ${(isStaff || o.status === 'baru') ? `
                         <button class="action-btn action-btn-danger btn-del" data-id="${esc(o.id)}">🗑️ Hapus</button>
                       ` : ''}
                     </div>
                   </td>
                 </tr>
-              `).join('')}
+              `;}).join('')}
             </tbody>
             ${orders.length > 0 ? `
             <tfoot>
@@ -3409,6 +3456,124 @@ const App = window.App = {
         <div id="chartTooltip" style="position: absolute; display: none; pointer-events: none; z-index: 20; background: var(--color-bg-inverse, #0f172a); color: var(--color-text-on-inverse, #ffffff); padding: 10px 14px; border-radius: 8px; font-size: 12px; box-shadow: var(--shadow-card); transform: translate(-50%, -100%); margin-top: -8px; border: 1px solid rgba(255,255,255,0.1);"></div>
       </div>
     `;
+  },
+
+  _timeAgo(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return String(dateStr);
+      const now = new Date();
+      const diffSec = Math.floor((now - date) / 1000);
+      if (diffSec < 60) return 'Baru saja';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin} mnt lalu`;
+      const diffHour = Math.floor(diffMin / 60);
+      if (diffHour < 24) return `${diffHour} jam lalu`;
+      const diffDay = Math.floor(diffHour / 24);
+      if (diffDay < 30) return `${diffDay} hr lalu`;
+      return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    } catch {
+      return String(dateStr);
+    }
+  },
+
+  async updateNotifications() {
+    const badge = document.getElementById('notifBadge');
+    const list = document.getElementById('notifList');
+    if (!list) return;
+
+    try {
+      const res = await fetch('/api/orders?limit=10');
+      const data = await res.json();
+      const orders = data.orders || [];
+
+      const attentionOrders = orders.filter(o => o.status === 'selesai' || o.payment_status === 'unpaid' || o.status === 'proses');
+      
+      if (badge) {
+        if (attentionOrders.length > 0) {
+          badge.textContent = attentionOrders.length > 9 ? '9+' : String(attentionOrders.length);
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      if (orders.length === 0) {
+        list.innerHTML = `<div style="font-size: 12px; color: var(--muted); text-align: center; padding: 16px 0;">Belum ada notifikasi pesanan</div>`;
+        return;
+      }
+
+      list.innerHTML = orders.slice(0, 6).map(o => {
+        let icon = '🧺';
+        let note = `Pesanan ${esc(o.order_code)}`;
+        if (o.status === 'selesai') {
+          icon = '✨';
+          note = `Pesanan <b>${esc(o.order_code)}</b> sudah selesai! Siap diambil / diantar.`;
+        } else if (o.payment_status === 'unpaid') {
+          icon = '💳';
+          note = `Menunggu pembayaran untuk <b>${esc(o.order_code)}</b> (Rp ${Number(o.total_amount).toLocaleString('id-ID')})`;
+        } else if (o.status === 'proses') {
+          icon = '🫧';
+          note = `Cucian <b>${esc(o.order_code)}</b> sedang diproses bersih`;
+        }
+
+        const time = this._timeAgo(o.created_at);
+        return `
+          <div style="padding: 8px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); display: flex; gap: 8px; align-items: flex-start; cursor: pointer; transition: background 0.15s ease;" onclick="App.navigate('/pesanan')">
+            <span style="font-size: 16px; line-height: 1;">${icon}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; color: var(--text); line-height: 1.3;">${note}</div>
+              <div style="font-size: 10px; color: var(--muted); margin-top: 4px;" title="${esc(o.created_at || '')}">${time}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch {
+      // Abaikan network glitch
+    }
+  },
+
+  toggleNotifDropdown() {
+    const drop = document.getElementById('notifDropdown');
+    if (!drop) return;
+    const isShown = drop.style.display === 'block';
+    drop.style.display = isShown ? 'none' : 'block';
+    if (!isShown) {
+      this.updateNotifications();
+    }
+  },
+
+  _startSessionWatch() {
+    if (this._sessionTimer) clearInterval(this._sessionTimer);
+    this._sessionTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/me');
+        if (res.status === 401) {
+          clearInterval(this._sessionTimer);
+          this.toast('Sesi Anda telah berakhir. Silakan login kembali.', 'warning');
+          setTimeout(() => { window.location.href = '/auth/login.html'; }, 2500);
+        }
+      } catch { /* network error, skip */ }
+    }, 10 * 60 * 1000); // 10 minutes
+  },
+
+  shareOrderWa(code, name, phone, amount, status) {
+    const statusMap = { baru: 'Baru', proses: 'Sedang Diproses', selesai: 'Selesai', batal: 'Dibatalkan' };
+    const statusText = statusMap[status] || status;
+    const trackUrl = `${location.origin}/track?code=${encodeURIComponent(code)}`;
+    const msg = `Halo ${name}! 👋\n\n` +
+      `Update pesanan laundry Anda di *Embun Laundry*:\n\n` +
+      `📋 Kode: *${code}*\n` +
+      `💰 Total: *Rp ${Number(amount).toLocaleString('id-ID')}*\n` +
+      `📊 Status: *${statusText}*\n\n` +
+      `🔗 Lacak pesanan: ${trackUrl}\n\n` +
+      `Terima kasih telah mempercayakan cucian Anda kepada kami! 🫧✨`;
+
+    const rawPhone = String(phone || '').replace(/[^0-9]/g, '');
+    const waPhone = rawPhone.startsWith('0') ? '62' + rawPhone.slice(1) : rawPhone;
+    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
   },
 
   exportCustomersCsv() {
