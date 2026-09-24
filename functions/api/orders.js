@@ -1,6 +1,7 @@
 // functions/api/orders.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr, STATUS_ORDER, COL_SPEC } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -253,6 +254,10 @@ export async function onRequest({ request, env }) {
           // Abaikan kegagalan notifikasi agar alur order utama tidak terganggu
         }
 
+        // Audit trail
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, { actor_name: myName || user.user_name, actor_role: user.user_role, action_type: 'create', entity_type: 'order', entity_id: code, entity_label: code, detail: `Pesanan baru: ${customer}, ${kg}kg, Rp${total.toLocaleString('id')}`, ip_address: clientIp });
+
         return jsonResponse({ ok: true, order: newOrder[0] });
       }
 
@@ -284,6 +289,11 @@ export async function onRequest({ request, env }) {
         } catch (notifErr) {
           // Abaikan kegagalan notifikasi agar alur order utama tidak terganggu
         }
+
+        // Audit trail — status change
+        const ipMove = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        const ordLabel = (await db.query('SELECT order_code FROM orders WHERE id = ? LIMIT 1', [id]))?.[0]?.order_code || String(id);
+        logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'status_change', entity_type: 'order', entity_id: ordLabel, entity_label: ordLabel, detail: `Status → ${newStatus}`, ip_address: ipMove });
 
         return jsonResponse({ ok: true });
       }
@@ -334,6 +344,11 @@ export async function onRequest({ request, env }) {
         if (!v.ok) return v.response;
         const id = v.data.id;
 
+        // Fetch label before delete
+        const delRow = await db.query('SELECT order_code, customer_name FROM orders WHERE id = ? LIMIT 1', [id]);
+        const delLabel = delRow?.[0]?.order_code || String(id);
+        const delCustomer = delRow?.[0]?.customer_name || '';
+
         if (isStaff) {
           await db.execute('DELETE FROM orders WHERE id = ?', [id]);
         } else {
@@ -348,6 +363,11 @@ export async function onRequest({ request, env }) {
             return jsonResponse({ ok: false, msg: 'Tidak diizinkan' }, 403);
           }
         }
+
+        // Audit trail — delete
+        const ipDel = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'delete', entity_type: 'order', entity_id: delLabel, entity_label: delLabel, detail: `Pesanan ${delLabel} (${delCustomer}) dihapus`, ip_address: ipDel });
+
         return jsonResponse({ ok: true });
       }
 

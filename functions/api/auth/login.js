@@ -1,5 +1,6 @@
 // functions/api/auth/login.js
 import { getDb, jsonResponse, createSessionToken, readJson, SERVER_ERROR } from '../../_db.js';
+import { logActivity } from '../../_activity.js';
 import { clientKey, consume, peek, clearAll } from '../../_ratelimit.js';
 import { validateOr400 } from '../../_validate.js';
 // B8 — verifikasi sandi kini PBKDF2 (dengan fallback ke format lawas).
@@ -147,6 +148,11 @@ export async function onRequestPost({ request, env, ctx }) {
     // header akan melaporkan sisa 0 pada login yang justru berhasil.
     // Tidak di-await: membersihkan jatah tidak boleh menahan respons login.
     ctx?.waitUntil?.(clearAll(key));
+
+    // Audit trail — login
+    const ipLogin = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+    logActivity(db, { actor_name: user.full_name, actor_role: user.role, action_type: 'login', entity_type: 'user', entity_id: String(user.id), entity_label: user.full_name, detail: `Login berhasil`, ip_address: ipLogin });
+
     return withRateHeaders(res, RL_LIMIT);
   } catch (e) {
     return reply(key, { ok: false, msg: SERVER_ERROR }, 500);

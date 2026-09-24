@@ -76,6 +76,7 @@ const App = window.App = {
       menu_delivery: 'Pickup & Delivery',
       menu_promos: 'Promo & Voucher',
       menu_reports: 'Laporan',
+      menu_activity_log: 'Riwayat Aktivitas',
       menu_profile: 'Profil',
       menu_logout: 'Keluar',
       new_order: 'Buat Pesanan Baru',
@@ -112,6 +113,7 @@ const App = window.App = {
       menu_delivery: 'Pickup & Delivery',
       menu_promos: 'Promos & Vouchers',
       menu_reports: 'Reports',
+      menu_activity_log: 'Activity Log',
       menu_profile: 'Profile',
       menu_logout: 'Sign Out',
       new_order: 'New Order',
@@ -681,6 +683,7 @@ const App = window.App = {
       { id: 'nav_promos', group: isEn ? 'Navigation' : 'Navigasi', title: this.t('menu_promos'), desc: isEn ? 'Promo codes & vouchers' : 'Kode promo & voucher diskon', icon: '🏷️', action: () => this.navigate('/promo') },
       ...(isStaff ? [
         { id: 'nav_reports', group: isEn ? 'Navigation' : 'Navigasi', title: this.t('menu_reports'), desc: isEn ? 'Financial charts & daily cashflow' : 'Grafik omset & kas harian', icon: '📈', action: () => this.navigate('/laporan') },
+        { id: 'nav_activity_log', group: isEn ? 'Navigation' : 'Navigasi', title: isEn ? 'Activity Log' : 'Riwayat Aktivitas', desc: isEn ? 'Audit trail — who did what, when' : 'Audit trail — siapa melakukan apa, kapan', icon: '📋', action: () => this.navigate('/activity-log') },
       ] : []),
       { id: 'nav_profile', group: isEn ? 'Navigation' : 'Navigasi', title: this.t('menu_profile'), desc: isEn ? 'Account settings & security' : 'Pengaturan akun & sandi', icon: '👤', action: () => this.navigate('/profile') },
 
@@ -1176,6 +1179,7 @@ const App = window.App = {
     else if (hash === '/laporan' || hash === '/laporan.html') this.renderLaporan();
     else if (hash === '/promo' || hash === '/promo.html') this.renderPromo();
     else if (hash === '/profile' || hash === '/profile.html') this.renderProfile();
+    else if (hash === '/activity-log' || hash === '/activity-log.html') this.renderActivityLog();
     else this.renderDashboard();
   },
 
@@ -1477,6 +1481,11 @@ const App = window.App = {
         </section>
       </div>
     `;
+
+    // Hide staff-only nav items from non-staff
+    if (!isStaff) {
+      document.querySelectorAll('.staff-only').forEach(el => el.style.display = 'none');
+    }
 
     // Global Click Delegation
     document.addEventListener('click', async (e) => {
@@ -2016,6 +2025,7 @@ const App = window.App = {
       else if (page === 'promo') this.renderPromo();
       else if (page === 'laporan') this.renderLaporan();
       else if (page === 'profile') this.renderProfile();
+      else if (page === 'activity-log') this.renderActivityLog();
       else this.renderDashboard();
       this.initScrollReveal();
       this.animateKpis();
@@ -4564,6 +4574,170 @@ const App = window.App = {
       `;
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan memuat profil</div>';
+    }
+  },
+
+  // =========================================================================
+  // ACTIVITY LOG — Audit trail timeline (staff only)
+  // =========================================================================
+  async renderActivityLog() {
+    document.getElementById('pageTitle').textContent = 'Riwayat Aktivitas Sistem';
+    const c = document.getElementById('mainContent');
+    const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user?.role || this.user?.user_role);
+    if (!isStaff) {
+      c.innerHTML = '<div class="err">Akses ditolak — hanya untuk staf.</div>';
+      return;
+    }
+
+    c.innerHTML = this.renderSkeletonTable({ columns: 6, rows: 8, hasActions: false });
+
+    try {
+      const filterType = this._actLogFilter || '';
+      const offset = this._actLogOffset || 0;
+      const limit = 30;
+      const url = `/api/activity-log?limit=${limit}&offset=${offset}${filterType ? '&type=' + encodeURIComponent(filterType) : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.msg || 'Gagal memuat log');
+
+      const logs = data.logs || [];
+      const total = data.total || 0;
+      const totalPages = Math.ceil(total / limit);
+      const currentPage = Math.floor(offset / limit) + 1;
+
+      const actionIcons = {
+        create: '🆕', login: '🔐', logout: '🚪', status_change: '🔄',
+        update: '✏️', delete: '🗑️', unknown: '❓'
+      };
+      const actionLabels = {
+        create: 'Buat', login: 'Login', logout: 'Logout', status_change: 'Ubah Status',
+        update: 'Perbarui', delete: 'Hapus', unknown: 'Lainnya'
+      };
+      const actionColors = {
+        create: 'var(--green)', login: 'var(--blue)', logout: 'var(--muted)',
+        status_change: 'var(--orange)', update: 'var(--blue)', delete: 'var(--red)', unknown: 'var(--muted)'
+      };
+
+      c.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text);">Riwayat Aktivitas Sistem</h3>
+            <div style="font-size: 13px; color: var(--muted); margin-top: 2px;">Audit trail — siapa melakukan apa, kapan. Total ${total} entri.</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="actLogFilterType" class="input-control" style="padding: 7px 12px; font-size: 12px; min-width: 140px;">
+              <option value="">Semua Tipe</option>
+              <option value="create" ${filterType === 'create' ? 'selected' : ''}>🆕 Buat</option>
+              <option value="login" ${filterType === 'login' ? 'selected' : ''}>🔐 Login</option>
+              <option value="status_change" ${filterType === 'status_change' ? 'selected' : ''}>🔄 Ubah Status</option>
+              <option value="update" ${filterType === 'update' ? 'selected' : ''}>✏️ Perbarui</option>
+              <option value="delete" ${filterType === 'delete' ? 'selected' : ''}>🗑️ Hapus</option>
+            </select>
+            <button class="btn" id="actLogExportCsv" style="padding: 7px 14px; font-size: 12px; font-weight: 600;">📥 CSV</button>
+          </div>
+        </div>
+
+        <div class="card glass-panel" style="padding: 0; border-radius: var(--radius-md); overflow: hidden;">
+          ${logs.length === 0 ? `
+            <div style="padding: 48px 24px; text-align: center;">
+              ${this.renderEmptyState({
+                icon: '📋',
+                title: 'Belum Ada Riwayat',
+                subtitle: 'Aktivitas akan tercatat otomatis saat pengguna membuat, mengubah, atau menghapus data.'
+              })}
+            </div>
+          ` : `
+            <div style="max-height: 65vh; overflow-y: auto;">
+              ${logs.map(log => {
+                const icon = actionIcons[log.action_type] || actionIcons.unknown;
+                const label = actionLabels[log.action_type] || log.action_type;
+                const color = actionColors[log.action_type] || actionColors.unknown;
+                const timeAgo = this._timeAgo(log.created_at);
+                const ts = new Date(log.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return `
+                  <div class="activity-log-item" style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); transition: background 0.15s ease;" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='transparent'">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: ${color}15; border: 1px solid ${color}30;">
+                      ${icon}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-weight: 700; font-size: 13px; color: var(--text);">${esc(log.actor_name)}</span>
+                        <span class="badge" style="font-size: 10px; padding: 2px 7px; background: ${color}18; color: ${color}; border: 1px solid ${color}30; font-weight: 700;">${esc(label)}</span>
+                        <span style="font-size: 12px; color: var(--muted);">${esc(log.entity_type)} ${log.entity_label ? '<code style="font-size:11px;background:var(--bg);padding:1px 5px;border-radius:4px;">' + esc(log.entity_label) + '</code>' : ''}</span>
+                      </div>
+                      ${log.detail ? `<div style="font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4;">${esc(log.detail)}</div>` : ''}
+                      <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                        <span style="font-size: 11px; color: var(--muted);" title="${esc(ts)}">${timeAgo}</span>
+                        ${log.ip_address ? `<span style="font-size: 10px; color: var(--muted); font-family: monospace;">IP: ${esc(log.ip_address)}</span>` : ''}
+                        <span style="font-size: 10px; color: var(--muted);">${esc(log.actor_role)}</span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- PAGINATION -->
+            ${totalPages > 1 ? `
+              <div style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 14px; border-top: 1px solid var(--line);">
+                <button class="btn btn-sm actlog-page" data-offset="${Math.max(0, offset - limit)}" ${offset === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''} style="padding: 6px 12px; font-size: 12px;">← Sebelumnya</button>
+                <span style="font-size: 12px; color: var(--muted); font-weight: 600;">Halaman ${currentPage} / ${totalPages}</span>
+                <button class="btn btn-sm actlog-page" data-offset="${offset + limit}" ${currentPage >= totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''} style="padding: 6px 12px; font-size: 12px;">Berikutnya →</button>
+              </div>
+            ` : ''}
+          `}
+        </div>
+      `;
+
+      // Filter handler
+      const filterEl = document.getElementById('actLogFilterType');
+      if (filterEl) {
+        filterEl.addEventListener('change', () => {
+          this._actLogFilter = filterEl.value;
+          this._actLogOffset = 0;
+          this.renderActivityLog();
+        });
+      }
+
+      // Pagination handlers
+      document.querySelectorAll('.actlog-page').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const newOffset = parseInt(btn.getAttribute('data-offset'), 10);
+          if (!isNaN(newOffset) && !btn.disabled) {
+            this._actLogOffset = newOffset;
+            this.renderActivityLog();
+          }
+        });
+      });
+
+      // CSV export
+      const csvBtn = document.getElementById('actLogExportCsv');
+      if (csvBtn) {
+        csvBtn.addEventListener('click', async () => {
+          try {
+            const allRes = await fetch(`/api/activity-log?limit=200&offset=0${filterType ? '&type=' + encodeURIComponent(filterType) : ''}`);
+            const allData = await allRes.json();
+            if (!allData.ok) throw new Error('Gagal');
+            const rows = allData.logs || [];
+            const bom = '\uFEFF';
+            const header = 'Waktu,Aktor,Role,Tipe,Entitas,Label,Detail,IP\n';
+            const csv = bom + header + rows.map(r =>
+              `"${r.created_at}","${(r.actor_name||'').replace(/"/g,'""')}","${r.actor_role}","${r.action_type}","${r.entity_type}","${(r.entity_label||'').replace(/"/g,'""')}","${(r.detail||'').replace(/"/g,'""')}","${r.ip_address||''}"`
+            ).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `activity-log-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            this.toast('CSV aktivitas berhasil diunduh', 'success');
+          } catch (err) {
+            this.toast('Gagal export CSV', 'error');
+          }
+        });
+      }
+    } catch (e) {
+      c.innerHTML = '<div class="err">Kesalahan memuat riwayat aktivitas</div>';
     }
   }
 };
