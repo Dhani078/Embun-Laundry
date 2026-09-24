@@ -1,6 +1,7 @@
 // functions/api/promos.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -94,6 +95,20 @@ export async function onRequest({ request, env }) {
         );
 
         const newP = await db.query('SELECT * FROM promos WHERE code = ?', [code]);
+
+        // Audit trail — create promo
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'promo',
+          entity_id: code,
+          entity_label: `${d.name} (${code})`,
+          detail: `Promo baru: ${d.name} (${d.type === 'percent' ? d.value + '%' : 'Rp ' + Number(d.value).toLocaleString('id-ID')})`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, promo: newP[0] });
       }
 
@@ -122,13 +137,42 @@ export async function onRequest({ request, env }) {
           [d.code.toUpperCase(), d.name, d.type, d.value, d.min_spend, d.max_discount, d.is_active, d.expires_at || null, now, d.id]
         );
 
+        // Audit trail — update promo
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'update',
+          entity_type: 'promo',
+          entity_id: String(d.id),
+          entity_label: d.name,
+          detail: `Perbarui promo: ${d.name}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
       if (act === 'delete_promo') {
         const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
         if (!v.ok) return v.response;
+        const pRow = await db.query('SELECT code, name FROM promos WHERE id = ? LIMIT 1', [v.data.id]);
+        const pLabel = pRow?.[0]?.name ? `${pRow[0].name} (${pRow[0].code})` : String(v.data.id);
         await db.execute('DELETE FROM promos WHERE id = ?', [v.data.id]);
+
+        // Audit trail — delete promo
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'delete',
+          entity_type: 'promo',
+          entity_id: String(v.data.id),
+          entity_label: pLabel,
+          detail: `Hapus promo: ${pLabel}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
@@ -138,7 +182,23 @@ export async function onRequest({ request, env }) {
           is_active: { type: 'bool', default: 0, label: 'Status aktif' }
         });
         if (!v.ok) return v.response;
+        const ptRow = await db.query('SELECT code, name FROM promos WHERE id = ? LIMIT 1', [v.data.id]);
+        const ptLabel = ptRow?.[0]?.name || String(v.data.id);
         await db.execute('UPDATE promos SET is_active = ?, updated_at = NOW() WHERE id = ?', [v.data.is_active, v.data.id]);
+
+        // Audit trail — toggle active promo
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'status_change',
+          entity_type: 'promo',
+          entity_id: String(v.data.id),
+          entity_label: ptLabel,
+          detail: `Status promo: ${v.data.is_active ? 'Aktif' : 'Nonaktif'}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
@@ -163,4 +223,4 @@ export async function onRequestOptions() {
 export default {
   onRequest,
   onRequestOptions
-};
+};
