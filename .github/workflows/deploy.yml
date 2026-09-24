@@ -22,7 +22,8 @@ jobs:
 
       - name: Run Verification Tests & Asset Build
         run: |
-          npm test
+          set -o pipefail
+          npm test 2>&1 | tee test.log || (echo "### Test Failures" >> $GITHUB_STEP_SUMMARY && echo '```' >> $GITHUB_STEP_SUMMARY && cat test.log >> $GITHUB_STEP_SUMMARY && echo '```' >> $GITHUB_STEP_SUMMARY && exit 1)
           npm run build
 
       - name: Deploy to Cloudflare Workers
