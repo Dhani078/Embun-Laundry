@@ -81,12 +81,14 @@
       <p id="ordCodeLabel" style="margin: 4px 0 0; color: var(--muted); font-size: 13px;">Memuat rincian pesanan...</p>
     </div>
 
-    <div id="payAlert" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
+    <div id="payAlert" role="alert" aria-live="polite" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
 
     <div id="payContent">
-      <div style="text-align: center; padding: 30px 20px; color: #64748b;">
-        <span class="spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid #cbd5e1; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -4px; margin-right: 8px;"></span>
-        Memuat data tagihan...
+      <div style="padding: 10px 0;">
+        <div class="skeleton" style="height: 18px; width: 60%; margin-bottom: 12px; border-radius: 6px;"></div>
+        <div class="skeleton" style="height: 48px; width: 100%; margin-bottom: 16px; border-radius: 8px;"></div>
+        <div class="skeleton" style="height: 120px; width: 100%; margin-bottom: 16px; border-radius: 12px;"></div>
+        <div class="skeleton" style="height: 38px; width: 100%; border-radius: 8px;"></div>
       </div>
     </div>
 
