@@ -11,7 +11,7 @@
 // naikkan ke IndexedDB + background sync — jangan memperluas cache ini.
 
 const APP_SHELL = '/sw.js'; // marker: precache versi ini
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `embun-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `embun-assets-${CACHE_VERSION}`;
 
@@ -26,10 +26,13 @@ const SHELL_URLS = [
   '/pay.html',
   '/auth/login.html',
   '/auth/register.html',
+  '/auth/lupasandi.html',
   '/assets/design-tokens.css',
   '/assets/style.css',
   '/assets/escape.js',
   '/assets/hero-canvas.js',
+  '/assets/qrcode-lib.js',
+  '/assets/qrcode.js',
   '/app.js',
   '/img/Logo.png',
   '/robots.txt'
