@@ -319,7 +319,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (data.ok) {
       btn.textContent = 'Berhasil! Mengalihkan...';
-      window.location.href = '/dashboard.html';
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard.html';
+      window.location.href = redirectUrl;
     } else {
       errEl.textContent = '⚠️ ' + (data.msg || 'Login gagal');
       errEl.style.display = 'block';
