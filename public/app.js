@@ -1126,6 +1126,19 @@ const App = window.App = {
         const drop = document.getElementById('notifDropdown');
         if (drop && drop.style.display === 'block') drop.style.display = 'none';
       }
+      const refreshBtn = e.target.closest('#refreshPageBtn, .refresh-page-btn');
+      if (refreshBtn) {
+        e.preventDefault();
+        const icon = document.getElementById('refreshIcon') || refreshBtn;
+        if (icon) {
+          icon.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          icon.style.transform = 'rotate(360deg)';
+          setTimeout(() => { icon.style.transform = ''; }, 550);
+        }
+        this.renderPage(this.currentPage);
+        this.updateNotifications();
+        this.toast(this.lang === 'en' ? 'Data refreshed' : 'Data diperbarui', 'info');
+      }
     });
   },
 
@@ -1408,6 +1421,9 @@ const App = window.App = {
                 </button>
                 <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Ubah Tema (Gelap / Terang)">
                   <span class="theme-icon" id="themeIcon">${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'}</span>
+                </button>
+                <button id="refreshPageBtn" class="btn btn-ghost refresh-page-btn" type="button" aria-label="Segarkan data" title="Segarkan Data Halaman" style="padding: 6px 10px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border-light, var(--line)); background: var(--bg-card, var(--card)); color: var(--text-main, var(--text)); cursor: pointer; display: inline-flex; align-items: center;">
+                  <span id="refreshIcon" style="display:inline-block;">🔄</span>
                 </button>
                 <div style="position: relative;">
                   <button id="notifBellBtn" class="btn btn-ghost notif-bell-btn" type="button" aria-label="Notifikasi Aktivitas" title="Notifikasi Aktivitas" style="position: relative; padding: 6px 10px; font-size: 13px; border-radius: 8px; border: 1px solid var(--border-light, var(--line)); background: var(--bg-card, var(--card)); color: var(--text-main, var(--text)); cursor: pointer; display: inline-flex; align-items: center;">
@@ -1948,9 +1964,37 @@ const App = window.App = {
       else this.renderDashboard();
       this.initScrollReveal();
       this.animateKpis();
+      this.initPullToRefresh();
     } catch (e) {
       this.renderError(e && e.message ? e.message : String(e));
     }
+  },
+
+  initPullToRefresh() {
+    const content = document.getElementById('mainContent');
+    if (!content || this._ptrInitialized) return;
+    this._ptrInitialized = true;
+    let startY = 0;
+    let isTop = false;
+
+    content.addEventListener('touchstart', (e) => {
+      if (content.scrollTop <= 0) {
+        startY = e.touches[0].pageY;
+        isTop = true;
+      } else {
+        isTop = false;
+      }
+    }, { passive: true });
+
+    content.addEventListener('touchend', (e) => {
+      if (!isTop) return;
+      const endY = e.changedTouches[0].pageY;
+      isTop = false;
+      if (endY - startY > 80 && content.scrollTop <= 0) {
+        const btn = document.getElementById('refreshPageBtn');
+        if (btn) btn.click();
+      }
+    }, { passive: true });
   },
 
   // PAGE RENDERERS
