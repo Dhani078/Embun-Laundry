@@ -20,8 +20,9 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('../', import.meta.url).pathname.replace(/^\//, ''));
+const ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const SW_PATH = path.join(ROOT, 'public', 'sw.js');
 
 let pass = 0;
