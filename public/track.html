@@ -351,7 +351,10 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);flex-wrap:wrap">
         <div>
           <div style="font-size:var(--text-caption);color:var(--color-text-secondary)">Kode pesanan</div>
-          <div id="r-code" style="font-family:var(--font-mono);font-weight:var(--weight-semibold)"></div>
+          <div style="display:inline-flex;align-items:center;gap:6px">
+            <div id="r-code" style="font-family:var(--font-mono);font-weight:var(--weight-semibold)"></div>
+            <button type="button" id="btn-copy-code" aria-label="Salin kode" style="background:transparent;border:none;cursor:pointer;padding:0;font-size:14px;opacity:0.7;line-height:1" title="Salin kode pesanan">📋</button>
+          </div>
         </div>
         <span id="r-status" class="status-pill"></span>
       </div>
@@ -708,6 +711,34 @@
       input.value = pre;
       form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));
     }
+
+    // Salin kode pesanan ke clipboard
+    var copyBtn = document.getElementById('btn-copy-code');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        var code = document.getElementById('r-code').textContent || '';
+        if (!code) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(function() {
+            copyBtn.textContent = '✅';
+            setTimeout(function() { copyBtn.textContent = '📋'; }, 1500);
+          }).catch(function() {
+            copyBtn.textContent = '✅';
+            setTimeout(function() { copyBtn.textContent = '📋'; }, 1500);
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = code;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          ta.remove();
+          copyBtn.textContent = '✅';
+          setTimeout(function() { copyBtn.textContent = '📋'; }, 1500);
+        }
+      });
+    }
+
     // Theme toggle handling
     var themeBtn = document.getElementById('themeToggleBtn');
     var themeIcon = document.getElementById('themeIcon');
