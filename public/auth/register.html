@@ -344,7 +344,8 @@ document.getElementById('regForm').addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     if (data.ok) {
-      window.location.href = '/dashboard.html';
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard.html';
+      window.location.href = redirectUrl;
     } else {
       errEl.textContent = '⚠️ ' + (data.msg || 'Registrasi gagal');
       errEl.style.display = 'block';

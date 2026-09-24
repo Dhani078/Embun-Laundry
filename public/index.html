@@ -1425,13 +1425,14 @@ function computeTotal(){
 kgInput.addEventListener('input', computeTotal);
 document.getElementById('btnClose').addEventListener('click', closeOrderModal);
 document.getElementById('btnGo').addEventListener('click', ()=>{
-  const kg = parseInt(kgInput.value||'0',10);
+  const kg = parseInt(kgInput.value||'1',10);
+  const svcId = current && current.id ? current.id : '';
+  const target = `/dashboard.html?new_order=1${svcId ? '&service_id=' + encodeURIComponent(svcId) : ''}&kg=${encodeURIComponent(kg)}`;
   if (!isLoggedIn) {
     closeOrderModal();
-    window.location.href = '/auth/register.html';
+    window.location.href = `/auth/login.html?redirect=${encodeURIComponent(target)}`;
   } else {
-    // Navigate to dashboard order page
-    window.location.href = '/dashboard.html';
+    window.location.href = target;
   }
 });
 
