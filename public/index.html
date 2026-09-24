@@ -1045,7 +1045,8 @@ body.no-scroll { overflow: hidden; }
       <input class="input" type="text" id="serviceSearchInput" placeholder="🔍 Cari layanan (mis. Kiloan, Jas, Selimut)..." style="width:100%; border-radius:var(--radius-md);" aria-label="Cari layanan" />
     </div>
 
-    <div class="category-pills" id="categoryPills" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px;" role="tablist" aria-label="Kategori Layanan"></div>
+    <div class="category-pills" id="categoryPills" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;" role="tablist" aria-label="Kategori Layanan"></div>
+    <div id="svcResultCount" style="text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; min-height: 20px;" aria-live="polite"></div>
 
     <div class="prices" id="pricesGrid">
       <!-- Generated via JS from API -->
@@ -1272,6 +1273,15 @@ function renderServicesGrid() {
     return matchCat && matchQuery;
   });
 
+  const countEl = document.getElementById('svcResultCount');
+  if (countEl) {
+    if (activeCategory !== 'Semua' || searchQuery) {
+      countEl.textContent = `Menampilkan ${filtered.length} dari ${allServices.length} layanan`;
+    } else {
+      countEl.textContent = `Tersedia ${allServices.length} pilihan paket laundry`;
+    }
+  }
+
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 48px 20px;">
@@ -1331,9 +1341,13 @@ async function loadServices() {
 loadServices();
 
 // Event listeners for service search and category pills
+let svcSearchTimer = null;
 document.getElementById('serviceSearchInput')?.addEventListener('input', (e) => {
-  searchQuery = (e.target.value || '').trim();
-  renderServicesGrid();
+  clearTimeout(svcSearchTimer);
+  svcSearchTimer = setTimeout(() => {
+    searchQuery = (e.target.value || '').trim();
+    renderServicesGrid();
+  }, 200);
 });
 
 document.addEventListener('click', (e) => {
