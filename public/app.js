@@ -640,6 +640,7 @@ const App = window.App = {
       { id: 'act_theme', group: isEn ? 'Quick Actions' : 'Aksi Cepat', title: document.documentElement.getAttribute('data-theme') === 'dark' ? (isEn ? 'Switch to Light Mode' : 'Ganti ke Mode Terang') : (isEn ? 'Switch to Dark Mode' : 'Ganti ke Mode Gelap'), desc: isEn ? 'Toggle interface color theme' : 'Beralih palet warna antarmuka', icon: '🌓', action: () => this.toggleTheme() },
       { id: 'act_lang', group: isEn ? 'Quick Actions' : 'Aksi Cepat', title: isEn ? 'Switch Language to Indonesia (ID)' : 'Ganti Bahasa ke English (EN)', desc: isEn ? 'Bilingual ID / EN localization' : 'Pilihan lokalisasi dua bahasa', icon: '🌐', action: () => this.toggleLang() },
       { id: 'act_shortcuts', group: isEn ? 'Quick Actions' : 'Aksi Cepat', title: isEn ? 'Keyboard Shortcuts (?)' : 'Pintasan Keyboard (?)', desc: isEn ? 'View all available keyboard shortcuts' : 'Lihat semua daftar pintasan keyboard', icon: '⌨️', action: () => this.openShortcutsModal() },
+      { id: 'act_tour', group: isEn ? 'Quick Actions' : 'Aksi Cepat', title: isEn ? 'Welcome Guide / Tour' : 'Panduan Pengguna Baru', desc: isEn ? 'View onboarding walkthrough' : 'Buka panduan langkah awal penggunaan sistem', icon: '✨', action: () => this.openOnboardingModal() },
       { id: 'act_logout', group: isEn ? 'Quick Actions' : 'Aksi Cepat', title: this.t('menu_logout'), desc: isEn ? 'Sign out of current account' : 'Keluar dari sesi akun saat ini', icon: '🚪', action: () => { const btn = document.getElementById('logoutBtn'); if (btn) btn.click(); else fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload()); } }
     ];
     return items;
@@ -991,6 +992,56 @@ const App = window.App = {
             </div>
           `).join('')}
         </div>
+      </div>
+    `;
+    modal.style.display = 'grid';
+  },
+
+  openOnboardingModal() {
+    let modal = document.getElementById('onboardingModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'onboardingModal';
+      modal.className = 'invoice-modal';
+      document.body.appendChild(modal);
+    }
+    const isEn = this.lang === 'en';
+    modal.innerHTML = `
+      <div class="card" style="border-radius:var(--radius-lg, 16px);padding:28px;max-width:480px;width:100%;margin:20px auto;box-shadow:var(--shadow-card);position:relative;">
+        <button type="button" aria-label="Tutup" onclick="localStorage.setItem('embun_onboarding_completed','1');document.getElementById('onboardingModal').style.display='none';" style="position:absolute;top:16px;right:16px;border:none;background:var(--bg);color:var(--text);border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700;">✕</button>
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:36px;margin-bottom:6px;">🫧</div>
+          <h3 style="margin:0;font-size:18px;font-weight:800;color:var(--text);">${isEn ? 'Welcome to Embun Laundry!' : 'Selamat Datang di Embun Laundry!'}</h3>
+          <p style="margin:6px 0 0;font-size:13px;color:var(--muted);">${isEn ? 'Fast, clean, and modern cloud laundry management.' : 'Pengelolaan laundry modern, cepat, dan transparan.'}</p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);">
+            <div style="font-size:20px;line-height:1;">🧺</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text);">${isEn ? '1. Create or Track Orders' : '1. Buat Pesanan Kasir & Online'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${isEn ? 'Input orders with automatic weight, service rates, and promo codes.' : 'Pilih jenis layanan, masukkan berat pakaian, dan diskon kupon otomatis dihitung.'}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);">
+            <div style="font-size:20px;line-height:1;">📱</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text);">${isEn ? '2. Real-time Status & WhatsApp' : '2. Pelacakan Real-time & Notifikasi WA'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${isEn ? 'Customers can scan QR code on receipt or receive updates via WhatsApp.' : 'Pelanggan bisa memindai QR nota atau terima status cucian via pesan WhatsApp.'}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);">
+            <div style="font-size:20px;line-height:1;">💳</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text);">${isEn ? '3. Instant QRIS & Cashier Reports' : '3. QRIS Instan & Laporan Keuangan'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">${isEn ? 'Download daily transaction CSV reports and accept seamless payments.' : 'Unduh rekap transaksi Excel/CSV dan terima pembayaran digital tanpa ribet.'}</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="localStorage.setItem('embun_onboarding_completed','1');document.getElementById('onboardingModal').style.display='none';" style="width:100%;padding:10px;font-size:14px;font-weight:700;border-radius:8px;">${isEn ? 'Got It, Let\'s Start!' : 'Mengerti, Mulai Sekarang!'}</button>
       </div>
     `;
     modal.style.display = 'grid';
@@ -2003,6 +2054,10 @@ const App = window.App = {
       document.getElementById('dashNewOrdBtn').onclick = () => {
         this.renderPesanan();
       };
+
+      if (!localStorage.getItem('embun_onboarding_completed')) {
+        setTimeout(() => this.openOnboardingModal(), 600);
+      }
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan koneksi dashboard</div>';
     }
@@ -2244,10 +2299,34 @@ const App = window.App = {
         </div>
       `;
 
-      // Status change handler and delete handler removed since they are handled by global delegation
-
-      // Modal open/close handled by global click delegation
-      // Form submit handled by global submit delegation
+      // Debounced instant search & Enter key listener on #ordSearch
+      const ordSearchEl = document.getElementById('ordSearch');
+      if (ordSearchEl) {
+        if (q) {
+          ordSearchEl.focus();
+          ordSearchEl.setSelectionRange(ordSearchEl.value.length, ordSearchEl.value.length);
+        }
+        let debTimer;
+        ordSearchEl.addEventListener('input', (e) => {
+          clearTimeout(debTimer);
+          debTimer = setTimeout(() => {
+            const startVal = document.getElementById('filterStart')?.value || '';
+            const endVal = document.getElementById('filterEnd')?.value || '';
+            const statusVal = document.getElementById('filterStatus')?.value || '';
+            this.renderPesanan({ start: startVal, end: endVal, status: statusVal, q: e.target.value });
+          }, 350);
+        });
+        ordSearchEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(debTimer);
+            const startVal = document.getElementById('filterStart')?.value || '';
+            const endVal = document.getElementById('filterEnd')?.value || '';
+            const statusVal = document.getElementById('filterStatus')?.value || '';
+            this.renderPesanan({ start: startVal, end: endVal, status: statusVal, q: ordSearchEl.value });
+          }
+        });
+      }
 
     } catch (e) {
       c.innerHTML = '<div class="err">Kesalahan koneksi pesanan</div>';
