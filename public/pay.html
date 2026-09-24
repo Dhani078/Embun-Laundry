@@ -552,6 +552,19 @@
         }
         updateIcon();
       });
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'theme' && e.newValue) {
+          document.documentElement.setAttribute('data-theme', e.newValue);
+          if (e.newValue === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          }
+          updateIcon();
+        }
+      });
     }
 
     loadPay();
