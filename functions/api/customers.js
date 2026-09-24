@@ -1,6 +1,7 @@
 // functions/api/customers.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr, COL_SPEC } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -126,6 +127,20 @@ export async function onRequest({ request, env }) {
           [code, name, phone, address, now, now]
         );
         const newCust = await db.query('SELECT * FROM customers WHERE code = ?', [code]);
+
+        // Audit trail — create customer
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'customer',
+          entity_id: code,
+          entity_label: `${name} (${code})`,
+          detail: `Pelanggan baru: ${name}, ${phone || '-'}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, customer: newCust[0] });
       }
 
@@ -141,13 +156,43 @@ export async function onRequest({ request, env }) {
         const { id, full_name: name, phone, address } = v.data;
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute('UPDATE customers SET full_name=?, phone=?, address=?, updated_at=? WHERE id=?', [name, phone, address, now, id]);
+
+        // Audit trail — update customer
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'update',
+          entity_type: 'customer',
+          entity_id: String(id),
+          entity_label: name,
+          detail: `Perbarui pelanggan: ${name}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
       if (act === 'delete_customer') {
         const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
         if (!v.ok) return v.response;
+        const delCustRows = await db.query('SELECT code, full_name FROM customers WHERE id = ? LIMIT 1', [v.data.id]);
+        const delLabel = delCustRows?.[0]?.full_name ? `${delCustRows[0].full_name} (${delCustRows[0].code})` : String(v.data.id);
         await db.execute('DELETE FROM customers WHERE id = ?', [v.data.id]);
+
+        // Audit trail — delete customer
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'delete',
+          entity_type: 'customer',
+          entity_id: String(v.data.id),
+          entity_label: delLabel,
+          detail: `Hapus pelanggan: ${delLabel}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
