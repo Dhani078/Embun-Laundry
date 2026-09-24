@@ -60,6 +60,44 @@ export async function onRequestGet({ request, env }) {
       totalCustomers = custCountRes[0]?.c || 0;
     }
 
+    // KPI: outstanding (piutang) — follows reports.js: orders.paid_amount column
+    let outstanding = 0;
+    if (isStaff) {
+      const outRes = await db.query(
+        `SELECT COALESCE(SUM(GREATEST(total_amount - COALESCE(paid_amount, 0), 0)), 0) as outs
+         FROM orders WHERE (status IS NULL OR status <> 'batal')`
+      );
+      outstanding = Math.max(0, outRes[0]?.outs || 0);
+    }
+
+    // KPI: today revenue vs yesterday
+    const todayRevRes = await db.query(
+      scoped
+        ? "SELECT COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE DATE(created_at) = CURDATE() AND status <> 'batal' AND customer_name = ?"
+        : "SELECT COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE DATE(created_at) = CURDATE() AND status <> 'batal'",
+      params
+    );
+    const todayRev = todayRevRes[0]?.rev || 0;
+
+    const yesterdayRevRes = await db.query(
+      scoped
+        ? "SELECT COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status <> 'batal' AND customer_name = ?"
+        : "SELECT COALESCE(SUM(total_amount), 0) as rev FROM orders WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status <> 'batal'",
+      params
+    );
+    const yesterdayRev = yesterdayRevRes[0]?.rev || 0;
+
+    // Recent activity log (staff only, last 5)
+    let recentActivity = [];
+    if (isStaff) {
+      try {
+        recentActivity = await db.query(
+          `SELECT actor_name, action_type, entity_type, entity_label, detail, created_at
+           FROM activity_log ORDER BY created_at DESC LIMIT 5`
+        );
+      } catch (_) { /* table might not exist yet */ }
+    }
+
     // Recent orders
     const recentSql = scoped
       ? `SELECT o.*, s.name as service_name
@@ -90,9 +128,13 @@ export async function onRequestGet({ request, env }) {
         total_revenue: totalRev,
         active_orders: activeOrders,
         finished_today: finishedToday,
-        total_customers: totalCustomers
+        total_customers: totalCustomers,
+        outstanding: outstanding,
+        today_revenue: todayRev,
+        yesterday_revenue: yesterdayRev
       },
       recent_orders: recentOrders,
+      recent_activity: recentActivity,
       vouchers: vouchersRes,
       user: {
         id: user.id,

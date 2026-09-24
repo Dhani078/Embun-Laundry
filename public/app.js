@@ -2068,7 +2068,7 @@ const App = window.App = {
     const c = document.getElementById('mainContent');
     const isStaff = ['Admin', 'Owner', 'Staff'].includes(this.user.role || this.user.user_role);
     c.innerHTML = `
-      ${this.renderSkeletonCards(isStaff ? 4 : 3)}
+      ${this.renderSkeletonCards(isStaff ? 6 : 3)}
       ${this.renderSkeletonTable({ columns: 7, rows: 5, hasActions: true })}
     `;
 
@@ -2078,9 +2078,15 @@ const App = window.App = {
       if (!data.ok) return c.innerHTML = '<div class="err">Gagal memuat dashboard</div>';
 
       const s = data.stats;
+      const todayRev = Number(s.today_revenue) || 0;
+      const yesterdayRev = Number(s.yesterday_revenue) || 0;
+      const growthPct = yesterdayRev > 0 ? Math.round(((todayRev - yesterdayRev) / yesterdayRev) * 100) : (todayRev > 0 ? 100 : 0);
+      const growthSign = growthPct > 0 ? '+' : '';
+      const growthColor = growthPct >= 0 ? 'var(--green)' : 'var(--red)';
+      const growthArrow = growthPct >= 0 ? '↑' : '↓';
 
       c.innerHTML = `
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
           <div class="stat-card stat-blue">
             <div class="stat-card-header">
               <span class="stat-label">${this.t('total_revenue')}</span>
@@ -2113,6 +2119,22 @@ const App = window.App = {
               </div>
               <div class="stat-value" data-kpi="${s.total_customers || 0}">${esc(s.total_customers || 0)}</div>
               <div class="stat-sub">${this.t('total_customers_sub')}</div>
+            </div>
+            <div class="stat-card" style="border-left: 3px solid var(--green);">
+              <div class="stat-card-header">
+                <span class="stat-label">Omset Hari Ini</span>
+                <div class="stat-icon icon-green">📈</div>
+              </div>
+              <div class="stat-value" data-kpi="${todayRev}">Rp ${todayRev.toLocaleString('id-ID')}</div>
+              <div class="stat-sub"><span style="color:${growthColor};font-weight:700;">${growthArrow} ${growthSign}${growthPct}%</span> vs kemarin (Rp ${yesterdayRev.toLocaleString('id-ID')})</div>
+            </div>
+            <div class="stat-card" style="border-left: 3px solid var(--amber);">
+              <div class="stat-card-header">
+                <span class="stat-label">Piutang Belum Lunas</span>
+                <div class="stat-icon icon-amber">💳</div>
+              </div>
+              <div class="stat-value" data-kpi="${Number(s.outstanding) || 0}">Rp ${Number(s.outstanding).toLocaleString('id-ID')}</div>
+              <div class="stat-sub">Tagihan belum terbayar</div>
             </div>
           ` : ''}
         </div>
@@ -2219,6 +2241,28 @@ const App = window.App = {
             </table>
           </div>
         </div>
+
+        ${isStaff && (data.recent_activity || []).length > 0 ? `
+        <div class="card glass-panel" style="padding: 24px; border-radius: var(--radius-md); margin-top: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text);">📋 Aktivitas Terbaru</h3>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">5 aksi terakhir di sistem</div>
+            </div>
+            <button class="btn" onclick="App.renderPage('activity-log')" style="padding: 6px 14px; font-size: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text);">Lihat Semua →</button>
+          </div>
+          ${(data.recent_activity).map(a => {
+            const actMap = { create: ['🆕','Buat','var(--green)'], login: ['🔐','Login','var(--blue)'], status_change: ['🔄','Status','var(--amber)'], update: ['✏️','Edit','var(--blue)'], delete: ['🗑️','Hapus','var(--red)'] };
+            const [ic, lb, cl] = actMap[a.action_type] || ['❓', a.action_type, 'var(--muted)'];
+            return '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px;">'
+              + '<span style="font-size: 14px;">' + ic + '</span>'
+              + '<span style="font-weight: 700; color: ' + cl + ';">' + esc(a.actor_name) + '</span>'
+              + '<span style="color: var(--muted);">' + lb + ' ' + esc(a.entity_type) + (a.entity_label ? ' ' + esc(a.entity_label) : '') + '</span>'
+              + '<span style="margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap;">' + this._timeAgo(a.created_at) + '</span>'
+              + '</div>';
+          }).join('')}
+        </div>
+        ` : ''}
       `;
 
       document.getElementById('dashNewOrdBtn').onclick = () => {
@@ -4615,7 +4659,7 @@ const App = window.App = {
       };
       const actionColors = {
         create: 'var(--green)', login: 'var(--blue)', logout: 'var(--muted)',
-        status_change: 'var(--orange)', update: 'var(--blue)', delete: 'var(--red)', unknown: 'var(--muted)'
+        status_change: 'var(--amber)', update: 'var(--blue)', delete: 'var(--red)', unknown: 'var(--muted)'
       };
 
       c.innerHTML = `
