@@ -4,6 +4,17 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Lupa Sandi • Embun Laundry</title>
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    } catch (e) {}
+  })();
+</script>
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -134,6 +145,35 @@ h1 {
 }
 .small a { color: var(--bg1); font-weight: 600; text-decoration: none; }
 .small a:hover { text-decoration: underline; }
+
+[data-theme="dark"] html, [data-theme="dark"] body {
+  background: #090d16;
+  color: #f8fafc;
+}
+[data-theme="dark"] .card {
+  background: #111827;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+[data-theme="dark"] .steps {
+  background: #090d16;
+  border-color: #1e293b;
+}
+[data-theme="dark"] .contact {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .btn-sec {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .btn-back, [data-theme="dark"] .theme-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
 </style>
 </head>
 <body>
@@ -144,9 +184,14 @@ h1 {
         <div class="logo-mark">EL</div>
         <div class="logo-name">Embun Laundry</div>
       </div>
-      <a href="/" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #64748b; text-decoration: none; padding: 6px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;" title="Kembali ke Halaman Beranda">
-        <span style="font-size: 14px;">←</span> <span>Beranda</span>
-      </a>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="themeToggleBtn" type="button" class="theme-btn" aria-label="Toggle dark mode" title="Ubah Tema" style="padding: 6px 10px; font-size: 13px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer;">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <a href="/" class="btn-back" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #64748b; text-decoration: none; padding: 6px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;" title="Kembali ke Halaman Beranda">
+          <span style="font-size: 14px;">←</span> <span>Beranda</span>
+        </a>
+      </div>
     </div>
 
     <h1>Lupa Sandi?</h1>
@@ -180,5 +225,26 @@ h1 {
     </div>
   </div>
 </div>
+<script>
+// Theme Toggle
+const themeBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+if (themeBtn && themeIcon) {
+  const updateIcon = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeIcon.textContent = isDark ? '☀️' : '🌙';
+  };
+  updateIcon();
+  themeBtn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    if (next === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', next);
+    updateIcon();
+  });
+}
+</script>
 </body>
 </html>
