@@ -23,6 +23,8 @@
   <link rel="stylesheet" href="/assets/style.css"/>
   <!-- B9: escaping HTML untuk data pesanan (lihat public/assets/escape.js) -->
   <script src="/assets/escape.js"></script>
+  <script src="/assets/qrcode-lib.js"></script>
+  <script src="/assets/qrcode.js"></script>
   <style>
     .method-pill {
       flex: 1 1 70px;
@@ -205,14 +207,18 @@
       if (!detailWrap) return;
 
       if (method === 'QRIS') {
+        const qrPayload = currentOrder ? `DHLDR|${currentOrder.order_code}|${currentOrder.remaining || currentOrder.total_amount}|${Date.now()}` : 'EMBUN-LAUNDRY-QRIS';
+        const qrSvg = (typeof QRCode !== 'undefined' && QRCode.svg)
+          ? QRCode.svg(qrPayload, { level: 'M', scale: 3, border: 2 })
+          : `<svg width="140" height="140" viewBox="0 0 64 64" style="display:block;margin:0 auto;border:1px solid #e2e8f0;padding:6px;border-radius:8px;background:#fff"><rect width="64" height="64" fill="#fff"/><path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/></svg>`;
+
         detailWrap.innerHTML = `
-          <div style="text-align: center; padding: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px;">
-            <div style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px;">Scan QRIS Dinamis</div>
-            <svg width="140" height="140" viewBox="0 0 64 64" style="display:block;margin:0 auto;border:1px solid #e2e8f0;padding:6px;border-radius:8px;background:#fff">
-              <rect width="64" height="64" fill="#fff"/>
-              <path d="M4 4h20v20H4V4zm4 4v12h12V8H8zm32-4h20v20H40V4zm4 4v12h12V8H44zM4 40h20v20H4V40zm4 4v12h12V44H8zm20-32h4v8h-4zm8 0h4v4h-4zm-8 12h4v8h-4zm8 4h8v4h-8zm-8 8h4v4h-4zm16-8h4v8h-4zm-4 12h4v4h-4zm-8 4h8v4h-8zm16-4h4v8h-4zm4 4h4v8h-4zm-20 8h4v4h-4zm8 0h8v4h-8zm-8 8h12v4H28zm16-4h4v8h-4zm8-4h4v4h-4zm-4 8h8v4h-8z" fill="#0f172a"/>
-            </svg>
-            <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Mendukung BCA, Mandiri, GoPay, OVO, ShopeePay, DANA</div>
+          <div style="text-align: center; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px;">Scan QRIS Dinamis</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 8px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid var(--line); width: fit-content; margin-left: auto; margin-right: auto;">
+              ${qrSvg}
+            </div>
+            <div style="font-size: 11px; color: var(--muted);">Mendukung BCA, Mandiri, GoPay, OVO, ShopeePay, DANA</div>
           </div>
         `;
       } else if (method === 'TRANSFER') {
