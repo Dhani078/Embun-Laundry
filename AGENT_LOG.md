@@ -5,7 +5,7 @@ Riwayat tick (append-only).
 ---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
 
-9 commit fbc7a22..0224351 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
+12 commit fbc7a22..f704c99 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
 
 - **Chart Drill-Down Interaktif** (fbc7a22) — Batang grafik SVG laporan keuangan interaktif: tooltip detail pendapatan per tanggal + klik batang langsung membuka pesanan terfilter di tanggal tersebut.
 - **Panel Preferensi Sistem di Profil** (a87fe03) — Pengaturan tema visual (Terang/Gelap), lokalisasi bahasa antarmuka (ID/EN), tes audio chime, dan badge status TiDB online di halaman profil pengguna.
@@ -16,6 +16,9 @@ Riwayat tick (append-only).
 - **Dukungan Parameter Ganda Code/Order_Code** (062cd5e) — Sinkronisasi URL query params code, order_code, dan track pada pay.html, track.html, dan deep-link index.html + tombol salin nota di nota pembayaran.
 - **Routing SPA & Semantik Dialog ARIA Modal** (faf6e01) — Routing SPA via renderPage agar sinkron dengan back/forward browser history (popstate). Penambahan role="dialog", aria-modal="true", dan aria-label/aria-labelledby pada seluruh modal (invoice, proof, order, customer, service, delivery, shortcuts, lightbox).
 - **State Aksesibilitas Dinamis (A11y)** (0224351) — Atribut aria-expanded sinkron pada tombol sidebar dan lonceng notifikasi; aria-pressed pada tombol tema gelap/terang; skeleton shimmer awal untuk role badge di dashboard statis.
+- **Audit Trail Pembayaran & Pelanggan** (a261c87) — Audit logging otomatis pada pembayaran masuk /api/pay (nominal, metode, nota, IP) dan CRUD pelanggan /api/customers (tambah, perbarui, hapus).
+- **Audit Trail Logistik & Tarif Layanan** (f708b7b) — Audit logging otomatis pada tugas antar jemput /api/delivery (buat tugas, ubah status kurir, assign kurir, hapus tugas) dan katalog layanan /api/services (tambah, edit, toggle aktif, hapus).
+- **Audit Trail Promo & Voucher Diskon** (f704c99) — Audit logging otomatis pada kode promo /api/promos (buat promo, ubah promo, toggle aktif, hapus) dan voucher pengguna /api/vouchers (klaim, bagi massal, terbitkan, cabut voucher). Sistem audit trail kini 100% mencakup seluruh modul operasional.
 
 
 ---
