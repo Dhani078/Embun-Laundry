@@ -2019,10 +2019,19 @@ body.sidebar-locked {
     padding: 0;
   }
 
-  .wrap, aside, .sidebar, .topbar, .btn, .controls, .nav,
-  .toast-container, #orderModal, #grantVoucherModal,
-  .invoice-actions, .no-print, header, footer {
+  aside, .sidebar, .topbar, .btn, .controls, .nav,
+  .toast-container, .cmd-palette-overlay, .skip-link,
+  #orderModal, #grantVoucherModal, #serviceModal, #deliveryModal,
+  #proofModal, #shortcutsModal, #onboardingModal,
+  .invoice-actions, .no-print, header, footer, .cat-tab, #batchBar {
     display: none !important;
+  }
+
+  .wrap, .main, .content {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
   .invoice-modal {
