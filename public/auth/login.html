@@ -292,7 +292,7 @@ h1 { font-size: 20px; margin: 6px 0 0; }
           <div class="input-wrap">
             <input class="input" type="password" name="password" id="password" required>
             <button type="button" class="toggle-pass" title="Tampilkan" aria-label="Tampilkan sandi"
-              onclick="const i=document.getElementById('password');this.title=(i.type==='password'?(i.type='text','Sembunyikan'):(i.type='password','Tampilkan'));">👁</button>
+              onclick="const i=document.getElementById('password');if(i.type==='password'){i.type='text';this.textContent='🙈';this.title='Sembunyikan';}else{i.type='password';this.textContent='👁';this.title='Tampilkan';}">👁</button>
           </div>
         </div>
 
