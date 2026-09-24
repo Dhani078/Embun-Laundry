@@ -706,7 +706,8 @@
     });
 
     // Dukung deep-link: /track.html?code=ORD-ABC123 langsung melacak.
-    var pre = new URLSearchParams(location.search).get('code');
+    var qp = new URLSearchParams(location.search);
+    var pre = qp.get('code') || qp.get('order_code') || qp.get('track');
     if (pre) {
       input.value = pre;
       form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit'));

@@ -99,7 +99,7 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+    const code = params.get('code') || params.get('order_code');
 
     let currentOrder = null;
     let selectedMethod = 'QRIS';
@@ -430,7 +430,19 @@
           isPaid
         };
 
-        document.getElementById('ordCodeLabel').textContent = o.order_code + ' • ' + (o.customer_name || 'Pelanggan');
+        const lbl = document.getElementById('ordCodeLabel');
+        lbl.innerHTML = `<span style="font-family:monospace;font-weight:700;">${esc(o.order_code)}</span> <button type="button" id="payCopyBtn" aria-label="Salin kode pesanan" style="background:transparent;border:none;cursor:pointer;padding:0 4px;font-size:13px;opacity:0.7;line-height:1;" title="Salin kode">📋</button> • ${esc(o.customer_name || 'Pelanggan')}`;
+        const pcb = document.getElementById('payCopyBtn');
+        if (pcb) {
+          pcb.onclick = () => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(o.order_code).then(() => {
+                pcb.textContent = '✅';
+                setTimeout(() => { pcb.textContent = '📋'; }, 1500);
+              });
+            }
+          };
+        }
 
         if (isPaid) {
           document.getElementById('payContent').innerHTML = `
