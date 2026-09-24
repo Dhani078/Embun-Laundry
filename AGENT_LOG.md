@@ -2,6 +2,21 @@
 
 Riwayat tick (append-only).
 
+---
+## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
+
+9 commit fbc7a22..0224351 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
+
+- **Chart Drill-Down Interaktif** (fbc7a22) — Batang grafik SVG laporan keuangan interaktif: tooltip detail pendapatan per tanggal + klik batang langsung membuka pesanan terfilter di tanggal tersebut.
+- **Panel Preferensi Sistem di Profil** (a87fe03) — Pengaturan tema visual (Terang/Gelap), lokalisasi bahasa antarmuka (ID/EN), tes audio chime, dan badge status TiDB online di halaman profil pengguna.
+- **Riwayat Aktivitas Sistem (Activity Log)** (45deb57) — Tabel audit trail activity_log di TiDB, endpoint /api/activity-log, audit hooks pada order/status/delete/login, UI timeline aktivitas + filter tipe + paginasi + ekspor CSV satu klik.
+- **Dashboard KPI Lanjutan & Widget Aktivitas** (5aebf38) — Kartu metrik omset hari ini dengan indikator growth % vs kemarin, kartu piutang belum lunas (outstanding), widget 5 aktivitas sistem terkini di dashboard, skeleton loader diperbarui ke 6 kartu.
+- **Sinkronisasi Status & Label Konfirmasi Batch** (32b710a) — Handler /api/orders mendukung aksi move_status dan update_status. Dialog konfirmasi batch status menggunakan label 'Terapkan' (biru) bukan 'Hapus'. Tombol salin nota di track.html.
+- **Debounced Katalog & Skeleton Pay.html** (c78ed7a) — Live search input layanan di index.html dengan debounce 200ms + counter jumlah layanan live (#svcResultCount). Form pembayaran pay.html dilengkapi skeleton shimmer & role="alert" / aria-live="polite".
+- **Dukungan Parameter Ganda Code/Order_Code** (062cd5e) — Sinkronisasi URL query params code, order_code, dan track pada pay.html, track.html, dan deep-link index.html + tombol salin nota di nota pembayaran.
+- **Routing SPA & Semantik Dialog ARIA Modal** (faf6e01) — Routing SPA via renderPage agar sinkron dengan back/forward browser history (popstate). Penambahan role="dialog", aria-modal="true", dan aria-label/aria-labelledby pada seluruh modal (invoice, proof, order, customer, service, delivery, shortcuts, lightbox).
+- **State Aksesibilitas Dinamis (A11y)** (0224351) — Atribut aria-expanded sinkron pada tombol sidebar dan lonceng notifikasi; aria-pressed pada tombol tema gelap/terang; skeleton shimmer awal untuk role badge di dashboard statis.
+
 
 ---
 ## Sesi manual — 2026-09-24 (fitur flagship, UX polish, & audit tuntas)
