@@ -536,7 +536,12 @@ const App = window.App = {
   },
 
   toast(msg, type = 'info') {
-    if (type === 'success') this.playSuccessChime();
+    if (type === 'success') {
+      this.playSuccessChime();
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(12);
+    } else if (type === 'error' && typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([25, 40, 25]);
+    }
     let container = document.querySelector('.toast-container');
     if (!container) {
       container = document.createElement('div');
@@ -1143,6 +1148,24 @@ const App = window.App = {
   bindEvents() {
     window.addEventListener('popstate', () => {
       this.route();
+    });
+    window.addEventListener('online', () => {
+      this.toast(this.lang === 'en' ? 'Internet connection restored' : 'Koneksi internet terhubung kembali', 'success');
+      this.updateNotifications();
+      const banner = document.getElementById('offlineBanner');
+      if (banner) banner.remove();
+    });
+    window.addEventListener('offline', () => {
+      this.toast(this.lang === 'en' ? 'Internet connection lost (Offline)' : 'Koneksi internet terputus (Offline)', 'warning');
+      let banner = document.getElementById('offlineBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'offlineBanner';
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--amber, #f59e0b);color:#1e293b;padding:8px 18px;border-radius:99px;font-size:12px;font-weight:700;z-index:99998;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;';
+        banner.innerHTML = '<span>📡</span> <span>Mode Offline — Beberapa fitur membutuhkan internet</span>';
+        document.body.appendChild(banner);
+      }
     });
     document.addEventListener('click', (e) => {
       const cmdBtn = e.target.closest('#cmdPaletteBtn, .cmd-palette-trigger');
