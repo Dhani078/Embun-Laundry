@@ -373,12 +373,16 @@
         <dt>Dibayar</dt>            <dd id="r-paid"></dd>
         <dt>Status pembayaran</dt>  <dd id="r-pay"></dd>
         <dt>Dibuat</dt>             <dd id="r-created"></dd>
+        <dt>Estimasi selesai</dt>   <dd id="r-estimate" style="font-weight:var(--weight-semibold);">-</dd>
       </dl>
 
       <div style="margin-top:var(--space-5);padding-top:var(--space-4);border-top:1px solid var(--color-border-subtle);display:flex;gap:var(--space-3);flex-wrap:wrap">
         <button type="button" id="btn-print-invoice" style="display:inline-flex;align-items:center;gap:6px;padding:var(--space-2) var(--space-4);font-size:var(--text-body-sm);background:var(--color-brand-primary);color:var(--color-text-on-inverse);border:none;border-radius:var(--radius-md);cursor:pointer;font-weight:var(--weight-semibold)">
           🧾 Cetak / Unduh Invoice
         </button>
+        <a id="btn-pay-now" href="#" style="display:none;align-items:center;gap:6px;padding:var(--space-2) var(--space-4);font-size:var(--text-body-sm);background:var(--color-brand-accent, #10b981);color:#fff;text-decoration:none;border-radius:var(--radius-md);font-weight:var(--weight-semibold)">
+          💳 Bayar Sekarang
+        </a>
       </div>
 
       <div id="notif-box" style="margin-top:var(--space-4);border-top:1px solid var(--color-border);padding-top:var(--space-4)">
@@ -524,6 +528,41 @@
       };
       setText('r-pay', payMap[o.payment_status] || o.payment_status || '-');
       setText('r-created', o.created_at || '-');
+
+      // Estimasi pengerjaan cucian
+      var estEl = document.getElementById('r-estimate');
+      if (estEl) {
+        if (o.status === 'selesai') {
+          estEl.textContent = '✅ Cucian selesai & siap diambil';
+          estEl.style.color = 'var(--color-success, #10b981)';
+        } else if (o.status === 'batal') {
+          estEl.textContent = 'Pesanan dibatalkan';
+          estEl.style.color = 'var(--color-danger, #ef4444)';
+        } else {
+          var created = new Date(o.created_at || Date.now());
+          var svcName = String(o.service_name || '').toLowerCase();
+          var addHours = 24;
+          if (svcName.includes('express') || svcName.includes('kilat')) addHours = 6;
+          else if (svcName.includes('bed') || svcName.includes('selimut') || svcName.includes('satuan')) addHours = 48;
+          var targetDate = new Date(created.getTime() + addHours * 3600 * 1000);
+          var estStr = targetDate.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' +
+            targetDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+          estEl.textContent = '⏱️ ' + estStr;
+          estEl.style.color = 'var(--color-brand-primary)';
+        }
+      }
+
+      // Tombol bayar cepat jika belum lunas
+      var btnPay = document.getElementById('btn-pay-now');
+      var isUnpaid = (o.payment_status !== 'paid' && o.payment_status !== 'lunas');
+      if (btnPay) {
+        if (isUnpaid && o.status !== 'batal') {
+          btnPay.href = '/pay.html?code=' + encodeURIComponent(o.order_code);
+          btnPay.style.display = 'inline-flex';
+        } else {
+          btnPay.style.display = 'none';
+        }
+      }
 
       var st = document.getElementById('r-status');
       st.textContent = o.status || '-';
