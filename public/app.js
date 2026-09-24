@@ -822,6 +822,9 @@ const App = window.App = {
       modal = document.createElement('div');
       modal.id = 'invoiceModal';
       modal.className = 'invoice-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Rincian Invoice Pesanan');
       document.body.appendChild(modal);
     }
 
@@ -953,6 +956,9 @@ const App = window.App = {
         modal = document.createElement('div');
         modal.id = 'proofModal';
         modal.className = 'invoice-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-label', 'Bukti Pembayaran');
         document.body.appendChild(modal);
       }
       const proofs = payments.filter(p => p.proof_image);
@@ -996,6 +1002,9 @@ const App = window.App = {
     if (!lb) {
       lb = document.createElement('div');
       lb.id = 'appLightbox';
+      lb.setAttribute('role', 'dialog');
+      lb.setAttribute('aria-modal', 'true');
+      lb.setAttribute('aria-label', 'Pratinjau Foto Bukti Pembayaran');
       lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;display:none;place-items:center;padding:20px;backdrop-filter:blur(8px);cursor:zoom-out;';
       lb.onclick = () => { lb.style.display = 'none'; };
       document.body.appendChild(lb);
@@ -1016,6 +1025,9 @@ const App = window.App = {
       modal = document.createElement('div');
       modal.id = 'shortcutsModal';
       modal.className = 'invoice-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'Pintasan Keyboard');
       document.body.appendChild(modal);
     }
     const isEn = this.lang === 'en';
@@ -1172,15 +1184,15 @@ const App = window.App = {
 
   route() {
     const hash = window.location.pathname;
-    if (hash === '/pesanan' || hash === '/pesanan.html') this.renderPesanan();
-    else if (hash === '/pelanggan' || hash === '/pelanggan.html') this.renderPelanggan();
-    else if (hash === '/layanan' || hash === '/layanan.html') this.renderLayanan();
-    else if (hash === '/delivery' || hash === '/delivery.html') this.renderDelivery();
-    else if (hash === '/laporan' || hash === '/laporan.html') this.renderLaporan();
-    else if (hash === '/promo' || hash === '/promo.html') this.renderPromo();
-    else if (hash === '/profile' || hash === '/profile.html') this.renderProfile();
-    else if (hash === '/activity-log' || hash === '/activity-log.html') this.renderActivityLog();
-    else this.renderDashboard();
+    if (hash === '/pesanan' || hash === '/pesanan.html') this.renderPage('pesanan');
+    else if (hash === '/pelanggan' || hash === '/pelanggan.html') this.renderPage('pelanggan');
+    else if (hash === '/layanan' || hash === '/layanan.html') this.renderPage('layanan');
+    else if (hash === '/delivery' || hash === '/delivery.html') this.renderPage('delivery');
+    else if (hash === '/laporan' || hash === '/laporan.html') this.renderPage('laporan');
+    else if (hash === '/promo' || hash === '/promo.html') this.renderPage('promo');
+    else if (hash === '/profile' || hash === '/profile.html') this.renderPage('profile');
+    else if (hash === '/activity-log' || hash === '/activity-log.html') this.renderPage('activity-log');
+    else this.renderPage('dashboard');
   },
 
   renderLogin() {
@@ -2473,10 +2485,10 @@ const App = window.App = {
         </div>
 
         <!-- Order Modal -->
-        <div id="orderModal" class="modal-backdrop" style="display: none;">
+        <div id="orderModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
           <div class="modal-dialog">
             <div class="modal-header">
-              <h3 class="modal-title">🧺 Buat Pesanan Laundry</h3>
+              <h3 class="modal-title" id="orderModalTitle">🧺 Buat Pesanan Laundry</h3>
               <button type="button" class="modal-close" id="closeOrderModalBtn" aria-label="Tutup">✕</button>
             </div>
             <form id="newOrderForm">
@@ -2669,7 +2681,7 @@ const App = window.App = {
         </div>
 
         <!-- Customer Modal -->
-        <div id="customerModal" class="modal-backdrop" style="display: none;">
+        <div id="customerModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="custModalTitle">
           <div class="modal-dialog">
             <div class="modal-header">
               <h3 class="modal-title" id="custModalTitle">👥 Tambah Pelanggan</h3>
@@ -2819,7 +2831,7 @@ const App = window.App = {
         </div>
 
         <!-- Service Modal -->
-        <div id="serviceModal" class="modal-backdrop" style="display: none;">
+        <div id="serviceModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
           <div class="modal-dialog">
             <div class="modal-header">
               <h3 class="modal-title" id="serviceModalTitle">💲 Tambah Layanan Laundry</h3>
@@ -3039,10 +3051,10 @@ const App = window.App = {
         </div>
 
         <!-- Delivery Modal -->
-        <div id="deliveryModal" class="modal-backdrop" style="display: none;">
+        <div id="deliveryModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="deliveryModalTitle">
           <div class="modal-dialog">
             <div class="modal-header">
-              <h3 class="modal-title">🚚 Jadwalkan Penjemputan / Pengantaran</h3>
+              <h3 class="modal-title" id="deliveryModalTitle">🚚 Jadwalkan Penjemputan / Pengantaran</h3>
               <button type="button" class="modal-close" id="closeDeliveryModalBtn" aria-label="Tutup">✕</button>
             </div>
             <form id="deliveryForm">
