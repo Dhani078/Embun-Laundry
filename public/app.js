@@ -478,6 +478,35 @@ const App = window.App = {
     setTimeout(done, 5200);
   },
 
+  copyToClipboard(text, label = 'Teks') {
+    if (!text) return;
+    const onSuccess = () => this.toast(`${label} disalin!`, 'success');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
+        this._fallbackCopy(text, onSuccess);
+      });
+    } else {
+      this._fallbackCopy(text, onSuccess);
+    }
+  },
+
+  _fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (cb) cb();
+    } catch {
+      this.toast('Gagal menyalin', 'error');
+    }
+    document.body.removeChild(ta);
+  },
+
   toast(msg, type = 'info') {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -2022,7 +2051,10 @@ const App = window.App = {
                     return `
                     <tr style="${rowStyle}">
                       <td style="padding: 10px 12px;">
-                        <div style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</div>
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <span style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</span>
+                          <button type="button" aria-label="Salin kode" onclick="App.copyToClipboard('${esc(o.order_code)}', 'Kode pesanan')" style="border:none;background:transparent;cursor:pointer;padding:0;font-size:12px;opacity:0.6;line-height:1;" title="Salin kode nota">📋</button>
+                        </div>
                         <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" title="${esc(o.created_at || '')}">${this._timeAgo(o.created_at)}</div>
                       </td>
                       <td style="padding: 10px 12px;">
@@ -2198,7 +2230,10 @@ const App = window.App = {
                 <tr style="${rowStyle}">
                   ${isStaff ? `<td style="padding: 12px 6px;"><input type="checkbox" class="chk-order" data-id="${esc(o.id)}" value="${esc(o.id)}"></td>` : ''}
                   <td style="padding: 12px 10px;">
-                    <div style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</div>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                      <span style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(o.order_code)}">${esc(o.order_code)}</span>
+                      <button type="button" aria-label="Salin kode" onclick="App.copyToClipboard('${esc(o.order_code)}', 'Kode pesanan')" style="border:none;background:transparent;cursor:pointer;padding:0;font-size:12px;opacity:0.6;line-height:1;" title="Salin kode nota">📋</button>
+                    </div>
                     <div style="font-size: 11px; color: var(--muted); margin-top: 2px;" title="${esc(o.created_at || '')}">${this._timeAgo(o.created_at)}</div>
                   </td>
                   <td style="padding: 12px 10px;">
@@ -2398,7 +2433,12 @@ const App = window.App = {
 
                 return `
                   <tr class="cust-row" data-search="${esc(String(cust.code || '') + ' ' + String(cust.full_name || '') + ' ' + rawPhone).toLowerCase()}" style="border-bottom: 1px solid var(--line); transition: background 0.15s ease;">
-                    <td style="padding: 12px 10px; font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(cust.code)}">${esc(cust.code)}</td>
+                    <td style="padding: 12px 10px;">
+                      <div style="display:flex;align-items:center;gap:4px;">
+                        <span style="font-weight: 700; color: var(--blue); font-family: monospace;" title="${esc(cust.code)}">${esc(cust.code)}</span>
+                        <button type="button" aria-label="Salin kode" onclick="App.copyToClipboard('${esc(cust.code)}', 'Kode pelanggan')" style="border:none;background:transparent;cursor:pointer;padding:0;font-size:12px;opacity:0.6;line-height:1;" title="Salin kode pelanggan">📋</button>
+                      </div>
+                    </td>
                     <td style="padding: 12px 10px;">
                       <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                         <div class="user-avatar-sm" style="width: 28px; height: 28px; font-size: 11px; flex-shrink: 0;">
@@ -2412,6 +2452,7 @@ const App = window.App = {
                     <td style="padding: 12px 10px;">
                       <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;" title="${esc(rawPhone || '-')}">${esc(rawPhone || '-')}</span>
+                        ${rawPhone ? `<button type="button" aria-label="Salin nomor HP" onclick="App.copyToClipboard('${esc(rawPhone)}', 'Nomor HP')" style="border:none;background:transparent;cursor:pointer;padding:0;font-size:12px;opacity:0.6;line-height:1;" title="Salin No. HP">📋</button>` : ''}
                         ${waPhone.length >= 8 ? `
                           <a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" class="btn-wa" title="Hubungi via WhatsApp">
                             <span>💬</span> <span>WA</span>
