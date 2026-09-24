@@ -31,9 +31,11 @@ for (const f of files) {
     console.log(`${f.padEnd(32)} HIJAU  ${score}`);
     passed++;
   } catch (err) {
-    console.error(`${f.padEnd(32)} MERAH`);
     const stdout = err.stdout ? err.stdout.toString() : '';
     const stderr = err.stderr ? err.stderr.toString() : '';
+    const details = (stdout + ' ' + stderr + ' ' + err.message).replace(/[\r\n]+/g, ' ').slice(0, 500);
+    console.log(`::error file=${f}::Test ${f} MERAH: ${details}`);
+    console.error(`${f.padEnd(32)} MERAH`);
     console.error(stdout || stderr || err.message);
     failed++;
   }
