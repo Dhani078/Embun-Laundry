@@ -1,6 +1,7 @@
 // functions/api/vouchers.js
 import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_ERROR } from '../_db.js';
 import { validateOr400, cleanStr } from '../_validate.js';
+import { logActivity } from '../_activity.js';
 
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
@@ -96,6 +97,20 @@ export async function onRequest({ request, env }) {
         );
 
         const newV = await db.query('SELECT * FROM user_vouchers WHERE code = ?', [code]);
+
+        // Audit trail — claim voucher
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'voucher',
+          entity_id: code,
+          entity_label: `${p.name} (${code})`,
+          detail: `Klaim voucher untuk user #${userId}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, voucher: newV[0] });
       }
 
@@ -136,6 +151,20 @@ export async function onRequest({ request, env }) {
             created++;
           }
         }
+
+        // Audit trail — bulk claim
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'voucher',
+          entity_id: String(promoId),
+          entity_label: p.name,
+          detail: `Bagi massal ${created} voucher ${p.name}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, created });
       }
 
@@ -161,13 +190,43 @@ export async function onRequest({ request, env }) {
         );
 
         const newV = await db.query('SELECT * FROM user_vouchers WHERE code = ?', [code]);
+
+        // Audit trail — create voucher
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'create',
+          entity_type: 'voucher',
+          entity_id: code,
+          entity_label: `${p.name} (${code})`,
+          detail: `Terbitkan voucher untuk user #${userId}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true, voucher: newV[0] });
       }
 
       if (act === 'delete_voucher') {
         const v = validateOr400(body, { id: { type: 'int', required: true, min: 1, label: 'ID' } });
         if (!v.ok) return v.response;
+        const vRow = await db.query('SELECT code, name FROM user_vouchers WHERE id = ? LIMIT 1', [v.data.id]);
+        const vLabel = vRow?.[0]?.code || String(v.data.id);
         await db.execute('DELETE FROM user_vouchers WHERE id = ?', [v.data.id]);
+
+        // Audit trail — delete voucher
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
+        logActivity(db, {
+          actor_name: user.user_name,
+          actor_role: user.user_role,
+          action_type: 'delete',
+          entity_type: 'voucher',
+          entity_id: String(v.data.id),
+          entity_label: vLabel,
+          detail: `Cabut voucher: ${vLabel}`,
+          ip_address: clientIp
+        });
+
         return jsonResponse({ ok: true });
       }
 
