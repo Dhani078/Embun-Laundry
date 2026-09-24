@@ -350,6 +350,10 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 2;
 }
 
 .table td {
