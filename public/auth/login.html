@@ -341,6 +341,14 @@ if (themeBtn && themeIcon) {
     localStorage.setItem('theme', next);
     updateIcon();
   });
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme' && e.newValue) {
+      document.documentElement.setAttribute('data-theme', e.newValue);
+      if (e.newValue === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      updateIcon();
+    }
+  });
 }
 
 // CSRF token fetch
