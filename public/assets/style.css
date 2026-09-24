@@ -1367,7 +1367,14 @@ textarea {
 [data-theme="dark"] .side-bottom a.active, html.dark .side-bottom a.active { background: var(--blue-soft); border-color: var(--blue-border); color: var(--blue-light); }
 [data-theme="dark"] .topbar, html.dark .topbar { background: rgba(17, 24, 39, 0.85); border-color: var(--line); }
 [data-theme="dark"] .search, html.dark .search { background: var(--bg); border-color: var(--line); color: var(--text); }
-[data-theme="dark"] .card, html.dark .card { background: var(--card); border-color: var(--line); }
+[data-theme="dark"] .card, html.dark .card {
+  background: var(--card);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), var(--shadow-sm);
+}
+[data-theme="dark"] .stat-card, html.dark .stat-card {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), var(--shadow-sm);
+}
 [data-theme="dark"] input, html.dark input,
 [data-theme="dark"] select, html.dark select,
 [data-theme="dark"] textarea, html.dark textarea {
