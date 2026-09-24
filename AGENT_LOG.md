@@ -4,6 +4,28 @@ Riwayat tick (append-only).
 
 
 ---
+## Sesi manual — 2026-09-24 (fitur flagship, UX polish, & audit tuntas)
+
+14 commit (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: sukses.
+
+- **Command Palette (Ctrl+K / ⌘K)** (b0ef8b2) — 13 menu navigasi + 5 aksi cepat (buat order, ganti tema, ganti bahasa, logout) + fuzzy search live filter pesanan + navigasi keyboard ↑↓ Enter Esc.
+- **CI/CD Linux Path Fix** (c061649) — tools/verify_c9.mjs diganti fileURLToPath agar kompatibel runner Ubuntu GitHub Actions. Step 5 (test 48/48 + build minifikasi) 100% sukses di runner.
+- **Batch Status Update & CSV Export** (91699f3) — checkbox bulk select di tabel pesanan + status dropdown + apply massal. Tombol unduh CSV di Pesanan, Pelanggan, dan Laporan Keuangan (UTF-8 BOM Excel-friendly). Summary footer (total pesanan, total kg, total omset).
+- **Deep-linking Landing Page** (91699f3) — klik 'Pesan Sekarang' di landing page otomatis simpan redirect param -> login/register -> buka dashboard -> auto-open modal pesanan dengan pre-filled layanan & berat.
+- **Notifikasi In-App Real-time Topbar** (90e5b76) — ikon lonceng interaktif 🔔 dengan badge dinamis (pesanan selesai / unpaid / proses) + dropdown riwayat aktivitas pesanan.
+- **Waktu Relatif Humanis (_timeAgo)** (90e5b76) — format 'Baru saja', 'X mnt lalu', 'X jam lalu' di kolom nota dengan tooltip timestamp asli.
+- **Lightbox Zoom Bukti Bayar & Shortcut Cheat Sheet (?)** (f104acf) — modal lightbox zoom bukti transfer struk (backdrop blur, click outside dismiss) + dialog cheat sheet pintasan keyboard via tombol '?' + sticky table header th.
+- **Debounced Instant Search & Onboarding Tour** (5331731) — live search input debounce 350ms & Enter handler pada #ordSearch (posisi kursor & fokus terjaga) + welcome tour modal 3 langkah untuk pengguna baru (localStorage persist).
+- **Estimasi Waktu Pengerjaan di /track** (4e6da44) — kalkulasi otomatis waktu selesai (Express 6 jam, Reguler 24 jam, Satuan/Bed Cover 48 jam) + tombol bayar cepat '💳 Bayar Sekarang' jika nota belum lunas.
+- **Quick-Copy Clipboard (📋)** (bd8b820) — tombol salin 1-klik untuk kode nota, kode pelanggan, dan no HP dengan toast non-blocking.
+- **Dark Mode Auth Pages** (bed9dac) — tema gelap presisi dan tombol toggle tema tersinkron pada login.html, register.html, dan lupasandi.html.
+- **Optimistic UI Status & 'Apel ke Emas'** (c3c66b4) — status dropdown berubah seketika + auto-rollback jika gagal; status selesai memunculkan tombol '🚚 Antar' dengan form kurir prefilled otomatis.
+- **Penyegaran Data Instan & Pull-to-Refresh** (3311fd6) — tombol '🔄' di topbar dengan animasi rotasi 360° + touch gesture pull-to-refresh mobile saat di posisi scroll teratas.
+- **PWA Offline Precache v4** (853a9e5) — sw.js meng-cache /assets/qrcode-lib.js, /assets/qrcode.js, dan /auth/lupasandi.html agar cetak QR dan reset sandi tetap bisa dibuka saat offline.
+- **Perbaikan Print Stylesheet** (9a618ba) — menghapus .wrap dari display:none agar cetak laporan keuangan dan tabel pesanan tidak kosong.
+- **Web Audio Chime & Dark Elevation Ring** (76308a4) — nada sintetis audio Web Audio API (D5->A5 250ms) saat transaksi sukses + shadow ring pada card dark mode.
+- **CRUD Pelanggan Lengkap di UI** (a5ecac1) — form modal tambah & edit pelanggan (#customerModal) serta aksi hapus pelanggan untuk staf terhubung ke POST /api/customers.
+---
 ## Sesi manual — 2026-09-17 (chat, bukan cron)
 
 7 commit f5233d2..a25ed07 (branch main, ter-push GitHub). app.js 2556→2398 baris.
