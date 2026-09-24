@@ -1638,7 +1638,7 @@ function renderTrackResult(order) {
   const remaining = Math.max(0, order.total_amount - (order.paid_amount || 0));
   const payActionHtml = !isPaid ? `
     <div style="margin-top:14px; text-align:center;">
-      <a class="btn btn-primary" href="/pay.html?order_code=${encodeURIComponent(order.order_code)}" style="width:100%;">
+      <a class="btn btn-primary" href="/pay.html?code=${encodeURIComponent(order.order_code)}" style="width:100%;">
         💳 Bayar Sekarang (${rupiah(remaining)})
       </a>
     </div>
