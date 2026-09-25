@@ -996,7 +996,7 @@ const App = window.App = {
                 <span style="color:var(--muted);">${esc(p.created_at || '')}</span>
               </div>
               <div style="cursor:zoom-in;" onclick="App.openLightbox('${esc(p.proof_image)}', 'Bukti Transfer Rp ${Number(p.amount).toLocaleString('id-ID')} (${esc(p.method)}')">
-                <img src="${p.proof_image}" alt="Bukti Transfer" style="width:100%;max-height:360px;object-fit:contain;border-radius:6px;background:var(--card);border:1px solid var(--line);">
+                <img src="${esc(p.proof_image)}" alt="Bukti Transfer" style="width:100%;max-height:360px;object-fit:contain;border-radius:6px;background:var(--card);border:1px solid var(--line);">
               </div>
               <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:right;">🔍 Klik gambar untuk memperbesar</div>
             </div>
@@ -1063,8 +1063,8 @@ const App = window.App = {
         <div style="display:flex;flex-direction:column;gap:10px;">
           ${shortcuts.map(s => `
             <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--line);">
-              <span style="font-size:13px;color:var(--text);">${s.desc}</span>
-              <kbd style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:var(--card);border:1px solid var(--line);color:var(--blue);font-family:monospace;">${s.key}</kbd>
+              <span style="font-size:13px;color:var(--text);">${esc(s.desc)}</span>
+              <kbd style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:var(--card);border:1px solid var(--line);color:var(--blue);font-family:monospace;">${esc(s.key)}</kbd>
             </div>
           `).join('')}
         </div>
@@ -2167,7 +2167,7 @@ const App = window.App = {
               <span class="stat-label">${this.t('active_orders')}</span>
               <div class="stat-icon icon-blue">🧺</div>
             </div>
-            <div class="stat-value" data-kpi="${s.active_orders || 0}">${esc(s.active_orders || 0)}</div>
+            <div class="stat-value" data-kpi="${Number(s.active_orders) || 0}">${esc(s.active_orders || 0)}</div>
             <div class="stat-sub">${this.t('active_orders_sub')}</div>
           </div>
           <div class="stat-card stat-green">
@@ -2175,7 +2175,7 @@ const App = window.App = {
               <span class="stat-label">${this.t('finished_today')}</span>
               <div class="stat-icon icon-green">✨</div>
             </div>
-            <div class="stat-value" data-kpi="${s.finished_today || 0}">${esc(s.finished_today || 0)}</div>
+            <div class="stat-value" data-kpi="${Number(s.finished_today) || 0}">${esc(s.finished_today || 0)}</div>
             <div class="stat-sub">${this.t('finished_today_sub')}</div>
           </div>
           ${isStaff ? `
@@ -2184,7 +2184,7 @@ const App = window.App = {
                 <span class="stat-label">${this.t('total_customers')}</span>
                 <div class="stat-icon icon-amber">👥</div>
               </div>
-              <div class="stat-value" data-kpi="${s.total_customers || 0}">${esc(s.total_customers || 0)}</div>
+              <div class="stat-value" data-kpi="${Number(s.total_customers) || 0}">${esc(s.total_customers || 0)}</div>
               <div class="stat-sub">${this.t('total_customers_sub')}</div>
             </div>
             <div class="stat-card" style="border-left: 3px solid var(--green);">
@@ -4129,7 +4129,7 @@ const App = window.App = {
       `"${String(c.phone || '').replace(/"/g, '""')}"`,
       `"${String(c.email || '').replace(/"/g, '""')}"`,
       `"${String(c.address || '').replace(/"/g, '""')}"`,
-      `"${c.computed_tag || c.tag || 'Baru'}"`,
+      `"${String(c.computed_tag || c.tag || 'Baru').replace(/"/g, '""')}"`,
       Number(c.order_count || 0),
       Number(c.total_spent || 0)
     ]);
@@ -4194,8 +4194,8 @@ const App = window.App = {
       `"${String(o.service_name || '').replace(/"/g, '""')}"`,
       Number(o.weight_kg || 0),
       Number(o.total_amount || 0),
-      `"${o.status || ''}"`,
-      `"${o.payment_status || ''}"`,
+      `"${String(o.status || '').replace(/"/g, '""')}"`,
+      `"${String(o.payment_status || '').replace(/"/g, '""')}"`,
       `"${String(o.created_at || '').replace(/"/g, '""')}"`
     ]);
     const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
@@ -4839,8 +4839,8 @@ const App = window.App = {
             const rows = allData.logs || [];
             const bom = '\uFEFF';
             const header = 'Waktu,Aktor,Role,Tipe,Entitas,Label,Detail,IP\n';
-            const csv = bom + header + rows.map(r =>
-              `"${r.created_at}","${(r.actor_name||'').replace(/"/g,'""')}","${r.actor_role}","${r.action_type}","${r.entity_type}","${(r.entity_label||'').replace(/"/g,'""')}","${(r.detail||'').replace(/"/g,'""')}","${r.ip_address||''}"`
+            const csv = bom + header + rows.map(item =>
+              `"${String(item.created_at || '').replace(/"/g, '""')}","${String(item.actor_name || '').replace(/"/g, '""')}","${String(item.actor_role || '').replace(/"/g, '""')}","${String(item.action_type || '').replace(/"/g, '""')}","${String(item.entity_type || '').replace(/"/g, '""')}","${String(item.entity_label || '').replace(/"/g, '""')}","${String(item.detail || '').replace(/"/g, '""')}","${String(item.ip_address || '').replace(/"/g, '""')}"`
             ).join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
