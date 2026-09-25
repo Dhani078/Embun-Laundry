@@ -7,6 +7,8 @@ const App = window.App = {
   currentPage: 'dashboard',
 
   async init() {
+    if (this._initialized) return;
+    this._initialized = true;
     this.initTheme();
     this.initLang();
     if (typeof document !== 'undefined' && !document.getElementById('mainContent')) {
