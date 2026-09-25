@@ -5,7 +5,7 @@ Riwayat tick (append-only).
 ---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
 
-16 commit fbc7a22..93e2615 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
+17 commit fbc7a22..6eac441 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
 
 - **Chart Drill-Down Interaktif** (fbc7a22) — Batang grafik SVG laporan keuangan interaktif: tooltip detail pendapatan per tanggal + klik batang langsung membuka pesanan terfilter di tanggal tersebut.
 - **Panel Preferensi Sistem di Profil** (a87fe03) — Pengaturan tema visual (Terang/Gelap), lokalisasi bahasa antarmuka (ID/EN), tes audio chime, dan badge status TiDB online di halaman profil pengguna.
@@ -23,6 +23,7 @@ Riwayat tick (append-only).
 - **Audit SQL Injection 100% HIJAU (Zero Interpolasi)** (63f8c9e) — Mengeliminasi interpolasi template literal notifications fields di functions/api/notifications.js menjadi kolom statis eksplisit. Script tools/audit_sql_injection.py melaporkan 0 temuan interpolasi (seluruh 75 query database ter-parameterisasi penuh).
 - **Penjaga Idempotensi App.init()** (f38ed62) — Memasang guard `this._initialized` pada startup SPA untuk mencegah inisialisasi ganda jika dipicu berulang kali atau dari beberapa script tag bersamaan.
 - **Sinkronisasi Tema Real-Time Lintas Tab Landing Page** (93e2615) — Memasang window storage event listener pada public/index.html agar perubahan tema gelap/terang di tab kasir atau customer seketika memperbarui mode visual di landing page tanpa reload.
+- **Favicon Konsisten di Seluruh Halaman Standalone** (6eac441) — Memasang link rel icon /img/Logo.png pada pay.html, login.html, register.html, dan lupasandi.html sehingga seluruh rute publik menampilkan identitas brand Embun Laundry secara seragam.
 
 
 ---
