@@ -5,7 +5,7 @@ Riwayat tick (append-only).
 ---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
 
-12 commit fbc7a22..f704c99 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
+14 commit fbc7a22..63f8c9e (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
 
 - **Chart Drill-Down Interaktif** (fbc7a22) — Batang grafik SVG laporan keuangan interaktif: tooltip detail pendapatan per tanggal + klik batang langsung membuka pesanan terfilter di tanggal tersebut.
 - **Panel Preferensi Sistem di Profil** (a87fe03) — Pengaturan tema visual (Terang/Gelap), lokalisasi bahasa antarmuka (ID/EN), tes audio chime, dan badge status TiDB online di halaman profil pengguna.
@@ -19,6 +19,8 @@ Riwayat tick (append-only).
 - **Audit Trail Pembayaran & Pelanggan** (a261c87) — Audit logging otomatis pada pembayaran masuk /api/pay (nominal, metode, nota, IP) dan CRUD pelanggan /api/customers (tambah, perbarui, hapus).
 - **Audit Trail Logistik & Tarif Layanan** (f708b7b) — Audit logging otomatis pada tugas antar jemput /api/delivery (buat tugas, ubah status kurir, assign kurir, hapus tugas) dan katalog layanan /api/services (tambah, edit, toggle aktif, hapus).
 - **Audit Trail Promo & Voucher Diskon** (f704c99) — Audit logging otomatis pada kode promo /api/promos (buat promo, ubah promo, toggle aktif, hapus) dan voucher pengguna /api/vouchers (klaim, bagi massal, terbitkan, cabut voucher). Sistem audit trail kini 100% mencakup seluruh modul operasional.
+- **Audit XSS Statis 100% HIJAU (Zero Findings)** (da150fc) — Menuntaskan seluruh 14 temuan interpolasi field objek basis data pada tools/audit_xss.py di public/app.js (esc untuk proof_image, shortcut desc/key, active_orders, finished_today, total_customers, computed_tag, order/payment status, dan kolom CSV export).
+- **Audit SQL Injection 100% HIJAU (Zero Interpolasi)** (63f8c9e) — Mengeliminasi interpolasi template literal notifications fields di functions/api/notifications.js menjadi kolom statis eksplisit. Script tools/audit_sql_injection.py melaporkan 0 temuan interpolasi (seluruh 75 query database ter-parameterisasi penuh).
 
 
 ---
