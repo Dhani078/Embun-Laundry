@@ -68,7 +68,7 @@ export async function onRequestGet(context) {
     let notifications = [];
     try {
       const notificationsResult = await db.execute(
-        `SELECT ${NOTIFICATION_FIELDS.join(', ')}
+        `SELECT id, order_code, message, status, created_at
          FROM notifications
          WHERE order_code = ?
          ORDER BY created_at DESC
