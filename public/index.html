@@ -405,7 +405,6 @@ a { text-decoration: none; }
   position: relative;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
   box-sizing: border-box;
 }
 .card:hover {
@@ -1295,7 +1294,7 @@ function renderServicesGrid() {
     const isPop = s.is_popular || s.badge === 'Paling Populer' || idx === 0;
     const catBadge = s.category ? `<span class="badge-soft" style="font-size: 0.72rem; padding: 2px 10px; margin-bottom: 8px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;" title="${esc(s.category)}">${esc(s.category)}</span>` : '';
     return `
-      <div class="card ${isPop ? 'popular' : ''} reveal" style="--delay:${idx * 60}ms; min-width: 0; max-width: 100%; overflow: hidden; box-sizing: border-box;">
+      <div class="card ${isPop ? 'popular' : ''} reveal" style="--delay:${idx * 60}ms; min-width: 0; max-width: 100%; box-sizing: border-box;">
         ${isPop ? '<div class="badge">Paling Populer</div>' : (s.badge ? `<div class="badge" style="background:var(--accent);">${esc(s.badge)}</div>` : '')}
         ${catBadge}
         <h3 style="margin-top: 4px; max-width: 100%; width: 100%; overflow-wrap: anywhere;" title="${esc(s.name)}">${esc(s.name)}</h3>
