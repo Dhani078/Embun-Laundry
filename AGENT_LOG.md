@@ -5,7 +5,7 @@ Riwayat tick (append-only).
 ---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
 
-17 commit fbc7a22..6eac441 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
+19 commit fbc7a22..8430fd2 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
 
 - **Chart Drill-Down Interaktif** (fbc7a22) — Batang grafik SVG laporan keuangan interaktif: tooltip detail pendapatan per tanggal + klik batang langsung membuka pesanan terfilter di tanggal tersebut.
 - **Panel Preferensi Sistem di Profil** (a87fe03) — Pengaturan tema visual (Terang/Gelap), lokalisasi bahasa antarmuka (ID/EN), tes audio chime, dan badge status TiDB online di halaman profil pengguna.
@@ -24,6 +24,7 @@ Riwayat tick (append-only).
 - **Penjaga Idempotensi App.init()** (f38ed62) — Memasang guard `this._initialized` pada startup SPA untuk mencegah inisialisasi ganda jika dipicu berulang kali atau dari beberapa script tag bersamaan.
 - **Sinkronisasi Tema Real-Time Lintas Tab Landing Page** (93e2615) — Memasang window storage event listener pada public/index.html agar perubahan tema gelap/terang di tab kasir atau customer seketika memperbarui mode visual di landing page tanpa reload.
 - **Favicon Konsisten di Seluruh Halaman Standalone** (6eac441) — Memasang link rel icon /img/Logo.png pada pay.html, login.html, register.html, dan lupasandi.html sehingga seluruh rute publik menampilkan identitas brand Embun Laundry secara seragam.
+- **Verifikasi Chrome + Fix Judul Kartu Layanan & Badge** (2ffe6b7, bcd0e02, 8430fd2) — Inspeksi visual langsung di browser Chrome (embun-laundry-preview worker) menemukan judul kartu layanan "Setrika Rapi & Wangi" dan "Dry Cleaning Jas & Gaun" terpotong ellipsis karena rule CSS .card h3 (white-space:nowrap; text-overflow:ellipsis) dan badge "Paling Populer" terclip oleh overflow:hidden. Kedua rule dihapus, verifikasi visual 4/4 kartu: judul utuh (wrap 2 baris), badge lengkap straddling top border, layout uniform.
 
 
 ---
