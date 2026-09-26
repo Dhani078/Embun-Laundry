@@ -412,6 +412,7 @@
 
     async function loadPay() {
       if (!code) {
+        document.getElementById('ordCodeLabel').textContent = 'Kode pesanan tidak ditemukan di URL.';
         document.getElementById('payContent').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;font-size:13px">Kode pesanan tidak ditemukan di URL.</div>';
         return;
       }
@@ -419,6 +420,7 @@
         const res = await fetch('/api/pay?order_code=' + encodeURIComponent(code));
         const data = await res.json();
         if (!data.ok) {
+          document.getElementById('ordCodeLabel').textContent = data.msg || 'Pesanan tidak ditemukan';
           document.getElementById('payContent').innerHTML = '<div style="color:#ef4444;text-align:center;padding:20px;font-size:13px">' + esc(data.msg || 'Pesanan tidak ditemukan') + '</div>';
           return;
         }
