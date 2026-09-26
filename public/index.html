@@ -1301,7 +1301,7 @@ function renderServicesGrid() {
       <div class="card ${isPop ? 'popular' : ''} reveal" style="--delay:${idx * 60}ms; min-width: 0; max-width: 100%; overflow: hidden; box-sizing: border-box;">
         ${isPop ? '<div class="badge">Paling Populer</div>' : (s.badge ? `<div class="badge" style="background:var(--accent);">${esc(s.badge)}</div>` : '')}
         ${catBadge}
-        <h3 style="margin-top: 4px; max-width: 100%; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: break-word; overflow-wrap: anywhere;" title="${esc(s.name)}">${esc(s.name)}</h3>
+        <h3 style="margin-top: 4px; max-width: 100%; width: 100%; overflow-wrap: anywhere;" title="${esc(s.name)}">${esc(s.name)}</h3>
         <div class="price">${rupiah(s.price)}<span class="small" style="font-weight: 500; font-size: 0.85rem;"> /${esc(s.unit || 'kg')}</span></div>
         <div class="meta">⏱️ Estimasi ${esc(s.duration_hours || 24)} jam</div>
         ${s.description ? `<p class="small" style="margin-top: 6px; line-height: 1.4; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="${esc(s.description)}">${esc(s.description)}</p>` : ''}
