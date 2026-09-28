@@ -4057,7 +4057,7 @@ const App = window.App = {
           icon = '💳';
           note = `Menunggu pembayaran untuk <b>${esc(o.order_code)}</b> (Rp ${Number(o.total_amount).toLocaleString('id-ID')})`;
         } else if (o.status === 'proses') {
-          icon = '🫧';
+          icon = '🧼';
           note = `Cucian <b>${esc(o.order_code)}</b> sedang diproses bersih`;
         }
 
@@ -4113,7 +4113,7 @@ const App = window.App = {
       `💰 Total: *Rp ${Number(amount).toLocaleString('id-ID')}*\n` +
       `📊 Status: *${statusText}*\n\n` +
       `🔗 Lacak pesanan: ${trackUrl}\n\n` +
-      `Terima kasih telah mempercayakan cucian Anda kepada kami! 🫧✨`;
+      `Terima kasih telah mempercayakan cucian Anda kepada kami! 🧺✨`;
 
     const rawPhone = String(phone || '').replace(/[^0-9]/g, '');
     const waPhone = rawPhone.startsWith('0') ? '62' + rawPhone.slice(1) : rawPhone;
