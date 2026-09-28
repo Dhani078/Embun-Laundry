@@ -24,16 +24,20 @@ Status: 100% Roadmap Tuntas (Fase 0 s/d Fase F). Seluruh 48 test suites HIJAU. B
     - Step 6 (Deploy to Cloudflare Workers) gagal dengan pesan: `"Secret token Cloudflare kosong! Pastikan disimpan di Settings > Secrets and variables > Actions > Repository secrets (nama: CLOUDFLARE_API_TOKEN)"`.
     - Semua alias secret (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_TOKEN`, `CF_API_TOKEN`) terbaca kosong di runner karena secret belum tersimpan di tingkat GitHub Repository Secrets.
     - Token Cloudflare yang diberikan (`cfut_4wu...d300`) telah diuji secara valid via Workers API. Begitu user menyimpan secret di GitHub Settings, CI akan 100% HIJAU.
-- **Deployment Produksi Live Cloudflare Workers**:
-  - Dilakukan deploy langsung via Wrangler CLI OAuth (`dhanisepeda@gmail.com`).
-  - Worker aktif pada URL: `https://embun-laundry.dhanisepeda.workers.dev` (Version ID: `d4f58e1a-5494-45bf-8e8f-524a074ab59c`).
-  - Verifikasi live:
+- **Deployment Produksi Live Cloudflare Workers & Resolusi Database 500**:
+  - User memperbarui kredensial TiDB Cloud cluster `embun_laundry` (user `nkLgGwz1mobWK3U.root`).
+  - Secret `TIDB_DATABASE_URL` diunggah ke Cloudflare Workers via `npx wrangler secret put TIDB_DATABASE_URL` dan disimpan di `.dev.vars` lokal.
+  - Worker versi terbaru (`62106f2d-9305-4095-8499-ea1f33ff3e9d`) berhasil di-deploy ke Cloudflare Workers (`https://embun-laundry.dhanisepeda.workers.dev`).
+  - Verifikasi live pasca-deploy:
     - `/` (Landing page) → 200 OK.
     - `/dashboard` (Dashboard SPA) → 200 OK.
     - `/api/health` → 200 OK (`{"ok":true,"status":"healthy",...}`).
-    - `/api/services` & DB endpoints → 500 (`Error 1045: Access denied for user 'nkLgGwz1mobWK3U.root'`) karena kredensial TiDB Cloud expired/di-rotate di konsol TiDB Cloud, butuh reset password di TiDB Cloud console.
+    - `/api/services` → **200 OK** (`{"ok":true,"services":[7 item]}`).
+    - `/api/promos` → **200 OK** (`{"ok":true,"promos":[4 item]}`).
+    - Masalah Database 500 resmi **100% TUNTAS**.
 - **Penyelesaian Dokumentasi Markdown Proyek**:
   - `AGENT_STATE.md`, `AGENT_BACKLOG.md`, dan `AGENT_LOG.md` disinkronkan mencerminkan penyelesaian 100% seluruh fase roadmap dan status operasional terkini.
+  - Satu-satunya blocker yang tersisa adalah penyimpanan `CLOUDFLARE_API_TOKEN` di GitHub Repository Secrets agar CI Actions otomatis HIJAU.
 
 ---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
