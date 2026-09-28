@@ -1,7 +1,7 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-28T12:05:00+08:00
-Sesi: Manual QA lanjutan (post-tick-60) — emoji tofu fix + root cause DB 500
+Terakhir update: 2026-09-28T15:35:00+08:00
+Sesi: Finalisasi 100% Roadmap (C10, E4, F1-F4) + Diagnosa CI GitHub + Live Deploy
 Model: atria/Atria-Dawn-Preview
 
 ## Konfigurasi loop (update 2026-09-10)
@@ -30,21 +30,19 @@ Model: atria/Atria-Dawn-Preview
 
 ## Baseline terakhir
 
-| Path | Status | Catatan |
-|------|--------|---------|
-| `/` | 200 | Landing page OK, token ter-link |
-| `/auth/login.html` | 307 → `/auth/login` | Redirect normal (asset scheme) |
-| `/auth/register.html` | 307 | Redirect normal |
-| `/dashboard.html` | 307 → `/dashboard` | Worker serve `dashboard.html` |
-| `/api/health` | 200 | Liveness OK |
-| `/api/services` | 200 | 4 layanan |
-| `/api/notifications` | 200 / 400 | Query order_code required, rate limited 30 req/5m |
-| `/api/promos` | 200 | Filter q, active, id (?id=); CRUD staf; OPTIONS CORS |
-| `/api/vouchers` | 200 / 401 | Staf query u.full_name, u.email; grant/bulk/delete; OPTIONS CORS |
-| `/api/reports` | 200 / 403 | Staf KPI, chart grouping, daily; Customer 403; OPTIONS CORS |
-| `/assets/design-tokens.css` | **200** | DULU 404 — sudah fix di tick 3 |
-| `/assets/hero-canvas.js` | **200** | DULU 404 — sudah fix di tick 3 |
-| login admin | OK | Sesi tertutup (kredensial default dicabut dari dokumentasi) |
+| Path / Komponen | Status | Catatan |
+|-----------------|--------|---------|
+| `/` | **200** | Landing page live (`https://embun-laundry.dhanisepeda.workers.dev`), multi-bahasa ID/EN |
+| `/dashboard` | **200** | Worker serve dashboard.html, SPA command palette, dark mode, audit trail |
+| `/api/health` | **200** | Liveness OK (`{"ok":true,"status":"healthy",...}`) |
+| `/api/services` | 500 | TiDB user password expired (Error 1045) — butuh reset di TiDB Cloud console |
+| `/assets/design-tokens.css` | **200** | Tersedia asli & minifikasi (`.min.css` 6.7KB, -51.5%) |
+| `/assets/style.css` | **200** | Tersedia asli & minifikasi (`.min.css` 49.7KB, -25.2%) |
+| `/assets/hero-canvas.js` | **200** | Tersedia asli & minifikasi (`.min.js` 11.0KB, -25.0%) |
+| `/app.js` | **200** | Tersedia asli & minifikasi (`.min.js` 257.9KB, -1.5%) |
+| Test Suites | **48/48 HIJAU** | Seluruh verifier lulus 100% via `node tools/run_all_verifiers.mjs` |
+| Build Pipeline | **SUKSES** | `node tools/build.mjs` minifikasi otomatis dalam ~19ms |
+| Cloudflare Deploy | **LIVE** | Version ID `d4f58e1a-5494-45bf-8e8f-524a074ab59c` aktif di Workers |
 
 ## Task aktif
 
@@ -923,32 +921,36 @@ Model: atria/Atria-Dawn-Preview
   - Alat audit ikut ter-commit: `tools/audit_api_guard.py`,
     `tools/audit_throw_sites.py`, `tools/probe_api.py`
 
-## Blokir (update 2026-09-17)
+## Blokir & Status Operasional (update 2026-09-28)
 
-Semua blocker lama **TIDAK RELEVAN LAGI**:
+Status Roadmap: **100% SELESAI** (Fase 0 s/d Fase F tuntas, seluruh 48 test suites HIJAU).
 
-- **A6 SELESAI** `f51efc0` — secret sudah pindah dari `wrangler.toml` ke
-  CF secret store. Lihat detail di AGENT_BACKLOG.md "Sesi 2026-09-17".
+Tindakan tersisa hanya konfigurasi eksternal (bukan kode):
 
-Blocker sekarang **butuh manusia, bukan kode**:
+1. **GitHub Actions Repository Secret `CLOUDFLARE_API_TOKEN`**:
+   - Status: Run CI #77, #79, #80 membuktikan langkah 1 s/d 5 (checkout, node setup, install, test 48/48 HIJAU, build asset minifikasi) lulus 100%.
+   - Penyebab kegagalan: Step 6 (Deploy to Cloudflare Workers) gagal karena secret `CLOUDFLARE_API_TOKEN` belum tersimpan di GitHub Repository Secrets (`CLOUDFLARE_API_TOKEN secret kosong`).
+   - Tindakan User (30 detik):
+     1. Buka: `https://github.com/Dhani078/Embun-Laundry/settings/secrets/actions`
+     2. Klik **New repository secret**
+     3. Name: `CLOUDFLARE_API_TOKEN`
+     4. Secret: `cfut_4wu...d300`
+     5. Klik **Add secret**.
+     6. Setelah disimpan, trigger CI via git push atau tombol "Run workflow" di tab Actions -> CI langsung HIJAU.
 
-1. **Secret CF belum diset di production** → **10 API 500**
-   `{"ok":false,"msg":"Database not configured"}`. Kode BENAR
-   (`functions/_db.js:11` baca `env.TIDB_DATABASE_URL`).
-   CF Dashboard → Workers & Pages → `embun-laundry` → Settings →
-   Variables and Secrets → Add (TIDB_DATABASE_URL + JWT_SECRET) →
-   Save and Deploy. Sejak: 2026-09-17.
-2. **Password TiDB DITOLAK** —
-   `Error 1045 (28000): Access denied for user 'nkLgGwz1mobWK3U.root'@'10.0.114.45'`.
-   Awalnya valid (19 services + 10 tabel terbaca di sesi ini), lalu ditolak
-   beberapa menit kemudian. Password di-rotate/expired sisi TiDB.
-   **User cek TiDB Cloud console.** Sejak: 2026-09-17.
-3. **Deploy butuh login CF** — `npx wrangler deploy` gagal: not logged in.
-   `wrangler whoami` = belum autentikasi. Push GitHub sukses (`main` @
-   `a25ed07`), tapi Workers tidak auto-deploy. Butuh `CLOUDFLARE_API_TOKEN`
-   atau `npx wrangler login` interaktif.
-- **Catatan mitigasi**: JWT sudah baca `env.JWT_SECRET` dengan fallback;
-  setelah secret diset di produksi, fallback otomatis tidak terpakai.
+2. **Password TiDB Cloud Ditolak (Database 500)**:
+   - Status: `/api/health` merespons 200 OK (Cloudflare Worker hidup).
+   - Endpoint query database (`/api/services`, dll) merespons 500 karena `Error 1045 (28000): Access denied for user 'nkLgGwz1mobWK3U.root'`. Password expired / di-rotate pada sisi TiDB Cloud.
+   - Tindakan User (1 menit):
+     1. Buka konsol TiDB Cloud (https://tidbcloud.com) -> Cluster `Embun-Laundry`.
+     2. Reset password untuk user root / buat user baru.
+     3. Jalankan di terminal: `npx wrangler secret put TIDB_DATABASE_URL`
+     4. Masukkan URL koneksi baru (format: `mysql://user:pass@gateway.tidbcloud.com:4000/embun_laundry?ssl={"rejectUnauthorized":true}`).
+
+3. **Status Deployment Produksi Lokal**:
+   - Autentikasi Wrangler lokal sudah aktif (`Dhanisepeda@gmail.com's Account`, ID `c734e9afeed67d74624f8dcf9de3c6f8`).
+   - Versi terbaru (`d4f58e1a-5494-45bf-8e8f-524a074ab59c`) sudah aktif live di `https://embun-laundry.dhanisepeda.workers.dev`.
+   - Asset minifikasi, landing page dwibahasa ID/EN, command palette Ctrl+K, dan dark mode sudah aktif di live URL.
 
 ## Tech debt tercatat
 
