@@ -26,6 +26,9 @@ jobs:
           npm run build
 
       - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy
+        run: |
+          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
+          npx wrangler whoami
+          npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
