@@ -22,5 +22,8 @@
   "dependencies": {
     "@tidbcloud/serverless": "^0.3.0",
     "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
