@@ -27,7 +27,6 @@ jobs:
 
       - name: Deploy to Cloudflare Workers
         run: |
-          set -o pipefail
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::CLOUDFLARE_API_TOKEN secret kosong — set di Settings > Secrets"
             exit 1
