@@ -35,14 +35,15 @@ Model: atria/Atria-Dawn-Preview
 | `/` | **200** | Landing page live (`https://embun-laundry.dhanisepeda.workers.dev`), multi-bahasa ID/EN |
 | `/dashboard` | **200** | Worker serve dashboard.html, SPA command palette, dark mode, audit trail |
 | `/api/health` | **200** | Liveness OK (`{"ok":true,"status":"healthy",...}`) |
-| `/api/services` | 500 | TiDB user password expired (Error 1045) — butuh reset di TiDB Cloud console |
+| `/api/services` | **200** | 7 layanan aktif di TiDB Cloud (`{"ok":true,"services":[...]}`) |
+| `/api/promos` | **200** | 4 kode promo aktif (`{"ok":true,"promos":[...]}`) |
 | `/assets/design-tokens.css` | **200** | Tersedia asli & minifikasi (`.min.css` 6.7KB, -51.5%) |
 | `/assets/style.css` | **200** | Tersedia asli & minifikasi (`.min.css` 49.7KB, -25.2%) |
 | `/assets/hero-canvas.js` | **200** | Tersedia asli & minifikasi (`.min.js` 11.0KB, -25.0%) |
 | `/app.js` | **200** | Tersedia asli & minifikasi (`.min.js` 257.9KB, -1.5%) |
 | Test Suites | **48/48 HIJAU** | Seluruh verifier lulus 100% via `node tools/run_all_verifiers.mjs` |
 | Build Pipeline | **SUKSES** | `node tools/build.mjs` minifikasi otomatis dalam ~19ms |
-| Cloudflare Deploy | **LIVE** | Version ID `d4f58e1a-5494-45bf-8e8f-524a074ab59c` aktif di Workers |
+| Cloudflare Deploy | **LIVE** | Version ID `62106f2d-9305-4095-8499-ea1f33ff3e9d` aktif di Workers |
 
 ## Task aktif
 
@@ -938,19 +939,16 @@ Tindakan tersisa hanya konfigurasi eksternal (bukan kode):
      5. Klik **Add secret**.
      6. Setelah disimpan, trigger CI via git push atau tombol "Run workflow" di tab Actions -> CI langsung HIJAU.
 
-2. **Password TiDB Cloud Ditolak (Database 500)**:
-   - Status: `/api/health` merespons 200 OK (Cloudflare Worker hidup).
-   - Endpoint query database (`/api/services`, dll) merespons 500 karena `Error 1045 (28000): Access denied for user 'nkLgGwz1mobWK3U.root'`. Password expired / di-rotate pada sisi TiDB Cloud.
-   - Tindakan User (1 menit):
-     1. Buka konsol TiDB Cloud (https://tidbcloud.com) -> Cluster `Embun-Laundry`.
-     2. Reset password untuk user root / buat user baru.
-     3. Jalankan di terminal: `npx wrangler secret put TIDB_DATABASE_URL`
-     4. Masukkan URL koneksi baru (format: `mysql://user:pass@gateway.tidbcloud.com:4000/embun_laundry?ssl={"rejectUnauthorized":true}`).
+2. **Koneksi TiDB Cloud & Database 500 (100% TUNTAS)**:
+   - User telah memperbarui kredensial TiDB Cloud cluster `embun_laundry` (user `nkLgGwz1mobWK3U.root`).
+   - Secret `TIDB_DATABASE_URL` telah diunggah ke Cloudflare Workers (`npx wrangler secret put TIDB_DATABASE_URL`) dan disimpan di `.dev.vars` lokal.
+   - Endpoint `/api/services` mengembalikan status **200 OK** dengan 7 layanan aktif (`Cuci Kering Standar`, `Setrika Rapi & Wangi`, dll).
+   - Endpoint `/api/promos` mengembalikan status **200 OK** dengan 4 kode promo aktif (`BERSIHHEMAT`, `KILAT20`, dll).
+   - Seluruh query database TiDB Cloud di Cloudflare Workers kini 100% berfungsi normal.
 
-3. **Status Deployment Produksi Lokal**:
-   - Autentikasi Wrangler lokal sudah aktif (`Dhanisepeda@gmail.com's Account`, ID `c734e9afeed67d74624f8dcf9de3c6f8`).
-   - Versi terbaru (`d4f58e1a-5494-45bf-8e8f-524a074ab59c`) sudah aktif live di `https://embun-laundry.dhanisepeda.workers.dev`.
-   - Asset minifikasi, landing page dwibahasa ID/EN, command palette Ctrl+K, dan dark mode sudah aktif di live URL.
+3. **Status Deployment Produksi Live**:
+   - Worker versi `62106f2d-9305-4095-8499-ea1f33ff3e9d` aktif live di `https://embun-laundry.dhanisepeda.workers.dev`.
+   - 10/10 halaman statis, `/api/health` 200 OK, seluruh endpoint database 200 OK.
 
 ## Tech debt tercatat
 
