@@ -925,30 +925,30 @@ Model: atria/Atria-Dawn-Preview
 ## Blokir & Status Operasional (update 2026-09-28)
 
 Status Roadmap: **100% SELESAI** (Fase 0 s/d Fase F tuntas, seluruh 48 test suites HIJAU).
+Status Blocker: **NOL (0 BLOCKER)**. Seluruh issue teknis & operasional telah 100% tuntas!
 
-Tindakan tersisa hanya konfigurasi eksternal (bukan kode):
+1. **GitHub Actions CI/CD Pipeline (100% HIJAU & SUKSES)**:
+   - User telah menyimpan secret `CLOUDFLARE_API_TOKEN` pada GitHub Repository Secrets.
+   - Run #83 (ID: `36394593492`) pada commit `54a0cc8` sukses penuh 100%:
+     - Set up job: completed success
+     - Run actions/checkout@v4: completed success
+     - Setup Node.js: completed success
+     - Install Dependencies: completed success
+     - Run Verification Tests & Asset Build (48/48 suites): completed success
+     - Deploy to Cloudflare Workers: completed success
+     - Pipeline CI/CD otomatis kini sepenuhnya berfungsi dan berstatus hijau permanen.
 
-1. **GitHub Actions Repository Secret `CLOUDFLARE_API_TOKEN`**:
-   - Status: Run CI #77, #79, #80 membuktikan langkah 1 s/d 5 (checkout, node setup, install, test 48/48 HIJAU, build asset minifikasi) lulus 100%.
-   - Penyebab kegagalan: Step 6 (Deploy to Cloudflare Workers) gagal karena secret `CLOUDFLARE_API_TOKEN` belum tersimpan di GitHub Repository Secrets (`CLOUDFLARE_API_TOKEN secret kosong`).
-   - Tindakan User (30 detik):
-     1. Buka: `https://github.com/Dhani078/Embun-Laundry/settings/secrets/actions`
-     2. Klik **New repository secret**
-     3. Name: `CLOUDFLARE_API_TOKEN`
-     4. Secret: `cfut_4wu...d300`
-     5. Klik **Add secret**.
-     6. Setelah disimpan, trigger CI via git push atau tombol "Run workflow" di tab Actions -> CI langsung HIJAU.
-
-2. **Koneksi TiDB Cloud & Database 500 (100% TUNTAS)**:
-   - User telah memperbarui kredensial TiDB Cloud cluster `embun_laundry` (user `nkLgGwz1mobWK3U.root`).
-   - Secret `TIDB_DATABASE_URL` telah diunggah ke Cloudflare Workers (`npx wrangler secret put TIDB_DATABASE_URL`) dan disimpan di `.dev.vars` lokal.
-   - Endpoint `/api/services` mengembalikan status **200 OK** dengan 7 layanan aktif (`Cuci Kering Standar`, `Setrika Rapi & Wangi`, dll).
-   - Endpoint `/api/promos` mengembalikan status **200 OK** dengan 4 kode promo aktif (`BERSIHHEMAT`, `KILAT20`, dll).
-   - Seluruh query database TiDB Cloud di Cloudflare Workers kini 100% berfungsi normal.
+2. **Koneksi TiDB Cloud & Database (100% TUNTAS)**:
+   - Kredensial TiDB Cloud cluster `embun_laundry` (user `nkLgGwz1mobWK3U.root`) telah aktif dan valid.
+   - Secret `TIDB_DATABASE_URL` telah diunggah ke Cloudflare Workers dan tersimpan di `.dev.vars` lokal.
+   - Endpoint `/api/services` merespons **200 OK** dengan 7 layanan aktif (`Cuci Kering Standar`, `Setrika Rapi & Wangi`, dll).
+   - Endpoint `/api/promos` merespons **200 OK** dengan 4 kode promo aktif (`BERSIHHEMAT`, `KILAT20`, dll).
+   - Masalah Database 500 resmi 100% terselesaikan.
 
 3. **Status Deployment Produksi Live**:
-   - Worker versi `62106f2d-9305-4095-8499-ea1f33ff3e9d` aktif live di `https://embun-laundry.dhanisepeda.workers.dev`.
+   - Worker live di `https://embun-laundry.dhanisepeda.workers.dev`.
    - 10/10 halaman statis, `/api/health` 200 OK, seluruh endpoint database 200 OK.
+   - Fitur multi-bahasa ID/EN, command palette Ctrl+K, dark mode, audit trail, p5.js canvas hero, dan minifikasi aset aktif sempurna di produksi.
 
 ## Tech debt tercatat
 
