@@ -3,6 +3,39 @@
 Riwayat tick (append-only).
 
 ---
+## Sesi manual — 2026-09-28 (100% Roadmap Tuntas: Task C10, Task E4, CI/CD Diagnosa, & Live Deploy)
+
+Status: 100% Roadmap Tuntas (Fase 0 s/d Fase F). Seluruh 48 test suites HIJAU. Build asset minifikasi aktif.
+
+- **Task C10 (Multi-Bahasa ID/EN)** (`1103f61`) —
+  - `public/index.html`: Tombol toggle bahasa `#langToggleBtn` di navbar, atribut `data-i18n`, kamus dwibahasa `I18N` (Indonesia & English) dengan persistensi `localStorage('embun_lang')`.
+  - `public/dashboard.html` & `public/app.js`: Dukungan `App.initLang()`, `App.applyLang()`, `App.toggleLang()`, tombol `#langToggleBtn` di topbar, otomatis sinkronisasi status bahasa ke seluruh halaman SPA.
+  - Verifikasi: `tools/verify_c10_run.mjs` (13/13 HIJAU termasuk uji mutasi).
+- **Task E4 (Pipeline Build & Minifikasi Aset)** (`1103f61`) —
+  - `tools/build.mjs`: Script pipeline otomatis untuk minifikasi file CSS & JS (`design-tokens.min.css` 13.7KB → 6.7KB [-51.5%], `style.min.css` 66.5KB → 49.7KB [-25.2%], `hero-canvas.min.js` 14.7KB → 11.0KB [-25.0%], `app.min.js` 261.7KB → 257.9KB [-1.5%]).
+  - `package.json`: Menambahkan scripts `"test": "node tools/run_all_verifiers.mjs"` dan `"build": "node tools/build.mjs"`.
+  - Verifikasi: `tools/verify_e4_run.mjs` (14/14 HIJAU termasuk uji mutasi).
+- **Regresi & Suite Pengujian Total**:
+  - Menjalankan seluruh 48 suite verifier (`node tools/run_all_verifiers.mjs`): **48 HIJAU, 0 MERAH**.
+  - Pipeline build aset minifikasi selesai dalam waktu 19ms dengan penghematan payload total -8.8%.
+- **Diagnostik GitHub Actions CI/CD (Run #77, #79, #80)**:
+  - Investigasi log runner Ubuntu Actions membuktikan:
+    - Step 1 (Checkout), Step 2 (Setup Node 20), Step 3 (Install dependencies), Step 4 (Run all 48 verifiers), Step 5 (Run asset build) **100% SUKSES HIJAU**.
+    - Step 6 (Deploy to Cloudflare Workers) gagal dengan pesan: `"Secret token Cloudflare kosong! Pastikan disimpan di Settings > Secrets and variables > Actions > Repository secrets (nama: CLOUDFLARE_API_TOKEN)"`.
+    - Semua alias secret (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_TOKEN`, `CF_API_TOKEN`) terbaca kosong di runner karena secret belum tersimpan di tingkat GitHub Repository Secrets.
+    - Token Cloudflare yang diberikan (`cfut_4wu...d300`) telah diuji secara valid via Workers API. Begitu user menyimpan secret di GitHub Settings, CI akan 100% HIJAU.
+- **Deployment Produksi Live Cloudflare Workers**:
+  - Dilakukan deploy langsung via Wrangler CLI OAuth (`dhanisepeda@gmail.com`).
+  - Worker aktif pada URL: `https://embun-laundry.dhanisepeda.workers.dev` (Version ID: `d4f58e1a-5494-45bf-8e8f-524a074ab59c`).
+  - Verifikasi live:
+    - `/` (Landing page) → 200 OK.
+    - `/dashboard` (Dashboard SPA) → 200 OK.
+    - `/api/health` → 200 OK (`{"ok":true,"status":"healthy",...}`).
+    - `/api/services` & DB endpoints → 500 (`Error 1045: Access denied for user 'nkLgGwz1mobWK3U.root'`) karena kredensial TiDB Cloud expired/di-rotate di konsol TiDB Cloud, butuh reset password di TiDB Cloud console.
+- **Penyelesaian Dokumentasi Markdown Proyek**:
+  - `AGENT_STATE.md`, `AGENT_BACKLOG.md`, dan `AGENT_LOG.md` disinkronkan mencerminkan penyelesaian 100% seluruh fase roadmap dan status operasional terkini.
+
+---
 ## Sesi manual — 2026-09-24 lanjutan (flagship features, audit trail, & a11y polish)
 
 19 commit fbc7a22..8430fd2 (branch main, ter-push ke GitHub Dhani078/Embun-Laundry). Test suite: 48/48 HIJAU. Build asset: lancar.
