@@ -469,6 +469,12 @@ a { text-decoration: none; }
   gap: 24px;
   margin-top: 40px;
 }
+/* Grid item default `min-width: auto` — konten panjang (mis. judul + teks)
+   memaksa kolom melebihi wadah dan meluber keluar layar. `min-width: 0`
+   membuat kolom benar-benar menyusut. */
+.features-bento > * {
+  min-width: 0;
+}
 .bento-cell {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -951,6 +957,47 @@ a { text-decoration: none; }
   }
   .site-footer {
     padding: 60px 0 30px;
+  }
+  /* Bento jadi SATU kolom: dua kolom memaksa kartu 203px di layar 390px
+     dan meluberkan seluruh halaman (terukur: overflow 227px). */
+  .features-bento {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .bento-cell.large {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 0;
+  }
+  .bento-cell {
+    padding: 24px;
+    min-height: 0;
+  }
+  /* Navbar: 5 kontrol tidak muat sebaris di HP — biarkan melipat dan
+     turunkan tinggi sentuh ke 44px agar jempol tetap nyaman. */
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .nav-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .nav-actions .btn {
+    min-height: 44px;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.8rem;
+    max-width: 150px;
+  }
+  /* Tap target minimum 44px (standar jempol) */
+  .cat-pill {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+  #btnPromo {
+    min-height: 44px;
   }
 }
 
