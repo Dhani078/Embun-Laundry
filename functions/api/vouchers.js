@@ -3,6 +3,15 @@ import { getDb, jsonResponse, getUserFromSession, readJson, corsOptions, SERVER_
 import { validateOr400, cleanStr } from '../_validate.js';
 import { logActivity } from '../_activity.js';
 
+// B21 — `promos.type` enum('percent','nominal','fixed') TIDAK sama dengan
+// `user_vouchers.type` enum('flat','percent'). Menyalin `p.type` mentah
+// membuat klaim promo bertipe `nominal` gagal dengan
+// "Data truncated for column 'type'" (500). `nominal`/`fixed` = potongan
+// rupiah tetap, yang di `user_vouchers` disebut `flat`.
+function voucherType(promoType) {
+  return promoType === 'percent' ? 'percent' : 'flat';
+}
+
 export async function onRequest({ request, env }) {
   const db = await getDb(env);
   if (!db) return jsonResponse({ ok: false, msg: 'Database not configured' }, 500);
@@ -59,14 +68,21 @@ export async function onRequest({ request, env }) {
   }
 
   if (request.method === 'POST') {
-    if (!isStaff) return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+    // B18/B20 — `claim` adalah aksi PELANGGAN: tombol "Klaim Voucher" di SPA
+    // memanggilnya dengan sesi Customer. Penjaga lama `!isStaff` menolak
+    // semua non-staf, jadi tombol itu selalu 401. Sekarang: `claim` boleh
+    // oleh SIAPA PUN yang punya sesi; aksi lain tetap khusus staf.
+    // `user` sudah dijamin ada oleh penjaga 401 di atas fungsi ini.
+    const parsed = await readJson(request);
+    if (!parsed.ok) return parsed.response;
+    const body = parsed.data;
+    const act = body.action || action;
+
+    if (act !== 'claim' && !isStaff) {
+      return jsonResponse({ ok: false, msg: 'Unauthorized' }, 401);
+    }
 
     try {
-      const parsed = await readJson(request);
-      if (!parsed.ok) return parsed.response;
-      const body = parsed.data;
-      const act = body.action || action;
-
       if (act === 'claim') {
         const v = validateOr400(body, {
           promo_id: { type: 'int', required: true, min: 1, label: 'Promo ID' },
@@ -93,14 +109,14 @@ export async function onRequest({ request, env }) {
         await db.execute(
           `INSERT INTO user_vouchers (user_id, promo_id, code, name, type, value, min_spend, max_discount, expires_at, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [userId, promoId, code, p.name, p.type, p.value, p.min_spend, p.max_discount, p.expires_at, now]
+          [userId, promoId, code, p.name, voucherType(p.type), p.value, p.min_spend, p.max_discount, p.expires_at, now]
         );
 
         const newV = await db.query('SELECT * FROM user_vouchers WHERE code = ?', [code]);
 
         // Audit trail — claim voucher
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'create',
@@ -146,7 +162,7 @@ export async function onRequest({ request, env }) {
             await db.execute(
               `INSERT INTO user_vouchers (user_id, promo_id, code, name, type, value, min_spend, max_discount, expires_at, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [uid, promoId, code, p.name, p.type, p.value, p.min_spend, p.max_discount, p.expires_at, now]
+              [uid, promoId, code, p.name, voucherType(p.type), p.value, p.min_spend, p.max_discount, p.expires_at, now]
             );
             created++;
           }
@@ -154,7 +170,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — bulk claim
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'create',
@@ -186,14 +202,14 @@ export async function onRequest({ request, env }) {
         await db.execute(
           `INSERT INTO user_vouchers (user_id, promo_id, code, name, type, value, min_spend, max_discount, expires_at, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [userId, promoId, code, p.name, p.type, p.value, p.min_spend, p.max_discount, p.expires_at, now]
+          [userId, promoId, code, p.name, voucherType(p.type), p.value, p.min_spend, p.max_discount, p.expires_at, now]
         );
 
         const newV = await db.query('SELECT * FROM user_vouchers WHERE code = ?', [code]);
 
         // Audit trail — create voucher
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'create',
@@ -216,7 +232,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — delete voucher
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'delete',

@@ -4,6 +4,7 @@ import * as registerHandler from '../functions/api/auth/register.js';
 import * as logoutHandler from '../functions/api/auth/logout.js';
 import * as refreshHandler from '../functions/api/auth/refresh.js';
 import * as meHandler from '../functions/api/me.js';
+import * as activityLogHandler from '../functions/api/activity-log.js';
 import * as ordersHandler from '../functions/api/orders.js';
 import * as customersHandler from '../functions/api/customers.js';
 import * as servicesHandler from '../functions/api/services.js';
@@ -68,6 +69,7 @@ export default {
           '/api/notifications': notificationsHandler,
           '/api/promos': promosHandler,
           '/api/vouchers': vouchersHandler,
+          '/api/activity-log': activityLogHandler,
           '/api/reports': reportsHandler
         };
         const h = optMap[path];
@@ -109,7 +111,8 @@ export default {
         else if (request.method === 'OPTIONS') resp = reportsHandler.onRequestOptions(context);
       }
       else if (path === '/api/profile') resp = profileHandler.onRequest(context);
-      else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
+            else if (path === '/api/activity-log') resp = activityLogHandler.onRequest(context);
+            else if (path === '/api/checkin') resp = checkinHandler.onRequest(context);
       else if (path === '/api/pay') resp = payHandler.onRequest(context);
       else if (path === '/api/track') resp = trackHandler.onRequest(context);
       else if (path === '/api/notifications') {

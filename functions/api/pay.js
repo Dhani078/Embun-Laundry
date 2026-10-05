@@ -286,7 +286,7 @@ export async function onRequest({ request, env }) {
 
       // Audit trail — payment
       const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-      logActivity(db, {
+      await logActivity(db, {
         actor_name: order.customer_name || 'Pelanggan',
         actor_role: 'Customer',
         action_type: 'payment',

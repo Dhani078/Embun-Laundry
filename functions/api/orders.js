@@ -231,17 +231,25 @@ export async function onRequest({ request, env }) {
 
         const newOrder = await db.query('SELECT * FROM orders WHERE order_code = ?', [code]);
         
-        // Mark voucher as used
+        // B22 — Tandai voucher terpakai. Tabel `voucher_claims` TIDAK ADA di
+        // DB produksi dan tidak dibaca satu pun kode (write-only), jadi
+        // INSERT ke sana melempar 500 SETELAH order tersimpan — order yatim
+        // + voucher terbakar. Dicatat hanya bila tabelnya memang ada, dan
+        // kegagalannya tidak boleh membatalkan order yang sudah jadi.
         if (voucherCode) {
           await db.execute(
             `UPDATE user_vouchers SET used_at = NOW() WHERE user_id = ? AND code = ? AND used_at IS NULL`,
             [user.id, voucherCode]
-          );
-          await db.execute(
-            `INSERT INTO voucher_claims (user_id, promo_id, voucher_id, source, amount)
-             SELECT ?, promo_id, id, 'code', ? FROM user_vouchers WHERE user_id = ? AND code = ?`,
-            [user.id, finalDisc, user.id, voucherCode]
-          );
+          ).catch(() => {});
+          try {
+            await db.execute(
+              `INSERT INTO voucher_claims (user_id, promo_id, voucher_id, source, amount)
+               SELECT ?, promo_id, id, 'code', ? FROM user_vouchers WHERE user_id = ? AND code = ?`,
+              [user.id, finalDisc, user.id, voucherCode]
+            );
+          } catch (claimErr) {
+            // Tabel opsional — jangan gagalkan order karena riwayat klaim.
+          }
         }
 
         // C3 — Catat notifikasi pesanan baru untuk polling status
@@ -256,7 +264,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, { actor_name: myName || user.user_name, actor_role: user.user_role, action_type: 'create', entity_type: 'order', entity_id: code, entity_label: code, detail: `Pesanan baru: ${customer}, ${kg}kg, Rp${total.toLocaleString('id')}`, ip_address: clientIp });
+        await logActivity(db, { actor_name: myName || user.user_name, actor_role: user.user_role, action_type: 'create', entity_type: 'order', entity_id: code, entity_label: code, detail: `Pesanan baru: ${customer}, ${kg}kg, Rp${total.toLocaleString('id')}`, ip_address: clientIp });
 
         return jsonResponse({ ok: true, order: newOrder[0] });
       }
@@ -293,7 +301,7 @@ export async function onRequest({ request, env }) {
         // Audit trail — status change
         const ipMove = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
         const ordLabel = (await db.query('SELECT order_code FROM orders WHERE id = ? LIMIT 1', [id]))?.[0]?.order_code || String(id);
-        logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'status_change', entity_type: 'order', entity_id: ordLabel, entity_label: ordLabel, detail: `Status → ${newStatus}`, ip_address: ipMove });
+        await logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'status_change', entity_type: 'order', entity_id: ordLabel, entity_label: ordLabel, detail: `Status → ${newStatus}`, ip_address: ipMove });
 
         return jsonResponse({ ok: true });
       }
@@ -366,7 +374,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — delete
         const ipDel = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'delete', entity_type: 'order', entity_id: delLabel, entity_label: delLabel, detail: `Pesanan ${delLabel} (${delCustomer}) dihapus`, ip_address: ipDel });
+        await logActivity(db, { actor_name: user.user_name, actor_role: user.user_role, action_type: 'delete', entity_type: 'order', entity_id: delLabel, entity_label: delLabel, detail: `Pesanan ${delLabel} (${delCustomer}) dihapus`, ip_address: ipDel });
 
         return jsonResponse({ ok: true });
       }
