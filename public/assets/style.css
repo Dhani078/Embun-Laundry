@@ -419,6 +419,10 @@ a {
 .main {
   display: flex;
   flex-direction: column;
+  /* `min-width: auto` pada flex item membuat konten lebar (tabel, kanban)
+     mendorong kolom melampaui viewport — terukur 647px overflow di 390px.
+     `0` mengizinkan kolom menyusut dan biarkan child-nya yang scroll. */
+  min-width: 0;
 }
 
 .topbar {
@@ -1763,6 +1767,22 @@ body.sidebar-locked {
 @media (max-width: 1024px) {
   .wrap {
     grid-template-columns: 1fr;
+    min-width: 0;
+  }
+  /* Penjaga terakhir: konten SPA tidak boleh melebarkan halaman. Anak yang
+     memang lebar (tabel) sudah punya .table-responsive sendiri. */
+  .main > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  /* Tabel data memakai `min-width: 680-840px` inline. Tanpa wadah yang bisa
+     di-scroll, tabel itu mendorong SELURUH halaman melebar (terukur: sisa
+     584px di viewport 390px setelah .main diperbaiki). `.card` adalah
+     pembungkus langsung setiap tabel di SPA. */
+  .card:has(> table) {
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
   .sidebar-toggle-btn {
     display: inline-flex;
@@ -1822,6 +1842,21 @@ body.sidebar-locked {
     flex-wrap: wrap;
     gap: 8px;
   }
+  /* `.search { flex: 1 }` tidak cukup: kontennya (input + placeholder) punya
+     `min-width: auto` dan menahan penyusutan — terukur sisa 194px overflow
+     di viewport 390px. */
+  .search {
+    min-width: 0;
+    flex: 1 1 100%;
+    order: 3;
+  }
+  .search input {
+    min-width: 0;
+    width: 100%;
+  }
+  .topbar-inner > * {
+    min-width: 0;
+  }
   .kanban {
     display: flex;
     flex-direction: row;
@@ -1865,9 +1900,76 @@ body.sidebar-locked {
   .content {
     padding: 12px 10px;
   }
+  .topbar .btn,
+  .topbar .btn-icon,
+  .topbar-inner button,
+  .topbar-inner a.btn,
+  .sidebar-toggle-btn,
+  .sidebar-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .side-bottom .btn,
+  .side-bottom .nav-link {
+    min-height: 44px;
+  }
+  .nav-link {
+    min-height: 44px;
+  }
+  .quick-action,
+  .card .btn,
+  .content .btn {
+    min-height: 44px;
+  }
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .content table button,
+  .content table [onclick] {
+    min-width: 24px;
+    min-height: 24px;
+  }
+  #userName {
+    display: none;
+  }
+  .topbar-inner {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
   .topbar {
     padding: 10px;
   }
+  .topbar-actions,
+  .topbar-inner > div:last-child {
+    flex-wrap: wrap;
+    gap: 5px !important;
+  }
+  .cmd-palette-trigger kbd {
+    display: none !important;
+  }
+}
+
+/* ----------------------------------------------------
+   Tier 5: Layar sangat sempit (<= 400px)
+   Urutan descending agar menimpa Tier 4 dengan benar.
+   ---------------------------------------------------- */
+@media (max-width: 400px) {
+  .topbar-inner {
+    gap: 4px;
+  }
+  .topbar-actions,
+  .topbar-inner > div:last-child {
+    gap: 4px !important;
+    padding-left: 2px !important;
+  }
+  .cmd-palette-trigger span:nth-of-type(2) {
+    display: none !important;
+  }
+}
   .h1, #pageTitle {
     font-size: 1.15rem !important;
   }
