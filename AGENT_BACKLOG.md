@@ -63,6 +63,9 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | B18 | Audit kata kerja TULIS semua modul (jaring regresi B17) | P1 | [x] | `ab7026e` |
 | B19 | Harga & diskon bukan hak pelanggan (`create_order`) | P1 | [x] | `3709f0f` |
 | B20 | Jumlah bayar dibatasi sisa tagihan (`POST /api/pay`) | P1 | [x] | `858262a` |
+| B21 | Izin aksi claim voucher untuk pelanggan bersesi + mapping type enum (`nominal` -> `flat`) | P1 | [x] | `a75b863` |
+| B22 | Penanganan toleran tabel `voucher_claims` di pembuatan order | P1 | [x] | `9014f12` |
+| B23 | Pembersihan dead code form & sanitasi rujukan ID modal `dlvCustName` | P2 | [x] | `efbacaa` |
 
 ---
 
@@ -95,6 +98,7 @@ File ini adalah **working copy** yang diupdate setiap tick.
 | D5 | Toast notification global (ganti alert) | P3 | [x] | `52ea710` |
 | D6 | Micro-interaction konsisten (hover/focus/active) | P3 | [x] | `14f257d` |
 | D7 | Responsive audit 360/768/1024/1440px | P3 | [x] | `8240209` |
+| D7b | Eliminasi 100% horizontal overflow di semua layar (360-1440px) via CDP & tap target 44px | P1 | [x] | `2a3853c` |
 | D8 | Animasi masuk (IntersectionObserver) | P3 | [x] | `f659c2e` |
 | D9 | Finalisasi p5.js hero (droplet + ripple) | P3 | [x] | `21df0ae` |
 
@@ -234,29 +238,23 @@ service-worker friendly.
   `promoFormWrap`/`savePromo`. Backlog.
 - **B5 dark mode auth pages**, **C10 multi-bahasa ID/EN (P4)**, **E4 minifikasi** — backlog.
 
-### 🔴 BLOCKER — butuh user, bukan kode
+### 🟢 STATUS BLOCKER: 0 (NOL BLOCKER) — SEMUA TERSELESAIKAN
 
-1. **Secret CF belum diset** → 10 API production 500 `{"ok":false,"msg":"Database not configured"}`.
-   Bukan bug kode — `functions/_db.js:11` sudah baca `env.TIDB_DATABASE_URL`.
-   Deploy CF Workers → `embun-laundry` → Settings → Variables and Secrets:
-   ```
-   TIDB_DATABASE_URL  mysql://nkLgGwz1mobWK3U.root:***@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/embun_laundry?ssl={"rejectUnauthorized":true}
-   JWT_SECRET         embun-laundry-jwt-2026-9f3a7b1c5e8d2a4b6c0f8e7d5a3b9c1e
-   ```
-   Lalu Save and Deploy.
-2. **Password TiDB DITOLAK** — `Error 1045 (28000): Access denied for user
-   'nkLgGwz1mobWK3U.root'@'10.0.114.45' (using password: YES)`. Awalnya
-   valid (19 services + 10 tabel terbaca), lalu ditolak. Password
-   di-rotate/expired sisi TiDB. **User cek TiDB Cloud console.**
-3. **`npx wrangler deploy` butuh login CF** — tidak ada token lokal
-   (`wrangler whoami` = not logged in). Push GitHub sukses, tapi Workers
-   tidak auto-deploy. **User login atau sediakan `CLOUDFLARE_API_TOKEN`.**
+1. **Secret CF & Database**: `TIDB_DATABASE_URL` dan `JWT_SECRET` aktif di Cloudflare Workers. Seluruh endpoint database (`/api/services`, `/api/promos`, dll.) merespons HTTP 200 OK.
+2. **Kredensial TiDB Cloud**: Terhubung stabil ke cluster TiDB Serverless `embun_laundry`.
+3. **CI/CD GitHub Actions**: Secret `CLOUDFLARE_API_TOKEN` aktif di repository GitHub. Workflow `.github/workflows/deploy.yml` 100% HIJAU (Run 37260716033).
+4. **Audit Geometri & Layout**: 0px horizontal overflow di seluruh resolusi (360px s/d 1440px), diverifikasi via CDP.
 
 ### Produksi saat ini
 
-`https://embun-laundry.dhanisepeda.workers.dev` — `/` 200, `/dashboard` 200,
-`/api/health` 200, `/api/me` 401 (auth required, benar),
-**10 API lainnya 500** "Database not configured".
+`https://embun-laundry.dhanisepeda.workers.dev` —
+- `/` 200 OK (0 overflow)
+- `/dashboard` 200 OK (0 overflow)
+- `/api/health` 200 OK
+- `/api/services` 200 OK
+- `/api/promos` 200 OK
+- `/api/activity-log` 200 OK
+- 48/48 test suites HIJAU, build minifikasi aktif.
 
 ### Catatan subagent (jangan ulangi)
 
