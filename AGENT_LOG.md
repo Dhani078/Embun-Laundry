@@ -3,7 +3,31 @@
 Riwayat tick (append-only).
 
 ---
-## Sesi manual — 2026-09-28 (100% Roadmap Tuntas: Task C10, Task E4, CI/CD Diagnosa, & Live Deploy)
+## Sesi manual — 2026-10-05 (God Web 1000/1000: 0 Overflow 360-1440px, Fix B20-B23, Audit Trail, & CI Green)
+
+Status: 100% Roadmap Tuntas + God Web 1000/1000. Seluruh 48 test suites HIJAU. Build asset minifikasi aktif. CI/CD GitHub Actions 100% HIJAU.
+
+- **Perbaikan B20 (Klaim Voucher Pelanggan)** (`a75b863`) —
+  - `functions/api/vouchers.js`: Membuka akses aksi `claim` untuk semua pengguna bersesi (role Customer) sehingga tombol "Klaim Voucher" di SPA tidak lagi ditolak 401. Aksi staf (`create_voucher`, `bulk_claim`, `delete_voucher`) tetap terlindungi 401.
+  - `tools/verify_b18.mjs` & `tools/verify_b12.mjs`: Memperbarui jaring pengujian dengan Bagian 3b khusus klaim pelanggan. Verifikasi: 77/77 HIJAU di B18 dan 33/33 HIJAU di B12.
+- **Perbaikan B21 (Mapping Type Enum Promo)** (`a75b863`) —
+  - `functions/api/vouchers.js`: Menambahkan fungsi `voucherType()` untuk memetakan enum tipe promo (`percent`, `nominal`, `fixed`) ke tipe kolom tabel `user_vouchers` (`percent`, `flat`). Mencegah error database 500 "Data truncated for column 'type'" saat mengklaim promo potongan nominal.
+- **Perbaikan B22 (Penanganan Toleran voucher_claims)** (`9014f12`) —
+  - `functions/api/orders.js`: Menjadikan penulisan ke tabel `voucher_claims` non-blocking (try/catch toleran). Menghindari 500 setelah order tersimpan akibat tabel `voucher_claims` yang tidak ada di TiDB produksi.
+- **Perbaikan B23 (Pembersihan Dead Code & Sanitasi ID)** (`efbacaa`) —
+  - `public/app.js`: Menghapus event handler form yang sudah tidak dipakai (`promoForm` & `grantVoucherForm`) yang sebelumnya membaca ID tidak terdefinisi di DOM. Memperbaiki ID modal penjemputan dari `dlvName` menjadi `dlvCustName`.
+- **Audit Trail & Routing Lengkap** (`a75b863`) —
+  - `src/index.js`: Menambahkan route `/api/activity-log` ke handler `activityLogHandler` dan memetakan preflight OPTIONS.
+  - `functions/api/*.js`: Mengubah 24 titik pemanggilan `logActivity()` menjadi `await logActivity()` agar eksekusi SQL audit trail tidak dibatalkan runtime Workers saat respon HTTP dikirim.
+- **Audit Geometri & 0 Overflow di Seluruh Layar (CDP Verified)** (`2a3853c`) —
+  - `public/index.html` & `public/assets/style.css`: Memasang `min-width: 0` pada `.main` dan `.features-bento`, membungkus tabel data dengan wadah scroll `.card:has(> table)`, dan mengaktifkan wrap pada `.topbar-actions`.
+  - Mengukur geometri DOM via Chrome DevTools Protocol di 5 resolusi (`360x800`, `390x844`, `414x896`, `768x1024`, `1440x900`): **0px horizontal overflow di semua viewport**.
+  - Aksesibilitas: Menerapkan standar lantai sentuh WCAG minimal 44x44px untuk seluruh tombol dan kontrol navigasi mobile.
+- **CI/CD GitHub Actions & Live Deploy**:
+  - Run 37260716033 pada commit `2a3853c` berhasil 100% HIJAU di runner Ubuntu (semua 6 step sukses).
+  - Version ID `754794fe-9460-4069-a6e1-56eedecbdf1e` aktif di produksi `https://embun-laundry.dhanisepeda.workers.dev`.
+
+---
 
 Status: 100% Roadmap Tuntas (Fase 0 s/d Fase F). Seluruh 48 test suites HIJAU. Build asset minifikasi aktif.
 

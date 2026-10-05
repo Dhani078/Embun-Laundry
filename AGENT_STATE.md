@@ -1,8 +1,8 @@
 # AGENT STATE
 
-Terakhir update: 2026-09-28T15:35:00+08:00
-Sesi: Finalisasi 100% Roadmap (C10, E4, F1-F4) + Diagnosa CI GitHub + Live Deploy
-Model: atria/Atria-Dawn-Preview
+Terakhir update: 2026-10-05T12:00:00+08:00
+Sesi: Audit Total God Web 1000/1000 — 0 Overflow (360px-1440px), Perbaikan Bug B20-B23, Audit Trail, & CI Green
+Model: ag/gemini-3.8-flash-high
 
 ## Konfigurasi loop (update 2026-09-10)
 
@@ -32,18 +32,20 @@ Model: atria/Atria-Dawn-Preview
 
 | Path / Komponen | Status | Catatan |
 |-----------------|--------|---------|
-| `/` | **200** | Landing page live (`https://embun-laundry.dhanisepeda.workers.dev`), multi-bahasa ID/EN |
-| `/dashboard` | **200** | Worker serve dashboard.html, SPA command palette, dark mode, audit trail |
+| `/` | **200** | Landing page live (`https://embun-laundry.dhanisepeda.workers.dev`), 0 overflow di 360-1440px |
+| `/dashboard` | **200** | Worker serve dashboard.html, SPA command palette, dark mode, audit trail, 0 overflow |
 | `/api/health` | **200** | Liveness OK (`{"ok":true,"status":"healthy",...}`) |
 | `/api/services` | **200** | 7 layanan aktif di TiDB Cloud (`{"ok":true,"services":[...]}`) |
 | `/api/promos` | **200** | 4 kode promo aktif (`{"ok":true,"promos":[...]}`) |
+| `/api/activity-log` | **200** | Audit trail live, seluruh 24 mutasi tercatat via `await logActivity()` |
 | `/assets/design-tokens.css` | **200** | Tersedia asli & minifikasi (`.min.css` 6.7KB, -51.5%) |
-| `/assets/style.css` | **200** | Tersedia asli & minifikasi (`.min.css` 49.7KB, -25.2%) |
+| `/assets/style.css` | **200** | Tersedia asli & minifikasi (`.min.css` 50.8KB, -23.1%) |
 | `/assets/hero-canvas.js` | **200** | Tersedia asli & minifikasi (`.min.js` 11.0KB, -25.0%) |
-| `/app.js` | **200** | Tersedia asli & minifikasi (`.min.js` 257.9KB, -1.5%) |
+| `/app.js` | **200** | Tersedia asli & minifikasi (`.min.js` 254.6KB, -1.5%) |
 | Test Suites | **48/48 HIJAU** | Seluruh verifier lulus 100% via `node tools/run_all_verifiers.mjs` |
-| Build Pipeline | **SUKSES** | `node tools/build.mjs` minifikasi otomatis dalam ~19ms |
-| Cloudflare Deploy | **LIVE** | Version ID `62106f2d-9305-4095-8499-ea1f33ff3e9d` aktif di Workers |
+| Build Pipeline | **SUKSES** | `node tools/build.mjs` minifikasi otomatis dalam ~21ms |
+| CI/CD Pipeline | **100% HIJAU** | GitHub Actions Run 37260716033 sukses deploy otomatis ke Cloudflare |
+| Cloudflare Deploy | **LIVE** | Version ID `754794fe-9460-4069-a6e1-56eedecbdf1e` aktif di Workers |
 
 ## Task aktif
 
@@ -53,6 +55,16 @@ Model: atria/Atria-Dawn-Preview
 - Mulai: —
 
 ## Task selesai
+
+- **Audit Total God Web 1000/1000 — 0 Overflow (360px-1440px), Perbaikan Bug B20-B23, Audit Trail, & CI Green** (`a75b863`, `efbacaa`, `2a3853c`) —
+  - **B20 (Klaim Voucher Pelanggan)**: `functions/api/vouchers.js` sebelumnya memblokir semua POST dari non-staff (401). Diperbaiki sehingga aksi `claim` diizinkan bagi pelanggan bersesi, sementara aksi penerbitan/penghapusan voucher staf tetap diproteksi 401. Uji regresi B18 Bagian 3b ditambahkan (77/77 HIJAU).
+  - **B21 (Mapping Type Enum Promo)**: Kolom `promos.type` bertipe `enum('percent','nominal','fixed')` sedangkan `user_vouchers.type` bertipe `enum('flat','percent')`. Menyalin `p.type` mentah menyebabkan error `Data truncated for column 'type'` (500). Ditambahkan fungsi helper `voucherType()` untuk memetakan `nominal`/`fixed` menjadi `flat`.
+  - **B22 (Penanganan Toleran voucher_claims)**: Tabel `voucher_claims` tidak ada di TiDB produksi dan tidak dibaca modul apa pun (write-only). Eksekusi INSERT ke tabel tersebut sebelumnya menyebabkan 500 setelah order tersimpan. Diubah menjadi blok try/catch toleran sehingga kegagalan riwayat klaim tidak membatalkan pembuatan pesanan.
+  - **B23 (Pembersihan Dead Code & Sanitasi ID)**: Menghapus handler dead code `promoForm` dan `grantVoucherForm` di `public/app.js` yang membaca elemen ID tidak terdefinisi di DOM. Memperbaiki referensi ID modal penjemputan `dlvName` menjadi `dlvCustName`.
+  - **Audit Trail (Await logActivity)**: Memperbaiki 24 titik pemanggilan `logActivity()` di seluruh endpoint agar menggunakan `await`. Sebelumnya promise dibatalkan runtime Workers saat respon HTTP dikirim. Route `/api/activity-log` kini di-wiring penuh ke `src/index.js` dengan proteksi RBAC staf.
+  - **Layout & Responsive 0 Overflow (CDP Verified)**: Memperbaiki tata letak `.wrap` dan `.main` dengan `min-width: 0`, auto-scroll table wrapper `.card:has(> table)`, pembungkusan tombol `.topbar-actions`, serta penataan media query mobile (768px, 480px, 400px, 360px). Terverifikasi 0px horizontal overflow di semua viewport (`360x800`, `390x844`, `414x896`, `768x1024`, `1440x900`).
+  - **Aksesibilitas (WCAG 2.5.5)**: Seluruh tombol interaktif, topbar actions, navigasi, dan tombol tutup modal memenuhi standar lantai sentuh minimal 44x44px.
+  - **CI/CD GitHub Actions**: Workflow deploy di `.github/workflows/deploy.yml` sukses 100% HIJAU (Run 37260716033) dengan verifikasi otomatis `npm test` + `npm run build` + `npx wrangler deploy`.
 
 - **C10 & E4** (Fase C & E) — Multi-bahasa ID/EN Sederhana & Minifikasi Asset Build Pipeline (P4) —
   - `public/index.html`: Tombol `#langToggleBtn` di header navigasi, sistem `data-i18n`, kamus dwibahasa `I18N` (ID/EN) terintegrasi dengan persistensi `localStorage('embun_lang')`.
