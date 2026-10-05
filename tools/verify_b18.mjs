@@ -90,8 +90,13 @@ globalThis.__MOCK_ROWS = (sql) => {
     return [{ id: 1, code: 'PROMO1', name: 'Promo', type: 'percent', value: 10, min_spend: 0, max_discount: 0, expires_at: null, is_active: 1 }];
   }
   if (/FROM\s+user_vouchers/i.test(sql)) {
-    return [{ id: 1, user_id: 1, promo_id: 1, code: 'VOU-TEST', name: 'Promo', type: 'percent', value: 10, min_spend: 0, max_discount: 0, expires_at: null, used_at: null }];
-  }
+      // Untuk uji `claim` pelanggan (B20): cek "sudah punya voucher?" harus
+      // KOSONG agar jalur INSERT benar-benar tercapai — kalau tidak, handler
+      // wajar membalas 400 "sudah memiliki voucher" dan uji MERAH karena
+      // kesalahan TIRUAN, bukan kebijakan.
+      if (globalThis.__MOCK_NO_VOUCHERS) return [];
+      return [{ id: 1, user_id: 1, promo_id: 1, code: 'VOU-TEST', name: 'Promo', type: 'percent', value: 10, min_spend: 0, max_discount: 0, expires_at: null, used_at: null }];
+    }
   if (/FROM\s+pickup_delivery/i.test(sql)) {
     return [{ id: 1, task_code: 'PU-TEST', type: 'pickup', status: 'scheduled', customer_name: 'Budi Santoso' }];
   }
@@ -155,8 +160,7 @@ const CASES = [
   { mod: 'promos',   act: 'toggle_promo',   handler: promos,   path: '/api/promos',   body: { action: 'toggle_promo', id: 1, is_active: 0 } },
 
   // vouchers.js
-  { mod: 'vouchers', act: 'claim',          handler: vouchers, path: '/api/vouchers', body: { action: 'claim', promo_id: 1 } },
-  { mod: 'vouchers', act: 'bulk_claim',     handler: vouchers, path: '/api/vouchers', body: { action: 'bulk_claim', promo_id: 1, user_ids: [1, 2] } },
+    { mod: 'vouchers', act: 'bulk_claim',     handler: vouchers, path: '/api/vouchers', body: { action: 'bulk_claim', promo_id: 1, user_ids: [1, 2] } },
   { mod: 'vouchers', act: 'create_voucher', handler: vouchers, path: '/api/vouchers', body: { action: 'create_voucher', promo_id: 1, user_id: 1 } },
   { mod: 'vouchers', act: 'delete_voucher', handler: vouchers, path: '/api/vouchers', body: { action: 'delete_voucher', id: 1 } },
 
@@ -285,6 +289,54 @@ for (const c of STAFF_CASES) {
     `staf ${c.mod}:${c.act} — status 200`,
     r.status === 200,
     `status ${r.status}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bagian 3b — `claim` voucher HARUS hidup untuk PELANGGAN (B20).
+// SPA punya tombol "Klaim Voucher" yang memanggil `claim` dengan sesi
+// Customer. Kalau ini kembali ditutup `!isStaff`, tombolnya mati lagi.
+// ---------------------------------------------------------------------------
+console.log('\n=== B18 — klaim voucher pelanggan tidak boleh mati ===\n');
+
+const customerToken = await createSessionToken(
+  { id: 77, full_name: 'Pelanggan Uji', role: 'Customer', email: 'cust@test.com' },
+  ENV
+);
+
+{
+  globalThis.__MOCK_NO_VOUCHERS = true;
+  let r, r2;
+  try {
+    r = await run(vouchers, {
+      path: '/api/vouchers',
+      body: { action: 'claim', promo_id: 1 },
+      cookie: customerToken
+    });
+    r2 = await run(vouchers, {
+      path: '/api/vouchers',
+      body: { action: 'create_voucher', promo_id: 1, user_id: 1 },
+      cookie: customerToken
+    });
+  } finally {
+    globalThis.__MOCK_NO_VOUCHERS = false;
+  }
+  check(
+    'pelanggan vouchers:claim — penulisan terjadi (fitur hidup)',
+    r.writes.length > 0,
+    `status ${r.status}, ${r.writes.length} penulisan`
+  );
+  check(
+    'pelanggan vouchers:claim — status 200',
+    r.status === 200,
+    `status ${r.status}`
+  );
+
+  // Penyeimbang: aksi staf lain tetap tertutup untuk pelanggan.
+  check(
+    'pelanggan vouchers:create_voucher — tetap ditolak (0 penulisan)',
+    r2.writes.length === 0,
+    `status ${r2.status}, ${r2.writes.length} penulisan`
   );
 }
 

@@ -130,7 +130,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — create customer
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'create',
@@ -159,7 +159,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — update customer
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'update',
@@ -182,7 +182,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — delete customer
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'delete',

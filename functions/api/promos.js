@@ -98,7 +98,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — create promo
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'create',
@@ -139,7 +139,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — update promo
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'update',
@@ -162,7 +162,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — delete promo
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'delete',
@@ -188,7 +188,7 @@ export async function onRequest({ request, env }) {
 
         // Audit trail — toggle active promo
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-        logActivity(db, {
+        await logActivity(db, {
           actor_name: user.user_name,
           actor_role: user.user_role,
           action_type: 'status_change',

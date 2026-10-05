@@ -151,7 +151,7 @@ export async function onRequestPost({ request, env, ctx }) {
 
     // Audit trail — login
     const ipLogin = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '';
-    logActivity(db, { actor_name: user.full_name, actor_role: user.role, action_type: 'login', entity_type: 'user', entity_id: String(user.id), entity_label: user.full_name, detail: `Login berhasil`, ip_address: ipLogin });
+    await logActivity(db, { actor_name: user.full_name, actor_role: user.role, action_type: 'login', entity_type: 'user', entity_id: String(user.id), entity_label: user.full_name, detail: `Login berhasil`, ip_address: ipLogin });
 
     return withRateHeaders(res, RL_LIMIT);
   } catch (e) {

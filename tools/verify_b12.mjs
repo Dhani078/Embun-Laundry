@@ -247,8 +247,10 @@ for (const [label, body] of [
 }
 
 {
+  // B20 — `claim` adalah aksi PELANGGAN (tombol "Klaim Voucher" di SPA).
+  // Perilaku lama 401 = bug. Sekarang harus 200 dan menulis voucher.
   const r = await call(vouchers, 'POST', '/api/vouchers', { action: 'claim', promo_id: 7 }, custToken);
-  check('vouchers POST claim sebagai Customer -> 401', r.status === 401, `status=${r.status}`);
+  check('vouchers POST claim sebagai Customer -> 200', r.status === 200, `status=${r.status}`);
 }
 
 {
