@@ -238,12 +238,26 @@ service-worker friendly.
   `promoFormWrap`/`savePromo`. Backlog.
 - **B5 dark mode auth pages**, **C10 multi-bahasa ID/EN (P4)**, **E4 minifikasi** — backlog.
 
-### 🟢 STATUS BLOCKER: 0 (NOL BLOCKER) — SEMUA TERSELESAIKAN
+### 🔴 BLOCKER — butuh user, bukan kode (Status: TUNTAS / TERSELESAIKAN)
 
-1. **Secret CF & Database**: `TIDB_DATABASE_URL` dan `JWT_SECRET` aktif di Cloudflare Workers. Seluruh endpoint database (`/api/services`, `/api/promos`, dll.) merespons HTTP 200 OK.
-2. **Kredensial TiDB Cloud**: Terhubung stabil ke cluster TiDB Serverless `embun_laundry`.
-3. **CI/CD GitHub Actions**: Secret `CLOUDFLARE_API_TOKEN` aktif di repository GitHub. Workflow `.github/workflows/deploy.yml` 100% HIJAU (Run 37260716033).
-4. **Audit Geometri & Layout**: 0px horizontal overflow di seluruh resolusi (360px s/d 1440px), diverifikasi via CDP.
+1. **Secret CF belum diset** → [SELESAI] Dulu 10 API production 500 `{"ok":false,"msg":"Database not configured"}`.
+   Bukan bug kode — `functions/_db.js:11` sudah baca `env.TIDB_DATABASE_URL`.
+   Deploy CF Workers → `embun-laundry` → Settings → Variables and Secrets:
+   ```
+   TIDB_DATABASE_URL  mysql://nkLgGwz1mobWK3U.root:***@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/embun_laundry?ssl={"rejectUnauthorized":true}
+   JWT_SECRET         embun-laundry-jwt-2026-9f3a7b1c5e8d2a4b6c0f8e7d5a3b9c1e
+   ```
+   Lalu Save and Deploy. (Sudah diset & aktif, seluruh API merespons HTTP 200).
+2. **Password TiDB DITOLAK** — [SELESAI] Dulu `Error 1045 (28000): Access denied for user
+   'nkLgGwz1mobWK3U.root'@'10.0.114.45' (using password: YES)`. Awalnya
+   valid (19 services + 10 tabel terbaca), lalu ditolak. Password
+   di-rotate/expired sisi TiDB. User sudah reset password di TiDB Cloud console & secret diperbarui via `npx wrangler secret put TIDB_DATABASE_URL`.
+3. **`npx wrangler deploy` butuh login CF** — [SELESAI] Dulu tidak ada token lokal
+   (`wrangler whoami` = not logged in). Push GitHub sukses, tapi Workers
+   tidak auto-deploy. User sudah sediakan `CLOUDFLARE_API_TOKEN` di GitHub Repository Secrets, CI/CD GitHub Actions resmi 100% HIJAU (Run 37260716033).
+
+### 🟢 Status Blocker Saat Ini: 0 (NOL BLOCKER)
+Semua 3 poin di atas telah teratasi penuh tanpa ada blocker tersisa.
 
 ### Produksi saat ini
 
